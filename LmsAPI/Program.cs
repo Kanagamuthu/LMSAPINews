@@ -22,6 +22,7 @@ builder.Services.AddControllers();
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 #endregion
 
+
 #region CORS
 builder.Services.AddCors(options =>
 {
