@@ -1,0 +1,34 @@
+2025-10-17 10:08:18,307 [9] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 10:22:53,765 [3] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 10:22:55,797 [14] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-17 10:22:57,865 [14] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 11:52:08,617 [9] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 11:52:21,511 [9] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 11:52:23,059 [9] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-17 11:52:26,908 [9] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 16:39:33,514 [14] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 16:40:12,745 [14] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 16:40:44,141 [10] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 16:40:46,312 [22] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-17 16:40:50,414 [23] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 16:42:20,463 [14] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 16:42:22,876 [19] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-17 16:42:30,865 [20] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 17:00:04,901 [10] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 17:00:41,449 [10] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 17:00:43,628 [23] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-17 17:00:46,912 [23] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 17:06:31,519 [39] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 17:20:54,798 [15] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 17:21:23,339 [15] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 17:21:24,957 [21] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-17 17:21:28,961 [21] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 18:02:31,522 [3] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 18:02:33,499 [23] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-17 18:02:46,967 [23] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 18:03:03,145 [26] WARN  LMSAPI.Helpers.LoggerManager - Book limit setting not found or invalid in application configuration.
+2025-10-17 18:03:59,031 [26] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 18:07:28,671 [3] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 18:07:30,657 [26] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-17 18:07:41,521 [27] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-17 18:09:47,290 [23] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully

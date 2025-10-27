@@ -1,0 +1,26 @@
+2025-10-27 10:43:23,040 [15] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 10:43:25,103 [7] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-27 10:44:23,237 [7] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 10:44:24,921 [7] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-27 10:44:35,856 [7] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 12:37:53,385 [7] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 12:38:29,397 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 12:40:22,245 [3] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 12:41:36,644 [21] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:15:03,465 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:16:45,666 [11] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:18:13,658 [7] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:19:33,482 [7] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:19:57,941 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:21:05,938 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:30:51,328 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:32:12,306 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:34:08,828 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:34:47,926 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:35:53,359 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:40:21,305 [20] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:40:39,875 [24] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:40:59,480 [10] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:41:08,348 [24] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:41:24,281 [24] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-27 14:42:03,787 [15] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully

@@ -1,0 +1,25 @@
+2025-10-23 10:31:54,390 [9] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 10:31:56,444 [18] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-23 10:32:17,062 [7] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 10:32:17,066 [7] INFO  LMSAPI.Helpers.LoggerManager - Checking if student is valid for email: dhamotharan.s@infoplus.co.in
+2025-10-23 10:36:12,659 [24] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 10:36:12,662 [24] INFO  LMSAPI.Helpers.LoggerManager - Checking if student is valid for email: dhamotharan.s@infoplus.co.in
+2025-10-23 10:36:21,180 [24] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 10:44:08,513 [13] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 10:44:08,679 [13] WARN  LMSAPI.Helpers.LoggerManager - User email not found in session
+2025-10-23 10:44:31,462 [3] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 10:44:32,999 [19] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-23 10:44:53,101 [7] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 11:16:40,891 [29] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 11:16:40,896 [29] WARN  LMSAPI.Helpers.LoggerManager - User email not found in session
+2025-10-23 11:16:45,874 [29] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 11:16:45,875 [29] WARN  LMSAPI.Helpers.LoggerManager - User email not found in session
+2025-10-23 11:16:52,412 [29] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 11:16:52,414 [29] WARN  LMSAPI.Helpers.LoggerManager - User email not found in session
+2025-10-23 11:18:37,359 [32] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 15:03:53,732 [3] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 15:03:56,063 [3] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-23 15:04:26,066 [26] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 15:04:26,112 [26] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
+2025-10-23 15:09:10,884 [10] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-10-23 15:09:13,706 [15] INFO  LMSAPI.Helpers.LoggerManager - Student found: dhamotharan.s@infoplus.co.in, Status: 1
