@@ -302,6 +302,7 @@ namespace LmsAPI.Controllers
         }
         #endregion
 
+        //Sessions
         private void SetStudentSession(TblStudentUserMaster student)
         {
             HttpContext.Session.SetString("UserEmail", student.EmailId);
@@ -310,5 +311,6 @@ namespace LmsAPI.Controllers
             HttpContext.Session.SetInt32("UserStatus", (int)student.ActiveStatus);
             HttpContext.Session.SetInt32("trade_id", student.TradeId ?? 0);
         }
+
     }
 }
