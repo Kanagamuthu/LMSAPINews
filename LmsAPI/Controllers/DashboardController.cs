@@ -393,7 +393,6 @@ namespace LMSAPI.Controllers
                 flag = true;
                 Message = "Subscription created successfully.";
                 await _dashboardRepository.AddUserSubscribeMasterAsync(model.SubscribeMaster);
-
             }
 
             if (flag)
