@@ -39,6 +39,12 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<TblSubjectMaster> TblSubjectMasters { get; set; }
 
+    public virtual DbSet<TblSubjectMasterHistory> TblSubjectMasterHistories { get; set; }
+
+    public virtual DbSet<TblSubjectUnitMaster> TblSubjectUnitMasters { get; set; }
+
+    public virtual DbSet<TblSubjectUnitMasterHistory> TblSubjectUnitMasterHistories { get; set; }
+
     public virtual DbSet<TblUserPurchaseGroup> TblUserPurchaseGroups { get; set; }
 
     public virtual DbSet<TblUserRandomPass> TblUserRandomPasses { get; set; }
@@ -46,6 +52,8 @@ public partial class LmsdbNewContext : DbContext
     public virtual DbSet<TblUserSubjectActivationHistory> TblUserSubjectActivationHistories { get; set; }
 
     public virtual DbSet<TblUserSubjectMapping> TblUserSubjectMappings { get; set; }
+
+    public virtual DbSet<TblUserSubjectMappingHistory> TblUserSubjectMappingHistories { get; set; }
 
     public virtual DbSet<TblUserSubjectReadHistory> TblUserSubjectReadHistories { get; set; }
 
@@ -429,6 +437,7 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.SubjectName)
                 .HasMaxLength(100)
                 .HasColumnName("subject_name");
+            entity.Property(e => e.SubjectSyllabusPath).HasColumnName("Subject_Syllabus_Path");
             entity.Property(e => e.SubjectVersion)
                 .HasMaxLength(20)
                 .HasColumnName("subject_version");
@@ -439,6 +448,114 @@ public partial class LmsdbNewContext : DbContext
                 .HasColumnName("univ_subject_code");
             entity.Property(e => e.UniversityId).HasColumnName("UniversityID");
             entity.Property(e => e.Visuals).HasColumnName("visuals");
+        });
+
+        modelBuilder.Entity<TblSubjectMasterHistory>(entity =>
+        {
+            entity.HasKey(e => e.SubjectHistoryid).HasName("PK__Tbl_subj__152EEBC31BA8ACC4");
+
+            entity.ToTable("Tbl_subject_master_history");
+
+            entity.Property(e => e.SubjectHistoryid).HasColumnName("subject_historyid");
+            entity.Property(e => e.ActiveDurationDate)
+                .HasColumnType("datetime")
+                .HasColumnName("active_duration_date");
+            entity.Property(e => e.ActiveDurationDays).HasColumnName("active_duration_days");
+            entity.Property(e => e.ActiveStatus).HasColumnName("active_status");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("created_on");
+            entity.Property(e => e.HavingQuestionpaper).HasColumnName("having_questionpaper");
+            entity.Property(e => e.ReleasedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("released_on");
+            entity.Property(e => e.RuleId).HasColumnName("rule_id");
+            entity.Property(e => e.SubjectCode)
+                .HasMaxLength(20)
+                .HasColumnName("subject_code");
+            entity.Property(e => e.SubjectCoverPath).HasColumnName("subject_cover_path");
+            entity.Property(e => e.SubjectDescription).HasColumnName("subject_description");
+            entity.Property(e => e.SubjectId).HasColumnName("subject_id");
+            entity.Property(e => e.SubjectName)
+                .HasMaxLength(100)
+                .HasColumnName("subject_name");
+            entity.Property(e => e.SubjectVersion)
+                .HasMaxLength(15)
+                .HasColumnName("subject_version");
+            entity.Property(e => e.UniversityId).HasColumnName("UniversityID");
+        });
+
+        modelBuilder.Entity<TblSubjectUnitMaster>(entity =>
+        {
+            entity.HasKey(e => e.UnitId).HasName("PK__Tbl_subj__D3AF5BD7392AFDDE");
+
+            entity.ToTable("Tbl_subject_unit_master");
+
+            entity.Property(e => e.UnitId).HasColumnName("unit_id");
+            entity.Property(e => e.ActiveStatus).HasColumnName("active_status");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("created_on");
+            entity.Property(e => e.FilesizeInMb).HasColumnName("filesize_in_mb");
+            entity.Property(e => e.IsDemo).HasColumnName("is_demo");
+            entity.Property(e => e.IsUnitOrIndex).HasColumnName("is_unit_or_index");
+            entity.Property(e => e.OsType).HasColumnName("os_type");
+            entity.Property(e => e.ReleasedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("released_on");
+            entity.Property(e => e.SubjectId).HasColumnName("subject_id");
+            entity.Property(e => e.SubjectUnitPath)
+                .HasMaxLength(250)
+                .IsUnicode(false)
+                .HasColumnName("subject_unit_path");
+            entity.Property(e => e.SubjectUnitType).HasColumnName("subject_unit_type");
+            entity.Property(e => e.SubjectUnitVersion)
+                .HasMaxLength(20)
+                .HasColumnName("subject_unit_version");
+            entity.Property(e => e.UnitCode)
+                .HasMaxLength(50)
+                .HasColumnName("unit_code");
+            entity.Property(e => e.UnitName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("unit_name");
+        });
+
+        modelBuilder.Entity<TblSubjectUnitMasterHistory>(entity =>
+        {
+            entity.HasKey(e => e.UnitHistoryId).HasName("PK__Tbl_subj__64C77099F745C805");
+
+            entity.ToTable("Tbl_subject_unit_master_history");
+
+            entity.Property(e => e.UnitHistoryId).HasColumnName("unit_history_id");
+            entity.Property(e => e.ActiveStatus).HasColumnName("active_status");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("created_on");
+            entity.Property(e => e.FilesizeInMb).HasColumnName("filesize_in_mb");
+            entity.Property(e => e.IsDemo).HasColumnName("is_demo");
+            entity.Property(e => e.IsUnitOrIndex).HasColumnName("is_unit_or_index");
+            entity.Property(e => e.ReleasedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("released_on");
+            entity.Property(e => e.SubjectId).HasColumnName("subject_id");
+            entity.Property(e => e.SubjectUnitPath)
+                .HasMaxLength(250)
+                .IsUnicode(false)
+                .HasColumnName("subject_unit_path");
+            entity.Property(e => e.SubjectUnitVersion)
+                .HasMaxLength(20)
+                .HasColumnName("subject_unit_version");
+            entity.Property(e => e.UnitCode)
+                .HasMaxLength(25)
+                .HasColumnName("unit_code");
+            entity.Property(e => e.UnitId).HasColumnName("unit_id");
+            entity.Property(e => e.UnitName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("unit_name");
         });
 
         modelBuilder.Entity<TblUserPurchaseGroup>(entity =>
@@ -594,6 +711,66 @@ public partial class LmsdbNewContext : DbContext
                 .HasColumnName("subject_version");
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.Yearsem).HasColumnName("yearsem");
+        });
+
+        modelBuilder.Entity<TblUserSubjectMappingHistory>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("Tbl_user_subject_mapping_history");
+
+            entity.Property(e => e.DepartmentCode)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("department_code");
+            entity.Property(e => e.DepartmentId).HasColumnName("department_id");
+            entity.Property(e => e.DepartmentName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("department_name");
+            entity.Property(e => e.DownloadStatus).HasColumnName("download_status");
+            entity.Property(e => e.DownloadedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("downloaded_on");
+            entity.Property(e => e.IsDemo).HasColumnName("is_demo");
+            entity.Property(e => e.IsUnitOrIndex).HasColumnName("is_unit_or_index");
+            entity.Property(e => e.SubjectCode)
+                .HasMaxLength(20)
+                .HasColumnName("subject_code");
+            entity.Property(e => e.SubjectCoverPath).HasColumnName("subject_cover_path");
+            entity.Property(e => e.SubjectId).HasColumnName("subject_id");
+            entity.Property(e => e.SubjectName)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("subject_name");
+            entity.Property(e => e.SubjectUnitCode)
+                .HasMaxLength(25)
+                .HasColumnName("subject_unit_code");
+            entity.Property(e => e.SubjectUnitExpiryon)
+                .HasColumnType("datetime")
+                .HasColumnName("subject_unit_expiryon");
+            entity.Property(e => e.SubjectUnitId).HasColumnName("subject_unit_id");
+            entity.Property(e => e.SubjectUnitName)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("subject_unit_name");
+            entity.Property(e => e.SubjectUnitPath)
+                .HasMaxLength(250)
+                .IsUnicode(false)
+                .HasColumnName("subject_unit_path");
+            entity.Property(e => e.SubjectUnitVersion)
+                .HasMaxLength(15)
+                .IsUnicode(false)
+                .HasColumnName("subject_unit_version");
+            entity.Property(e => e.SubjectVersion)
+                .HasMaxLength(15)
+                .IsUnicode(false)
+                .HasColumnName("subject_version");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.UserSubjectHistoryId)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("user_subject_history_id");
+            entity.Property(e => e.UserSubjectId).HasColumnName("user_subject_id");
         });
 
         modelBuilder.Entity<TblUserSubjectReadHistory>(entity =>

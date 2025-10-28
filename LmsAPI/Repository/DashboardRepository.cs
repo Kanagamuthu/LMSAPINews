@@ -46,6 +46,52 @@ namespace LMSAPI.Repository
             }
         }
 
+        public async Task<bool> AddBooksToStudent(string userEmail, List<int> bookIds)
+        {
+            try
+            {
+                var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail && s.ActiveStatus == 1);
+                if (student == null)
+                {
+                    _logger.LogWarn("Student not found for email: " + userEmail);
+                    return false;
+                }
+                foreach (var bookId in bookIds)
+                {
+                    //trail period calculated from table TblStudentUserMaster - acc acvivet on
+                    var trialDays = await _studentsRepository.GetTrialPeriodDaysAsync();
+                    //get activate date from table
+                    var stdmaster = await _studentsRepository.GetStudentByEmailAsync(userEmail);
+                    var activationDate = stdmaster.AccActiveOn.Value;
+                    var currentDate = DateTime.UtcNow;
+                    var difference = currentDate - activationDate;
+                    int daysSinceActivation = (int)difference.TotalDays;
+                    int daysLeft = trialDays - daysSinceActivation; //days left date calculation 
+                    DateTime trail_expairy_on = activationDate.AddDays(trialDays);
+
+                    var existingEntry = await _context.TblStudentTrialSubjects.FirstOrDefaultAsync(m => m.SubjectId == student.StudentUserId && m.SubjectId == bookId);
+                    if (existingEntry == null)
+                    {
+                        var mapping = new TblStudentTrialSubject
+                        {
+                            UserId = student.StudentUserId,
+                            SubjectId = bookId,
+                            TrailExpiryOn = trail_expairy_on,
+                            CreatedOn = DateTime.Now
+                        };
+                        await _context.TblStudentTrialSubjects.AddAsync(mapping);
+                    }
+                }
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                _logger.LogError(ex, "Error occurred while adding books to student: " + userEmail);
+                return false;
+            }
+        }
         Task<List<TblSubjectMaster>> IDashboardRepository.GetAllSubjects()
         {
             try
@@ -59,7 +105,7 @@ namespace LMSAPI.Repository
 
             }
         }
-        public async Task<bool> AddBooksToStudent(string userEmail, List<int> bookIds)
+        public async Task<bool> Ad_contextooksToStudent(string userEmail, List<int> bookIds)
         {
             try
             {
@@ -304,37 +350,18 @@ namespace LMSAPI.Repository
         {
             try
             {
-                var result = await (from um in _context.TblStudentUserMasters
-                                    join dm in _context.TblDepartmentMasters
-                on um.DepartmentId equals dm.DepartmentId into dmJoin
-                                    from dm in dmJoin.DefaultIfEmpty()
-                                    join dsm in _context.TblDepartmentSubjectMappings
-                on um.DepartmentId equals dsm.DepartmentId into dsmJoin
-                                    from dsm in dsmJoin.DefaultIfEmpty()
-                                    join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId into smJoin
-                                    from sm in smJoin.DefaultIfEmpty()
-                                    select new
-                                    {
-                                        dm.DepartmentId,
-                                        dm.DepartmentName,
-                                        sm.SubjectId,
-                                        sm.SubjectName,
-                                        sm.SubjectCode
-                                        // Include other fields from sm as needed
-                                    }).Distinct().ToListAsync();
-                List<DepartmentSubjectDTO> subjects = new List<DepartmentSubjectDTO>();
-                foreach (var item in result)
-                {
-                    subjects.Add(new DepartmentSubjectDTO
-                    {
-                        DepartmentId = item.DepartmentId,
-                        DepartmentName = item.DepartmentName,
+                var query = (from um in _context.TblStudentUserMasters
+                             join dm in _context.TblDepartmentMasters on um.DepartmentId equals dm.DepartmentId
+                             join dsm in _context.TblDepartmentSubjectMappings on um.DepartmentId equals dsm.DepartmentId
+                             join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId
+                             select new DepartmentSubjectDTO
+                             {
+                                 DepartmentId = dm.DepartmentId,
+                                 DepartmentName = dm.DepartmentName,
+                                 subjectMaster = sm
+                             }).Distinct().ToList();
 
-                        SubjectName = item.SubjectName,
-                        SubjectCode = item.SubjectCode
-                    });
-                }
-                return subjects;
+                return query;
 
             }
             catch (Exception ex)

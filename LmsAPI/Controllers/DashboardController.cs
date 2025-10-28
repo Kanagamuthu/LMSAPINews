@@ -419,11 +419,8 @@ namespace LMSAPI.Controllers
                 }
 
             }
-            return Ok(new
-            {
-                Message = Message,
-                Data = model
-            });
+
+            return Ok(new ApiResponse(true, Message, model, ""));
         }
         #endregion
 
@@ -432,7 +429,7 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetDashboardSubjects()
+        public async Task<IActionResult> GetDashboardSubjects(string? SubjectCode)
         {
             try
             {
@@ -441,13 +438,12 @@ namespace LMSAPI.Controllers
                 {
                     return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
                 }
-                var student = await _studentsRepository.GetStudentByEmailAsync(email);
-                if (student == null)
-                {
-                    return Ok(new ApiResponse(false, "Student not found.", null, StatusCodes.Status404NotFound.ToString()));
-                }
+
                 var subjects = await _dashboardRepository.GetAllDepartmentSubjects();
-                return Ok(new ApiResponse(true, "Subjects fetched successfully.", subjects, StatusCodes.Status200OK.ToString()));
+                if(!string.IsNullOrEmpty(SubjectCode))
+                    subjects= subjects.Where(x=>x?.subjectMaster?.SubjectCode==SubjectCode).ToList();
+                
+                return Ok(new ApiResponse(true, "Subjects fetched successfully.", subjects,""));
             }
             catch (Exception ex)
             {
