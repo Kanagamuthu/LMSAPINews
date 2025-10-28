@@ -6,7 +6,6 @@ namespace LMSAPI.DTO
 {
     public class LessonConverter
     {
-
         public class Subject
         {
             public string? label { get; set; }
