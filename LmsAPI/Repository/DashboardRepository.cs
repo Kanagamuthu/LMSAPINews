@@ -12,10 +12,10 @@ namespace LMSAPI.Repository
 {
     public class DashboardRepository : IDashboardRepository
     {
-        private readonly LmsdbContext _context;
+        private readonly LmsdbNewContext _context;
         private readonly ILoggerManager _logger;
         private readonly IStudentsRepository _studentsRepository;
-        public DashboardRepository(LmsdbContext context, ILoggerManager logger, IStudentsRepository studentsRepository)
+        public DashboardRepository(LmsdbNewContext context, ILoggerManager logger, IStudentsRepository studentsRepository)
         {
             _context = context;
             _logger = logger;
@@ -229,7 +229,7 @@ namespace LMSAPI.Repository
         {
             try
             {
-                await _context.TblUserSubscribeMaster.AddAsync(usersubscribemaster);
+                await _context.TblUserSubscribeMasters.AddAsync(usersubscribemaster);
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -242,7 +242,7 @@ namespace LMSAPI.Repository
         {
             try
             {
-                await _context.TblUserSubjectActivationHistory.AddAsync(usersubjectactivationhistory);
+                await _context.TblUserSubjectActivationHistories.AddAsync(usersubjectactivationhistory);
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -255,7 +255,7 @@ namespace LMSAPI.Repository
         {
             try
             {
-                _context.TblUserSubscribeMaster.Update(usersubscribemaster);
+                _context.TblUserSubscribeMasters.Update(usersubscribemaster);
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -268,8 +268,8 @@ namespace LMSAPI.Repository
 
         public async Task<List<UserSubscriptionDetailDto>> GetUserSubscribeMasterAsync()
         {
-            var Query = from u in _context.TblUserSubscribeMaster
-                        join h in _context.TblUserSubjectActivationHistory on u.UserSubscribeMasterId equals h.TusmId
+            var Query = from u in _context.TblUserSubscribeMasters
+                        join h in _context.TblUserSubjectActivationHistories on u.UserSubscribeMasterId equals h.TusmId
                         orderby u.UserSubscribeMasterId descending
                         select new UserSubscriptionDetailDto
                         {
@@ -281,8 +281,8 @@ namespace LMSAPI.Repository
 
         public async Task DeleteUserSubjectActivationHistoryAsync(int Id)
         {
-            var getActivationHistory = _context.TblUserSubjectActivationHistory.Where(x => x.TusmId == Id);
-            _context.TblUserSubjectActivationHistory.RemoveRange(getActivationHistory);
+            var getActivationHistory = _context.TblUserSubjectActivationHistories.Where(x => x.TusmId == Id);
+            _context.TblUserSubjectActivationHistories.RemoveRange(getActivationHistory);
             await _context.SaveChangesAsync();
         }
 
@@ -298,6 +298,51 @@ namespace LMSAPI.Repository
                 throw;
 
             }
+        }
+
+        public async Task<List<DepartmentSubjectDTO>> GetAllDepartmentSubjects()
+        {
+            try
+            {
+                var result = await (from um in _context.TblStudentUserMasters
+                                    join dm in _context.TblDepartmentMasters
+                on um.DepartmentId equals dm.DepartmentId into dmJoin
+                                    from dm in dmJoin.DefaultIfEmpty()
+                                    join dsm in _context.TblDepartmentSubjectMappings
+                on um.DepartmentId equals dsm.DepartmentId into dsmJoin
+                                    from dsm in dsmJoin.DefaultIfEmpty()
+                                    join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId into smJoin
+                                    from sm in smJoin.DefaultIfEmpty()
+                                    select new
+                                    {
+                                        dm.DepartmentId,
+                                        dm.DepartmentName,
+                                        sm.SubjectId,
+                                        sm.SubjectName,
+                                        sm.SubjectCode
+                                        // Include other fields from sm as needed
+                                    }).Distinct().ToListAsync();
+                List<DepartmentSubjectDTO> subjects = new List<DepartmentSubjectDTO>();
+                foreach (var item in result)
+                {
+                    subjects.Add(new DepartmentSubjectDTO
+                    {
+                        DepartmentId = item.DepartmentId,
+                        DepartmentName = item.DepartmentName,
+
+                        SubjectName = item.SubjectName,
+                        SubjectCode = item.SubjectCode
+                    });
+                }
+                return subjects;
+
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+            }
+
         }
     }
 }

@@ -21,6 +21,8 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<TblDepartmentMaster> TblDepartmentMasters { get; set; }
 
+    public virtual DbSet<TblDepartmentSubjectMapping> TblDepartmentSubjectMappings { get; set; }
+
     public virtual DbSet<TblEducationType> TblEducationTypes { get; set; }
 
     public virtual DbSet<TblExceptionLog> TblExceptionLogs { get; set; }
@@ -133,6 +135,26 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.Solvedproblem).HasColumnName("solvedproblem");
             entity.Property(e => e.UniversityId).HasColumnName("UniversityID");
             entity.Property(e => e.Visuals).HasColumnName("visuals");
+        });
+
+        modelBuilder.Entity<TblDepartmentSubjectMapping>(entity =>
+        {
+            entity.HasKey(e => e.DepartmentSubjectMappingId).HasName("PK__Tbl_Depa__77D5179E59FAB19A");
+
+            entity.ToTable("Tbl_Department_subject_mapping");
+
+            entity.Property(e => e.DepartmentSubjectMappingId).HasColumnName("department_subject_mapping_id");
+            entity.Property(e => e.ActiveStatus).HasColumnName("active_status");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("created_on");
+            entity.Property(e => e.DepartmentId).HasColumnName("department_id");
+            entity.Property(e => e.MapYear).HasColumnName("map_year");
+            entity.Property(e => e.RuleId).HasColumnName("rule_id");
+            entity.Property(e => e.Semester).HasColumnName("semester");
+            entity.Property(e => e.SubjectId).HasColumnName("subject_id");
+            entity.Property(e => e.UniversityId).HasColumnName("university_id");
         });
 
         modelBuilder.Entity<TblEducationType>(entity =>

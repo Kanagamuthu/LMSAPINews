@@ -48,7 +48,7 @@ builder.Services.AddSession(options =>
 #endregion
 
 #region db conn
-builder.Services.AddDbContext<LmsdbContext>(options =>
+builder.Services.AddDbContext<LmsdbNewContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 

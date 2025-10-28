@@ -5,9 +5,9 @@ namespace LMSAPI.Repository
 {
     public class StudentsRepository:IStudentsRepository
     {
-        private readonly LmsdbContext _context;
+        private readonly LmsdbNewContext _context;
       
-        public StudentsRepository(LmsdbContext context)
+        public StudentsRepository(LmsdbNewContext context)
         {
             _context = context;
         }

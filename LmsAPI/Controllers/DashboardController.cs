@@ -337,7 +337,6 @@ namespace LMSAPI.Controllers
         }
         #endregion
 
-
         #region Payment
         [HttpPost("CreateSubscription")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -425,6 +424,37 @@ namespace LMSAPI.Controllers
                 Message = Message,
                 Data = model
             });
+        }
+        #endregion
+
+        #region get subject list for dashboard
+        [HttpGet("GetDashboardSubjects")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetDashboardSubjects()
+        {
+            try
+            {
+                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(email))
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
+                }
+                var student = await _studentsRepository.GetStudentByEmailAsync(email);
+                if (student == null)
+                {
+                    return Ok(new ApiResponse(false, "Student not found.", null, StatusCodes.Status404NotFound.ToString()));
+                }
+                var subjects = await _dashboardRepository.GetAllDepartmentSubjects();
+                return Ok(new ApiResponse(true, "Subjects fetched successfully.", subjects, StatusCodes.Status200OK.ToString()));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in GetDashboardSubjects: {ex}");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ApiResponse(false, "An error occurred while fetching dashboard subjects.", null, StatusCodes.Status500InternalServerError.ToString()));
+            }
         }
         #endregion
     }

@@ -31,6 +31,9 @@ namespace LMSAPI.Repository
         Task<List<UserSubscriptionDetailDto>> GetUserSubscribeMasterAsync();
         Task DeleteUserSubjectActivationHistoryAsync(int Id);
         Task<TblSubjectMaster> GetPaymentSubject(string subjectCode);
+        Task<List<DepartmentSubjectDTO>> GetAllDepartmentSubjects();
+
+
 
     }
 }
