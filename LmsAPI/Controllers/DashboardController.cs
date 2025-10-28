@@ -179,7 +179,7 @@ namespace LMSAPI.Controllers
             try
             {
                 //check user email from session
-                var userEmail = HttpContext.Session.GetString("UserEmail");
+                var userEmail = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userEmail))
                 {
                     return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
