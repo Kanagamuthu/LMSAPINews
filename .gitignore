@@ -1,0 +1,6 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/LmsAPI/Models/LMSDbContext.cs
+/LmsAPI/Models/LMSDbContext.cs
