@@ -188,6 +188,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.MapGet("/", async context =>
+{
+    context.Response.ContentType = "text/html";
+    await context.Response.WriteAsync("<title>LMS API</title><h2 style='font-family: century gothic;font-size: 36px;'>Welcome to LMS API</h2>");
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
