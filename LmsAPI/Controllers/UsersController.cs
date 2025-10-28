@@ -13,8 +13,9 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LmsAPI.Controllers
 {
-    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
+    [TypeFilter(typeof(ExceptionFilter))]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
     public class UsersController : ControllerBase
     {

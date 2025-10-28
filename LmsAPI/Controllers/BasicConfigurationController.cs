@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using LMSAPI.Helpers;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LMSAPI.Controllers
 {
     [ApiController]
+    [TypeFilter(typeof(ExceptionFilter))]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
     public class BasicConfigurationController : Controller
