@@ -18,7 +18,6 @@ namespace LmsAPI.Controllers
     [ApiVersion("1.0")]
     public class UsersController : ControllerBase
     {
-  
         private readonly IStudentsRepository _studentsRepository;
         private readonly ILoggerManager _logger;
         private readonly IValidator<string> _emailValidator;
