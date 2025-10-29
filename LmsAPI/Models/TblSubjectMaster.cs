@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+using static LMSAPI.DTO.LessonConverter;
 
 namespace LMSAPI.Models;
 
@@ -58,4 +60,20 @@ public partial class TblSubjectMaster
     public int? TradeId { get; set; }
 
     public string? SubjectSyllabusPath { get; set; }
+
+    [NotMapped]
+    private Subject? _subjectSyllabus;
+    [NotMapped]
+    public Subject? SubjectSyllabus
+    {
+        get
+        {
+
+            if (string.IsNullOrEmpty(SubjectSyllabusPath))
+                return null;
+
+            _subjectSyllabus = GetLessonConverterAsync(SubjectSyllabusPath).GetAwaiter().GetResult();
+            return _subjectSyllabus;
+        }
+    }
 }
