@@ -4,8 +4,10 @@ using LMSAPI.DTO;
 using LMSAPI.Helpers;
 using LMSAPI.Models;
 using LMSAPI.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -26,7 +28,7 @@ namespace LmsAPI.Controllers
         private readonly EmailService _emailService;
         private readonly JwtTokenService _jwtTokenService;
         public UsersController(IStudentsRepository studentsRepository, ILoggerManager logger, IValidator<string> emailValidator,
-            IValidator<StudentRegisterDto> validator,EmailService emailService, JwtTokenService jwtTokenService)
+            IValidator<StudentRegisterDto> validator, EmailService emailService, JwtTokenService jwtTokenService)
         {
             _studentsRepository = studentsRepository;
             _logger = logger;
@@ -58,8 +60,10 @@ namespace LmsAPI.Controllers
                 }
                 else
                 {
-                    var token = _jwtTokenService.GenerateToken(student.EmailId);
+                    var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
                     string base64Encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
+                    student.Token = base64Encoded;
+                    await _studentsRepository.UpdateStudentAsync(student);
                     _logger.LogInfo($"Student found: {student.EmailId}, Status: {student.ActiveStatus}");
                     SetStudentSession(student);
 
@@ -177,7 +181,7 @@ namespace LmsAPI.Controllers
                 if (otpRecord == null || otpRecord.VerificationCode != otpDto.Otp)
                 {
                     //return BadRequest(new { Message = "Invalid OTP." });
-                    return BadRequest(new ApiResponse(false,"Enter valid OTP",null,StatusCodes.Status400BadRequest.ToString()));
+                    return BadRequest(new ApiResponse(false, "Enter valid OTP", null, StatusCodes.Status400BadRequest.ToString()));
                 }
                 //if (string.IsNullOrEmpty(otpDto.Otp))
                 //{
@@ -267,13 +271,15 @@ namespace LmsAPI.Controllers
 
                 if (daysLeft > 0)
                 {
-                    return Ok(new ApiResponse(true, "Student is in trial period.", new { InTrialPeriod = true,DaysLeft = daysLeft}, StatusCodes.Status200OK.ToString()));
+                    return Ok(new ApiResponse(true, "Student is in trial period.", new { InTrialPeriod = true, DaysLeft = daysLeft }, StatusCodes.Status200OK.ToString()));
                 }
                 else
                 {
-                    return Ok(new ApiResponse(true, "Student trial period has ended.", new {
-                            InTrialPeriod = false, DaysLeft = 0
-                        },
+                    return Ok(new ApiResponse(true, "Student trial period has ended.", new
+                    {
+                        InTrialPeriod = false,
+                        DaysLeft = 0
+                    },
                         StatusCodes.Status200OK.ToString()
                     ));
                 }
@@ -310,6 +316,26 @@ namespace LmsAPI.Controllers
             HttpContext.Session.SetString("UserName", student.Username ?? "");
             HttpContext.Session.SetInt32("UserStatus", (int)student.ActiveStatus);
             HttpContext.Session.SetInt32("trade_id", student.TradeId ?? 0);
+        }
+
+        [Authorize]
+        [HttpGet("Logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            if (string.IsNullOrEmpty(token))
+                return BadRequest("No token found.");
+
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var student = await _studentsRepository.GetStudentByEmailAsync(email);
+            student.Token = "";
+            await _studentsRepository.UpdateStudentAsync(student);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Logged out successfully.",
+                Data = null
+            });
         }
 
     }

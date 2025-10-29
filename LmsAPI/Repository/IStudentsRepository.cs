@@ -16,5 +16,7 @@ namespace LMSAPI.Repository
 
         //get trail period days
         Task<int> GetTrialPeriodDaysAsync();
+
+        Task<bool> GetStudentTokenAsync(string token);
     }
 }

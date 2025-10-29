@@ -42,4 +42,6 @@ public partial class TblStudentUserMaster
     public int? EduType { get; set; }
 
     public int? TradeId { get; set; }
+
+    public string? Token { get; set; }
 }

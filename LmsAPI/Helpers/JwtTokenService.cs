@@ -14,12 +14,13 @@ namespace LMSAPI.Helpers
             _config = config;
         }
 
-        public string GenerateToken(string email)
+        public string GenerateToken(string email,string UserId,string UserName)
         {
             var claims = new[]
             {
             new Claim(JwtRegisteredClaimNames.Sub, email),
-            new Claim("UserId", "Info"),
+            new Claim("UserId", UserId),
+            new Claim("UserName", UserName),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

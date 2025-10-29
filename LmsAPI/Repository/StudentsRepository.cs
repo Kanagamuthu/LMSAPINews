@@ -1,5 +1,7 @@
-﻿using LMSAPI.Models;
+﻿using LmsAPI.Models;
+using LMSAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 namespace LMSAPI.Repository
 {
@@ -116,5 +118,19 @@ namespace LMSAPI.Repository
                 return false;
             }
         }
+
+        public async Task<bool> GetStudentTokenAsync(string token)
+        {
+            try
+            {
+                return await _context.TblStudentUserMasters.AnyAsync(x => x.Token == token);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
     }
 }
