@@ -45,6 +45,8 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<TblSubjectUnitMasterHistory> TblSubjectUnitMasterHistories { get; set; }
 
+    public virtual DbSet<TblSupportTicket> TblSupportTickets { get; set; }
+
     public virtual DbSet<TblUserPurchaseGroup> TblUserPurchaseGroups { get; set; }
 
     public virtual DbSet<TblUserRandomPass> TblUserRandomPasses { get; set; }
@@ -556,6 +558,39 @@ public partial class LmsdbNewContext : DbContext
                 .HasMaxLength(255)
                 .IsUnicode(false)
                 .HasColumnName("unit_name");
+        });
+
+        modelBuilder.Entity<TblSupportTicket>(entity =>
+        {
+            entity.HasKey(e => e.StId).HasName("PK__Tbl_Supp__A85E81CFAC6D192C");
+
+            entity.ToTable("Tbl_SupportTicket");
+
+            entity.Property(e => e.StId).HasColumnName("st_id");
+            entity.Property(e => e.ActiveStatus).HasColumnName("Active_status");
+            entity.Property(e => e.Createdon)
+                .HasColumnType("datetime")
+                .HasColumnName("createdon");
+            entity.Property(e => e.EmailId)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("email_id");
+            entity.Property(e => e.Isread).HasColumnName("isread");
+            entity.Property(e => e.Message)
+                .HasColumnType("text")
+                .HasColumnName("message");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("name");
+            entity.Property(e => e.ReadBy).HasColumnName("read_by");
+            entity.Property(e => e.Readon)
+                .HasColumnType("datetime")
+                .HasColumnName("readon");
+            entity.Property(e => e.Subject)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("subject");
         });
 
         modelBuilder.Entity<TblUserPurchaseGroup>(entity =>
