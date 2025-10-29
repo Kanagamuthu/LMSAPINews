@@ -358,7 +358,37 @@ namespace LMSAPI.Repository
                              {
                                  DepartmentId = dm.DepartmentId,
                                  DepartmentName = dm.DepartmentName,
-                                 subjectMaster = sm
+                                 subjectMaster = new SubjectMasterDto
+                                 {
+                                     SubjectId = sm.SubjectId,
+                                     SubjectCode = sm.SubjectCode,
+                                     UnivSubjectCode = sm.UnivSubjectCode,
+                                     SubjectName = sm.SubjectName,
+                                     SubjectCoverPath = sm.SubjectCoverPath,
+                                     SubjectDescription = sm.SubjectDescription,
+                                     ActiveStatus = sm.ActiveStatus,
+                                     RuleId = sm.RuleId,
+                                     CreatedOn = sm.CreatedOn,
+                                     ReleasedOn = sm.ReleasedOn,
+                                     UniversityId = sm.UniversityId,
+                                     HavingQuestionpaper = sm.HavingQuestionpaper,
+                                     SubjectVersion = sm.SubjectVersion,
+                                     ActiveDurationDays = sm.ActiveDurationDays,
+                                     ActiveDurationDate = sm.ActiveDurationDate,
+                                     Syllabus = sm.Syllabus,
+                                     DeptImgPath = sm.DeptImgPath,
+                                     Coursehours = sm.Coursehours,
+                                     Visuals = sm.Visuals,
+                                     Pagecontent = sm.Pagecontent,
+                                     Solvedproblem = sm.Solvedproblem,
+                                     Multichoice = sm.Multichoice,
+                                     DeptVideo = sm.DeptVideo,
+                                     IsInTrail = sm.IsInTrail,
+                                     IsInDemo = sm.IsInDemo,
+                                     TradeId = sm.TradeId,
+                                     SubjectSyllabusPath = sm.SubjectSyllabusPath
+                                 }
+
                              }).Distinct().ToList();
 
                 return query;
