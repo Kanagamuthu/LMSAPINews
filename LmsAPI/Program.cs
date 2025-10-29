@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using LMSAPI.DTO;
 using LMSAPI.Helpers;
 using LMSAPI.Models;
@@ -127,21 +127,48 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 
-var app = builder.Build();
+var app = builder.Build(); 
 app.Use(async (context, next) =>
 {
     var endpoint = context.GetEndpoint();
     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
 
+
+    async Task WriteApiResponseAsync(int statusCode, string message, string errorCode = "401")
+    {
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+
+        var response = new ApiResponse
+        {
+            Success = false,
+            Message = message,
+            Data = null,
+            ErrorCode = errorCode
+        };
+
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
+    }
+
+ 
     if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
     {
         try
         {
             var token = authHeader.Substring("Bearer ".Length).Trim();
+            var tokenRepo = context.RequestServices.GetRequiredService<IStudentsRepository>();
+
+            if (!await tokenRepo.GetStudentTokenAsync(token))
+            {
+                await WriteApiResponseAsync(401, "Token expired or not found");
+                return;
+            }
+
+          
             string tokendecoded = Encoding.UTF8.GetString(Convert.FromBase64String(token));
             var jwtSettings = context.RequestServices.GetRequiredService<IConfiguration>().GetSection("JwtSettings");
 
-            var tokenValidationParameters = new TokenValidationParameters
+            var parameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
@@ -152,32 +179,22 @@ app.Use(async (context, next) =>
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]))
             };
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-
-            var principal = tokenHandler.ValidateToken(tokendecoded, tokenValidationParameters, out var validatedToken);
-            context.User = principal;
+            var handler = new JwtSecurityTokenHandler();
+            context.User = handler.ValidateToken(tokendecoded, parameters, out _);
         }
         catch (Exception ex)
         {
-            // Token is invalid
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Invalid token: " + ex.Message);
+            await WriteApiResponseAsync(401, "Invalid token: " + ex.Message);
             return;
         }
     }
-    else if (endpoint != null)
+    else if (endpoint?.Metadata.GetMetadata<IAuthorizeData>() != null)
     {
-        var authorize = endpoint.Metadata.GetMetadata<IAuthorizeData>();
-        if (authorize != null)
-        {
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Invalid token");
-        }
-
+        await WriteApiResponseAsync(401, "Authorization token missing or invalid");
+        return;
     }
 
-    await next(); // Continue to the next middleware
+    await next();
 });
 
 #endregion
