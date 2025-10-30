@@ -401,5 +401,37 @@ namespace LMSAPI.Repository
             }
 
         }
+        public async Task AddReadHistoryAsync(TblReadHistory obj)
+        {
+            try
+            {
+                await _context.TblReadHistories.AddAsync(obj);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+            }
+        }
+        public async Task<ReadHistoryDto> ReadHistory(int Id)
+        {
+            try
+            {
+                var result = await _context.TblReadHistories.Where(rh => rh.Readby == Id && rh.Status==true).GroupBy(rh => Id)
+                    .Select(g => new ReadHistoryDto
+                    {
+                        VideoCount = g.Sum(rh => rh.Type == "Video" ? 1 : 0),
+                        PageCount = g.Sum(rh => rh.Type != "Video" ? 1 : 0)
+                       }).FirstOrDefaultAsync();
+
+                return result ?? new ReadHistoryDto { VideoCount = 0, PageCount = 0 };
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+            }
+        }
     }
 }

@@ -33,7 +33,8 @@ namespace LMSAPI.Repository
         Task<TblSubjectMaster> GetPaymentSubject(string subjectCode);
         Task<List<DepartmentSubjectDTO>> GetAllDepartmentSubjects();
 
-
+        Task AddReadHistoryAsync(TblReadHistory obj);
+        Task<ReadHistoryDto> ReadHistory(int Id);
 
     }
 }
