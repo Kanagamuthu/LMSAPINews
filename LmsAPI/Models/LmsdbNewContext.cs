@@ -33,6 +33,8 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<TblPersonalInformation> TblPersonalInformations { get; set; }
 
+    public virtual DbSet<TblReadHistory> TblReadHistories { get; set; }
+
     public virtual DbSet<TblStudentTrialSubject> TblStudentTrialSubjects { get; set; }
 
     public virtual DbSet<TblStudentUserMaster> TblStudentUserMasters { get; set; }
@@ -321,6 +323,18 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.Trades).HasMaxLength(350);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
             entity.Property(e => e.UserStatus).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<TblReadHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Tbl_Read__3214EC070CE934F0");
+
+            entity.ToTable("Tbl_ReadHistory");
+
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Type)
+                .HasMaxLength(30)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<TblStudentTrialSubject>(entity =>
