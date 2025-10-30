@@ -148,7 +148,7 @@ namespace LMSAPI.Repository
         public async Task<List<TblSupportTicket>> GetTicketByIdAsync(int id)
         {
 
-            return await _context.TblSupportTickets.Where(x => x.ReadBy == id).ToList();
+            return await _context.TblSupportTickets.Where(x => x.ReadBy == id).ToListAsync() ?? new List<TblSupportTicket>();
 
         }
     }
