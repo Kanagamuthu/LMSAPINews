@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Azure.Core;
+using FluentValidation;
 using LmsAPI.Models;
 using LMSAPI.DTO;
 using LMSAPI.Helpers;
@@ -6,7 +7,9 @@ using LMSAPI.Models;
 using LMSAPI.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -338,5 +341,69 @@ namespace LmsAPI.Controllers
             });
         }
 
+        [Authorize]
+        [HttpGet("byemail")]
+        public async Task<IActionResult> GetByEmail([FromQuery] string email)
+        {
+            try
+            {
+                var user = await _studentsRepository.GetStudentByEmailAsync(email);
+                if (user == null)
+                    return NotFound(new { success = false, message = "User not found." });
+
+                return Ok(new { success = true, data = user });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("update-fields")]
+        public async Task<IActionResult> UpdateUserFields([FromBody] TblStudentUserMaster request)
+        {
+            try
+            {
+
+                var result = await _studentsRepository.UpdateStudentAsync(request);
+
+                if (result == null)
+                    return NotFound(new { success = false, message = "User not found." });
+
+                return Ok(new { success = true, message = "User fields updated successfully.", data = result });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("TicketCreate")]
+        public async Task<IActionResult> TicketCreate([FromBody] TblSupportTicket request)
+        {
+
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            if (email == null)
+                return NotFound(new { success = false, message = "User not found." });
+            request.EmailId = email;
+            request.Createdon = DateTime.Now;
+            request.ActiveStatus = true;
+            request.ReadBy = Convert.ToInt32(userId);
+            await _studentsRepository.TicketCreateAsync(request);
+            return Ok(new { success = true, message = "Ticket created", data = request });
+
+        }
+
+        [Authorize]
+        [HttpGet("GetTickets")]
+        public async Task<IActionResult> GetActiveTickets()
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var activeTickets = await _studentsRepository.GetTicketByIdAsync(Convert.ToInt32(userId));
+            return Ok(new ApiResponse(true, "Ticket fetched successfully", activeTickets));
+        }
     }
 }

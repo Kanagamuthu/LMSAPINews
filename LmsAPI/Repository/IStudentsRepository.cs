@@ -18,5 +18,10 @@ namespace LMSAPI.Repository
         Task<int> GetTrialPeriodDaysAsync();
 
         Task<bool> GetStudentTokenAsync(string token);
+
+        Task TicketCreateAsync(TblSupportTicket request);
+        Task<List<TblSupportTicket>> GetTicketByIdAsync(int id);
+
+
     }
 }

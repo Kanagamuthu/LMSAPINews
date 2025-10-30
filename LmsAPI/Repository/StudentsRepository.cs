@@ -5,10 +5,10 @@ using Newtonsoft.Json.Linq;
 
 namespace LMSAPI.Repository
 {
-    public class StudentsRepository:IStudentsRepository
+    public class StudentsRepository : IStudentsRepository
     {
         private readonly LmsdbNewContext _context;
-      
+
         public StudentsRepository(LmsdbNewContext context)
         {
             _context = context;
@@ -131,6 +131,25 @@ namespace LMSAPI.Repository
             }
         }
 
+        public async Task TicketCreateAsync(TblSupportTicket request)
+        {
+            try
+            {
+                await _context.TblSupportTickets.AddAsync(request);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+            }
+        }
 
+        public async Task<List<TblSupportTicket>> GetTicketByIdAsync(int id)
+        {
+
+            return await _context.TblSupportTickets.Where(x => x.ReadBy == id).ToList();
+
+        }
     }
 }
