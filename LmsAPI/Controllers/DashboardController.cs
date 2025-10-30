@@ -481,7 +481,7 @@ namespace LMSAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error in GetDashboardSubjects: {ex}");
+                _logger.LogError($"Error in AddHistory: {ex}");
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new ApiResponse(false, ex.Message, null, StatusCodes.Status500InternalServerError.ToString()));
             }
@@ -507,7 +507,7 @@ namespace LMSAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error in GetDashboardSubjects: {ex}");
+                _logger.LogError($"Error in ReadHistory: {ex}");
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new ApiResponse(false, ex.Message, null, StatusCodes.Status500InternalServerError.ToString()));
             }
