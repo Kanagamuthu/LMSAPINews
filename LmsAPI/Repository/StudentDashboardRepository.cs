@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LMSAPI.Repository
 {
-    public class StudentDashboardRepository: IStudentDashboardRepository
+    public class StudentDashboardRepository: IStudentDashboard
     {
         private readonly LmsdbNewContext _context;
         public StudentDashboardRepository(LmsdbNewContext context)
