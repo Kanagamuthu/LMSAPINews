@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
@@ -30,11 +31,14 @@ namespace LMSAPI.Controllers
         private readonly ILoggerManager _logger;
         private readonly IDashboardRepository _dashboardRepository;
         private readonly IStudentsRepository _studentsRepository;
-        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository)
+        private readonly IDistributedCache _cache;
+
+        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository, IDistributedCache cache)
         {
             _logger = logger;
             _dashboardRepository = dashboardRepository;
             _studentsRepository = studentsRepository;
+            _cache = cache;
         }
 
         #region validate student is validate or not from session
@@ -155,7 +159,25 @@ namespace LMSAPI.Controllers
                 }
                 else
                 {
+                    string cacheKey = $"AllSubjects";
+                    var cachedSubjects = await _cache.GetStringAsync(cacheKey);
+                    if (!string.IsNullOrEmpty(cachedSubjects))
+                    {
+                        var getsubjects = System.Text.Json.JsonSerializer.Deserialize<List<TblSubjectMaster>>(cachedSubjects);
+                        return Ok(new ApiResponse { Success = true, Message = "Subjects fetched successfully (from cache)", Data = getsubjects });
+                    }
+
                     var subjects = await _dashboardRepository.GetAllSubjects();
+
+                    var cacheOptions = new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+                    };
+
+                    var jsonData = System.Text.Json.JsonSerializer.Serialize(subjects);
+                    await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
+
+
                     return Ok(new ApiResponse { Success = true, Message = "Subjects fetched successfully", Data = subjects, ErrorCode = null });
                 }
             }
@@ -371,7 +393,7 @@ namespace LMSAPI.Controllers
             var Message = ""; bool flag = false;
             var subjectCodes = model?.subjectCode?.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
             var UserSubscribeMaster = await _dashboardRepository.GetUserSubscribeMasterAsync();
-             var getData = UserSubscribeMaster.Where(x => x.UserSubscribeMaster.Amount == model?.SubscribeMaster?.Amount && x.UserSubscribeMaster.UserId == model?.SubscribeMaster?.UserId && x.UserSubjectActivationHistory.DepartmentId == model?.DepartmentId && x.UserSubscribeMaster.PaymentStatus == "Pending" && subjectCodes.Contains(x?.UserSubjectActivationHistory?.SubjectCode)).FirstOrDefault()?.UserSubscribeMaster ?? new TblUserSubscribeMaster();
+            var getData = UserSubscribeMaster.Where(x => x.UserSubscribeMaster.Amount == model?.SubscribeMaster?.Amount && x.UserSubscribeMaster.UserId == model?.SubscribeMaster?.UserId && x.UserSubjectActivationHistory.DepartmentId == model?.DepartmentId && x.UserSubscribeMaster.PaymentStatus == "Pending" && subjectCodes.Contains(x?.UserSubjectActivationHistory?.SubjectCode)).FirstOrDefault()?.UserSubscribeMaster ?? new TblUserSubscribeMaster();
             model.SubscribeMaster.CreatedOn = DateTime.Now;
 
             if (!string.IsNullOrEmpty(model?.SubscribeMaster?.PaymentRefNo) && getData.UserSubscribeMasterId > 0)
@@ -441,11 +463,29 @@ namespace LMSAPI.Controllers
                     return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
                 }
 
+                string cacheKey = $"DashboardUniqueSubjects";
+                var cachedData = await _cache.GetStringAsync(cacheKey);
+                if (!string.IsNullOrEmpty(cachedData))
+                {
+                    var cachedSubjects = System.Text.Json.JsonSerializer.Deserialize<List<DepartmentSubjectDTO>>(cachedData.ToString());
+                    if (!string.IsNullOrEmpty(SubjectCode))
+                        cachedSubjects = cachedSubjects.Where(x => x?.subjectMaster?.SubjectCode == SubjectCode).ToList();
+                    return Ok(new ApiResponse(true, "Subjects fetched successfully (from cache).", cachedSubjects, ""));
+                }
+
                 var subjects = await _dashboardRepository.GetAllDepartmentSubjects();
-                if(!string.IsNullOrEmpty(SubjectCode))
-                    subjects= subjects.Where(x=>x?.subjectMaster?.SubjectCode==SubjectCode).ToList();
-                
-                return Ok(new ApiResponse(true, "Subjects fetched successfully.", subjects,""));
+                var jsonData = System.Text.Json.JsonSerializer.Serialize(subjects);
+                if (!string.IsNullOrEmpty(SubjectCode))
+                    subjects = subjects.Where(x => x?.subjectMaster?.SubjectCode == SubjectCode).ToList();
+
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+                };
+                await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
+
+
+                return Ok(new ApiResponse(true, "Subjects fetched successfully.", subjects, ""));
             }
             catch (Exception ex)
             {
@@ -456,6 +496,6 @@ namespace LMSAPI.Controllers
         }
         #endregion
 
-      
+
     }
 }
