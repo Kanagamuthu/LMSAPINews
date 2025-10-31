@@ -418,14 +418,21 @@ namespace LMSAPI.Repository
         {
             try
             {
-                var result = await _context.TblReadHistories.Where(rh => rh.Readby == Id && rh.Status==true).GroupBy(rh => Id)
-                    .Select(g => new ReadHistoryDto
-                    {
-                        VideoCount = g.Sum(rh => rh.Type == "Video" ? 1 : 0),
-                        PageCount = g.Sum(rh => rh.Type != "Video" ? 1 : 0)
-                       }).FirstOrDefaultAsync();
+                var histories = await _context.TblReadHistories.Where(rh => rh.Readby == Id && rh.Status == true).ToListAsync();
 
-                return result ?? new ReadHistoryDto { VideoCount = 0, PageCount = 0 };
+                var videoCount = histories.Count(rh => rh.Type.ToLower() == "video");
+                var pageCount = histories.Count(rh => rh.Type.ToLower() != "video" && rh.Type.ToLower() != "bookmark" && rh.Type.ToLower() != "download");
+
+                var download = histories.Where(rh => rh.Type.ToLower() == "download").ToList();
+                var bookmark = histories.Where(rh => rh.Type.ToLower() == "bookmark").ToList();
+
+                return new ReadHistoryDto
+                {
+                    VideoCount = videoCount,
+                    PageCount = pageCount,
+                    Bookmarks = bookmark,
+                    Downloads= download
+                };
             }
             catch (Exception ex)
             {
@@ -433,5 +440,6 @@ namespace LMSAPI.Repository
                 throw;
             }
         }
+
     }
 }
