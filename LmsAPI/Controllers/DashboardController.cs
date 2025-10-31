@@ -456,62 +456,6 @@ namespace LMSAPI.Controllers
         }
         #endregion
 
-        #region get/Add ReadHistory list for Me
-        [HttpPost("AddHistory")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> AddHistory(TblReadHistory obj)
-        {
-            try
-            {
-                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-                if (string.IsNullOrEmpty(email))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
-                }
-                obj.CreatedDate = DateTime.Now;
-                obj.Status =true;
-                obj.Readby =Convert.ToInt32(userId);
-                await _dashboardRepository.AddReadHistoryAsync(obj);
-
-
-                return Ok(new ApiResponse(true, "Histroy added successfully.", obj, ""));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error in AddHistory: {ex}");
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ApiResponse(false, ex.Message, null, StatusCodes.Status500InternalServerError.ToString()));
-            }
-        }
-
-        [HttpGet("ReadHistory")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ReadHistory()
-        {
-            try
-            {
-                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-                if (string.IsNullOrEmpty(email))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
-                }
-
-                var GetList = await _dashboardRepository.ReadHistory(Convert.ToInt32(userId));
-                return Ok(new ApiResponse(true, "ReadHistory fetched successfully.", GetList, ""));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error in ReadHistory: {ex}");
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ApiResponse(false, ex.Message, null, StatusCodes.Status500InternalServerError.ToString()));
-            }
-        }
-        #endregion
+      
     }
 }

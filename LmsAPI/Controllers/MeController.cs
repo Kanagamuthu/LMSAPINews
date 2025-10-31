@@ -1,5 +1,6 @@
 ﻿using LMSAPI.DTO;
 using LMSAPI.Helpers;
+using LMSAPI.Models;
 using LMSAPI.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -25,31 +26,66 @@ namespace LMSAPI.Controllers
             _studentsRepository = studentsRepository;
         }
 
-        [HttpGet("GetStudentDashboard")]
+        #region Add Read History list for user
+        [HttpPost("AddHistory")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public Task<IActionResult> GetStudentDashboard()
+        public async Task<IActionResult> AddHistory(TblReadHistory obj)
         {
             try
             {
                 var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
                 if (string.IsNullOrEmpty(email))
                 {
-                    _logger.LogError("User email claim is missing.");
-                    return Task.FromResult<IActionResult>(BadRequest(new ApiResponse { Success = false, Message = "User email claim is missing." }));
-
+                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
                 }
-                return Task.FromResult<IActionResult>(BadRequest(new ApiResponse { Success = false, Message = "User email claim is missing." }));
+                obj.CreatedDate = DateTime.Now;
+                obj.Status = true;
+                obj.Readby = Convert.ToInt32(userId);
+                await _dashboardRepository.AddReadHistoryAsync(obj);
 
+
+                return Ok(new ApiResponse(true, "Histroy added successfully.", obj, ""));
             }
-            catch (Exception er)
+            catch (Exception ex)
             {
-                _logger.LogError(er);
-                throw;
+                _logger.LogError($"Error in AddHistory: {ex}");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ApiResponse(false, ex.Message, null, StatusCodes.Status500InternalServerError.ToString()));
             }
         }
+        #endregion
+
+        #region get Read History list for user
+
+        [HttpGet("ReadHistory")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ReadHistory()
+        {
+            try
+            {
+                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+                if (string.IsNullOrEmpty(email))
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
+                }
+
+                var GetList = await _dashboardRepository.ReadHistory(Convert.ToInt32(userId));
+                return Ok(new ApiResponse(true, "ReadHistory fetched successfully.", GetList, ""));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in ReadHistory: {ex}");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ApiResponse(false, ex.Message, null, StatusCodes.Status500InternalServerError.ToString()));
+            }
+        }
+        #endregion
 
 
     }
