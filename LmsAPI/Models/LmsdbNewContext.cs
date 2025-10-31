@@ -327,7 +327,7 @@ public partial class LmsdbNewContext : DbContext
 
         modelBuilder.Entity<TblReadHistory>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tbl_Read__3214EC070CE934F0");
+            entity.HasKey(e => e.Id).HasName("PK__Tbl_Read__3214EC07191B876E");
 
             entity.ToTable("Tbl_ReadHistory");
 

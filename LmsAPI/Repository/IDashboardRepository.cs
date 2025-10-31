@@ -35,6 +35,5 @@ namespace LMSAPI.Repository
 
         Task AddReadHistoryAsync(TblReadHistory obj);
         Task<ReadHistoryDto> ReadHistory(int Id);
-
     }
 }
