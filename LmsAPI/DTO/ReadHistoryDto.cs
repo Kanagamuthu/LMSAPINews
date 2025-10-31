@@ -7,6 +7,7 @@ namespace LMSAPI.DTO
         public int PageCount { get; set; } = 0;
         public int VideoCount { get; set; } = 0;
 
-        public List<TblReadHistory> tblreadhistory { get; set; } = new List<TblReadHistory>();
+        public List<TblReadHistory> Downloads { get; set; } = new List<TblReadHistory>();
+        public List<TblReadHistory> Bookmarks { get; set; } = new List<TblReadHistory>();
     }
 }

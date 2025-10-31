@@ -423,13 +423,15 @@ namespace LMSAPI.Repository
                 var videoCount = histories.Count(rh => rh.Type.ToLower() == "video");
                 var pageCount = histories.Count(rh => rh.Type.ToLower() != "video" && rh.Type.ToLower() != "bookmark" && rh.Type.ToLower() != "download");
 
-                var bookmarks = histories.Where(rh => rh.Type.ToLower() == "bookmark" || rh.Type.ToLower() == "download").ToList();
+                var download = histories.Where(rh => rh.Type.ToLower() == "download").ToList();
+                var bookmark = histories.Where(rh => rh.Type.ToLower() == "bookmark").ToList();
 
                 return new ReadHistoryDto
                 {
                     VideoCount = videoCount,
                     PageCount = pageCount,
-                    tblreadhistory = bookmarks
+                    Bookmarks = bookmark,
+                    Downloads= download
                 };
             }
             catch (Exception ex)
