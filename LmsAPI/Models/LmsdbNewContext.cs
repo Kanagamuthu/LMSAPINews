@@ -49,6 +49,10 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<TblSupportTicket> TblSupportTickets { get; set; }
 
+    public virtual DbSet<TblUserNotificationDetail> TblUserNotificationDetails { get; set; }
+
+    public virtual DbSet<TblUserNotificationMaster> TblUserNotificationMasters { get; set; }
+
     public virtual DbSet<TblUserPurchaseGroup> TblUserPurchaseGroups { get; set; }
 
     public virtual DbSet<TblUserRandomPass> TblUserRandomPasses { get; set; }
@@ -327,7 +331,7 @@ public partial class LmsdbNewContext : DbContext
 
         modelBuilder.Entity<TblReadHistory>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tbl_Read__3214EC070CE934F0");
+            entity.HasKey(e => e.Id).HasName("PK__Tbl_Read__3214EC07191B876E");
 
             entity.ToTable("Tbl_ReadHistory");
 
@@ -605,6 +609,37 @@ public partial class LmsdbNewContext : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("subject");
+        });
+
+        modelBuilder.Entity<TblUserNotificationDetail>(entity =>
+        {
+            entity.HasKey(e => e.UserNotifyId).HasName("PK__Tbl_user__7F53E0C02C24D61D");
+
+            entity.ToTable("Tbl_user_notification_details");
+
+            entity.Property(e => e.UserNotifyId).HasColumnName("user_notify_id");
+            entity.Property(e => e.Isread).HasColumnName("isread");
+            entity.Property(e => e.NotificationId).HasColumnName("notification_id");
+            entity.Property(e => e.NotificationOn)
+                .HasColumnType("datetime")
+                .HasColumnName("notification_on");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+        });
+
+        modelBuilder.Entity<TblUserNotificationMaster>(entity =>
+        {
+            entity.HasKey(e => e.NotificationId).HasName("PK__Tbl_user__E059842FF3A20951");
+
+            entity.ToTable("Tbl_user_notification_master");
+
+            entity.Property(e => e.NotificationId).HasColumnName("notification_id");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("created_on");
+            entity.Property(e => e.Isread).HasColumnName("isread");
+            entity.Property(e => e.NotificationFor).HasColumnName("notification_for");
+            entity.Property(e => e.NotificationMessage).HasColumnName("notification_message");
         });
 
         modelBuilder.Entity<TblUserPurchaseGroup>(entity =>

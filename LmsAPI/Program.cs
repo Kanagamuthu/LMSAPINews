@@ -14,10 +14,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 builder.Services.AddControllers();
-
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ExceptionFilter>();
@@ -26,7 +24,6 @@ builder.Services.AddControllers(options =>
 #region smtp
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 #endregion
-
 
 #region CORS
 builder.Services.AddCors(options =>
@@ -61,7 +58,7 @@ builder.Services.AddDbContext<LmsdbNewContext>(options =>
 builder.Services.AddScoped<ILoggerManager, LoggerManager>();
 builder.Services.AddScoped<IStudentsRepository, StudentsRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
-
+builder.Services.AddScoped<IMeUserRepository, MeUserRepository>();
 #endregion
 
 #region FluentValidation
@@ -199,26 +196,20 @@ app.Use(async (context, next) =>
 
 #endregion
 
-
 app.UseCors("AllowAll");
 app.UseSession();//Use session middleware
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.MapGet("/", async context =>
 {
     context.Response.ContentType = "text/html";
     await context.Response.WriteAsync("<title>LMS API</title><h2 style='font-family: century gothic;font-size: 36px;'>Welcome to LMS API</h2>");
 });
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

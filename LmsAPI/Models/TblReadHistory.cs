@@ -9,6 +9,8 @@ public partial class TblReadHistory
 
     public string? SubjctCode { get; set; }
 
+    public string? Url { get; set; }
+
     public string? Type { get; set; }
 
     public int? Readby { get; set; }
