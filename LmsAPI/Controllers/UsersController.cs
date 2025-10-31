@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -30,8 +31,9 @@ namespace LmsAPI.Controllers
         private readonly IValidator<StudentRegisterDto> _validator;
         private readonly EmailService _emailService;
         private readonly JwtTokenService _jwtTokenService;
+        private readonly IDistributedCache _cache;
         public UsersController(IStudentsRepository studentsRepository, ILoggerManager logger, IValidator<string> emailValidator,
-            IValidator<StudentRegisterDto> validator, EmailService emailService, JwtTokenService jwtTokenService)
+            IValidator<StudentRegisterDto> validator, EmailService emailService, JwtTokenService jwtTokenService, IDistributedCache cache)
         {
             _studentsRepository = studentsRepository;
             _logger = logger;
@@ -39,6 +41,7 @@ namespace LmsAPI.Controllers
             _validator = validator;
             _emailService = emailService;
             _jwtTokenService = jwtTokenService;
+            _cache = cache;
         }
 
         #region student login
@@ -333,6 +336,10 @@ namespace LmsAPI.Controllers
             var student = await _studentsRepository.GetStudentByEmailAsync(email);
             student.Token = "";
             await _studentsRepository.UpdateStudentAsync(student);
+
+            await _cache.RemoveAsync("AllSubjects");
+            await _cache.RemoveAsync("DashboardUniqueSubjects");
+
             return Ok(new ApiResponse
             {
                 Success = true,

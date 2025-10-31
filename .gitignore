@@ -4,5 +4,4 @@
 
 /LmsAPI/Models/LMSDbContext.cs
 /LmsAPI/Models/LMSDbContext.cs
-/LmsAPI/Repository/IStudentDashboard.cs
-/LmsAPI/Repository/StudentDashboardRepository.cs
+/LmsAPI/Repository
