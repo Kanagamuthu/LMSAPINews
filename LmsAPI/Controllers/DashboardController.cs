@@ -38,6 +38,7 @@ namespace LMSAPI.Controllers
         }
 
 
+
         #region validate student is validate or not from session
         [HttpGet("IsValidStudent")]
         [ProducesResponseType(StatusCodes.Status200OK)]
