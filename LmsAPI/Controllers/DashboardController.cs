@@ -17,6 +17,7 @@ using System;
 using System.Net.WebSockets;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using static LMSAPI.DTO.LessonConverter;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LMSAPI.Controllers
@@ -497,5 +498,53 @@ namespace LMSAPI.Controllers
         #endregion
 
 
+
+        #region get All Package list for dashboard
+        [HttpGet("GetAllPackage")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetAllPackage()
+        {
+            var getAllPackage = await _dashboardRepository.GetAllPackage();
+            return Ok(new ApiResponse(true, "Packages fetched successfully.", getAllPackage, ""));
+        }
+        #endregion
+
+        #region get Particular Package list 
+        [HttpGet("GetPackageDetails")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetPackageDetails(int? PackageId)
+        {
+            if (PackageId == null || PackageId <= 0)
+                return Ok(new ApiResponse { Success = false, Message = "PackageId Reuired", Data = null });
+
+            //string cacheKey = $"PackageDetails";
+            //var cachedData = await _cache.GetStringAsync(cacheKey);
+            //if (!string.IsNullOrEmpty(cachedData))
+            //{
+            //    var getAllPackage = System.Text.Json.JsonSerializer.Deserialize<List<PackageDetailsDTO>>(cachedData.ToString());
+            //    getAllPackage = getAllPackage?.Where(x => x.PackageId == PackageId).ToList();
+            //    return Ok(new ApiResponse(true, "Packages details fetched successfully (from cache).", getAllPackage, ""));
+            //}
+            //else
+            //{
+            var getAllPackage = await _dashboardRepository.GetPackageDetails();
+
+            var jsonData = System.Text.Json.JsonSerializer.Serialize(getAllPackage);
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+            };
+            //await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
+
+
+            getAllPackage = getAllPackage.Where(x => x.PackageId == PackageId).ToList();
+            return Ok(new ApiResponse(true, "Packages details fetched successfully.", getAllPackage, ""));
+            // }
+        }
+        #endregion
     }
 }

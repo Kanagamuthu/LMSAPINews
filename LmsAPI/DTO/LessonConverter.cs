@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using LmsAPI.Models;
+using LMSAPI.Models;
+using Newtonsoft.Json;
 using System.Xml.Linq;
 using static LMSAPI.DTO.LessonConverter;
 
@@ -10,6 +12,7 @@ namespace LMSAPI.DTO
         {
             public string? label { get; set; }
             public Lesson[]? Lessons { get; set; }
+            public int? TotalChapters { get; set; }
         }
 
         public class Lesson
@@ -22,9 +25,10 @@ namespace LMSAPI.DTO
         {
             public string? label { get; set; }
             public string? url { get; set; }
+            public bool? Watch { get; set; }
         }
 
-        public static async Task<Subject?> GetLessonConverterAsync(string SubjectSyllabusPath)
+        public async Task<Subject?> GetLessonConverterAsync(string SubjectSyllabusPath,string userId,List<TblReadHistory> readhistory)
         {
             if (string.IsNullOrEmpty(SubjectSyllabusPath))
                 return null;
@@ -40,22 +44,26 @@ namespace LMSAPI.DTO
                 if (subjectElement == null)
                     return null;
 
+                var userReadUrls = readhistory.Where(rh => rh.Readby.ToString() == userId).Select(rh => rh.Url).ToList();
+
                 var subject = new Subject
                 {
                     label = subjectElement.Attribute("label")?.Value,
-                    Lessons = subjectElement.Elements("Lessons").Select(l => new Lesson{
-                label = l.Attribute("label")?.Value,
-                 Chapters = l.Elements("Chapters")
+                    Lessons = subjectElement.Elements("Lessons").Select(l => new Lesson
+                    {
+                        label = l.Attribute("label")?.Value,
+                        Chapters = l.Elements("Chapters")
                     .Select(c => new Chapter
                     {
                         label = c.Attribute("label")?.Value,
-                        url = c.Attribute("url")?.Value
+                        url = c.Attribute("url")?.Value,
+                        Watch = userReadUrls.Contains(c.Attribute("url")?.Value)
                     })
                     .ToArray()
-            })
+                    })
             .ToArray()
                 };
-
+                subject.TotalChapters = subject.Lessons.Sum(l => l.Chapters.Count());
                 return subject;
             }
             catch (Exception ex)

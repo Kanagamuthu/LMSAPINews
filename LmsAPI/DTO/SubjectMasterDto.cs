@@ -1,10 +1,23 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using LMSAPI.Models;
+using LMSAPI.Repository;
+using System.ComponentModel.DataAnnotations.Schema;
 using static LMSAPI.DTO.LessonConverter;
+
 
 namespace LMSAPI.DTO
 {
     public partial class SubjectMasterDto
     {
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IDashboardRepository _dashboardRepository;
+        private readonly LmsdbNewContext _context;
+
+        public SubjectMasterDto(IHttpContextAccessor httpContextAccessor, IDashboardRepository dashboardRepository, LmsdbNewContext context)
+        {
+            _httpContextAccessor = httpContextAccessor;
+            _dashboardRepository = dashboardRepository;
+            _context = context;
+        }
         public long SubjectId { get; set; }
 
         public string SubjectCode { get; set; } = null!;
@@ -43,7 +56,7 @@ namespace LMSAPI.DTO
 
         public int? Visuals { get; set; }
 
-        public int? Pagecontent { get; set; }
+        public int Pagecontent { get; set; }
 
         public int? Solvedproblem { get; set; }
 
@@ -64,11 +77,13 @@ namespace LMSAPI.DTO
         {
             get
             {
-
                 if (string.IsNullOrEmpty(SubjectSyllabusPath))
                     return null;
-
-                _subjectSyllabus = GetLessonConverterAsync(SubjectSyllabusPath).GetAwaiter().GetResult();
+                LessonConverter obj = new LessonConverter();
+                var getdata = _dashboardRepository.GetAllReadHistory() ?? null;
+                var userId = _httpContextAccessor.HttpContext?.User?.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+                _subjectSyllabus = obj.GetLessonConverterAsync(SubjectSyllabusPath, userId, getdata).Result;
+                //Pagecontent = _subjectSyllabus?.TotalChapters ?? 0;
                 return _subjectSyllabus;
             }
         }

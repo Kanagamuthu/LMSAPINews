@@ -33,27 +33,30 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> AddHistory(TblReadHistory obj)
         {
-            try
+            var errors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(obj.SubjctCode))
+                errors.Add("SubjectCode is required.");
+            else if (string.IsNullOrWhiteSpace(obj.Type))
+                errors.Add("Type is required.");
+            else if (string.IsNullOrWhiteSpace(obj.Url))
+                errors.Add("Url is required.");
+
+            if (errors.Any())
+                return Ok(new ApiResponse { Success=false,Message= "Validation failed.", Data=null,ErrorCode =string.Join(",",errors) });
+
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            obj.CreatedDate = DateTime.Now;
+            obj.Status = true;
+            obj.Readby = Convert.ToInt32(userId);
+            bool flag =await _dashboardRepository.GetReadHistory(obj);
+            if (flag)          
+                return Ok(new ApiResponse(true, "History already exists.", obj, ""));
+            else
             {
-                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-                if (string.IsNullOrEmpty(email))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
-                }
-                obj.CreatedDate = DateTime.Now;
-                obj.Status = true;
-                obj.Readby = Convert.ToInt32(userId);
                 await _dashboardRepository.AddReadHistoryAsync(obj);
 
-
                 return Ok(new ApiResponse(true, "Histroy added successfully.", obj, ""));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error in AddHistory: {ex}");
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ApiResponse(false, ex.Message, null, StatusCodes.Status500InternalServerError.ToString()));
             }
         }
         #endregion

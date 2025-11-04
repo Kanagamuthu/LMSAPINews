@@ -15,11 +15,13 @@ namespace LMSAPI.Repository
         private readonly LmsdbNewContext _context;
         private readonly ILoggerManager _logger;
         private readonly IStudentsRepository _studentsRepository;
-        public DashboardRepository(LmsdbNewContext context, ILoggerManager logger, IStudentsRepository studentsRepository)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public DashboardRepository(LmsdbNewContext context, ILoggerManager logger, IStudentsRepository studentsRepository, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _logger = logger;
             _studentsRepository = studentsRepository;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public bool IsValidStudent(string userEmail)
@@ -358,7 +360,7 @@ namespace LMSAPI.Repository
                              {
                                  DepartmentId = dm.DepartmentId,
                                  DepartmentName = dm.DepartmentName,
-                                 subjectMaster = new SubjectMasterDto
+                                 subjectMaster = new SubjectMasterDto(_httpContextAccessor, this, _context)
                                  {
                                      SubjectId = sm.SubjectId,
                                      SubjectCode = sm.SubjectCode,
@@ -379,7 +381,7 @@ namespace LMSAPI.Repository
                                      DeptImgPath = sm.DeptImgPath,
                                      Coursehours = sm.Coursehours,
                                      Visuals = sm.Visuals,
-                                     Pagecontent = sm.Pagecontent,
+                                     Pagecontent = sm.Pagecontent ?? 0,
                                      Solvedproblem = sm.Solvedproblem,
                                      Multichoice = sm.Multichoice,
                                      DeptVideo = sm.DeptVideo,
@@ -414,6 +416,18 @@ namespace LMSAPI.Repository
                 throw;
             }
         }
+        public async Task<bool> GetReadHistory(TblReadHistory obj)
+        {
+            var exists = await _context.TblReadHistories.AnyAsync(rh => rh.SubjctCode == obj.SubjctCode && rh.Url == obj.Url && rh.Type == obj.Type && rh.Readby == obj.Readby);
+            return exists;
+        }
+
+        public List<TblReadHistory> GetAllReadHistory()
+        {
+            var data = _context.TblReadHistories.ToList();
+            return data;
+        }
+
         public async Task<ReadHistoryDto> ReadHistory(int Id)
         {
             try
@@ -431,7 +445,7 @@ namespace LMSAPI.Repository
                     VideoCount = videoCount,
                     PageCount = pageCount,
                     Bookmarks = bookmark,
-                    Downloads= download
+                    Downloads = download
                 };
             }
             catch (Exception ex)
@@ -439,6 +453,81 @@ namespace LMSAPI.Repository
                 string message = ex.Message;
                 throw;
             }
+        }
+
+        public async Task<List<TblPackageMaster>> GetAllPackage()
+        {
+            var Query = from p in _context.TblPackageMasters
+                        where p.Activestatus == true
+                        select p;
+            return await Query.OrderByDescending(x => x.CreatedOn).ToListAsync();
+        }
+
+        public async Task<List<PackageDetailsDTO>> GetPackageDetails()
+        {
+
+            var data = await (from dsm in _context.TblDepartmentSubjectMappings
+                              join dm in _context.TblDepartmentMasters on dsm.DepartmentId equals dm.DepartmentId
+                              join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId
+                              join pd in _context.TblPackageDetails on dsm.DepartmentSubjectMappingId equals pd.DepartmentSubjectMappingId
+                              join pm in _context.TblPackageMasters on pd.PackageId equals pm.PackageId
+                              select new
+                              {
+                                  dsm.DepartmentSubjectMappingId,
+                                  dm.DepartmentId,
+                                  dm.DepartmentCode,
+                                  dm.DepartmentName,
+                                  pd.PackageDetailId,
+                                  pd.PackageId,
+                                  pm.SellingPrice,
+                                  sm
+                              }).ToListAsync(); 
+
+           
+            var result = data.Select(x => new PackageDetailsDTO
+            {
+                DepartmentSubjectMappingId = x.DepartmentSubjectMappingId,
+                DepartmentId = x.DepartmentId,
+                PackageDetailId = x.PackageDetailId,
+                PackageId = x.PackageId,
+                Price = x.SellingPrice,
+                DepartmentCode = x.DepartmentCode,
+                DepartmentName = x.DepartmentName,
+                SubjectMaster = new List<SubjectMasterDto>
+        {
+            new SubjectMasterDto(_httpContextAccessor, this, _context)
+            {
+                SubjectId = x.sm.SubjectId,
+                SubjectCode = x.sm.SubjectCode,
+                SubjectName = x.sm.SubjectName,
+                SubjectCoverPath = x.sm.SubjectCoverPath,
+                SubjectDescription = x.sm.SubjectDescription,
+                ActiveStatus = x.sm.ActiveStatus,
+                RuleId = x.sm.RuleId,
+                CreatedOn = x.sm.CreatedOn,
+                ReleasedOn = x.sm.ReleasedOn,
+                UniversityId = x.sm.UniversityId,
+                HavingQuestionpaper = x.sm.HavingQuestionpaper,
+                SubjectVersion = x.sm.SubjectVersion,
+                ActiveDurationDays = x.sm.ActiveDurationDays,
+                ActiveDurationDate = x.sm.ActiveDurationDate,
+                Syllabus = x.sm.Syllabus,
+                DeptImgPath = x.sm.DeptImgPath,
+                Coursehours = x.sm.Coursehours,
+                Visuals = x.sm.Visuals,
+                Pagecontent = x.sm.Pagecontent ?? 0,
+                Solvedproblem = x.sm.Solvedproblem,
+                Multichoice = x.sm.Multichoice,
+                DeptVideo = x.sm.DeptVideo,
+                IsInTrail = x.sm.IsInTrail,
+                IsInDemo = x.sm.IsInDemo,
+                TradeId = x.sm.TradeId,
+                SubjectSyllabusPath = x.sm.SubjectSyllabusPath
+            }
+        }
+            }).OrderByDescending(x => x.DepartmentSubjectMappingId).ToList();
+
+            return result;
         }
 
     }

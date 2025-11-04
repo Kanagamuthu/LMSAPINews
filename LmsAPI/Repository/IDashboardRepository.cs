@@ -34,6 +34,11 @@ namespace LMSAPI.Repository
         Task<List<DepartmentSubjectDTO>> GetAllDepartmentSubjects();
 
         Task AddReadHistoryAsync(TblReadHistory obj);
+        Task<bool> GetReadHistory(TblReadHistory obj);
+        List<TblReadHistory> GetAllReadHistory();
         Task<ReadHistoryDto> ReadHistory(int Id);
+
+        Task<List<TblPackageMaster>> GetAllPackage();
+        Task<List<PackageDetailsDTO>> GetPackageDetails();
     }
 }
