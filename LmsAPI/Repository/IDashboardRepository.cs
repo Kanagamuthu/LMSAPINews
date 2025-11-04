@@ -40,5 +40,11 @@ namespace LMSAPI.Repository
 
         Task<List<TblPackageMaster>> GetAllPackage();
         Task<List<PackageDetailsDTO>> GetPackageDetails();
+
+        Task<List<TblDegreeMaster>> GetAllDegrees();
+
+        Task<List<TblUserSubjectActivationHistory>> AddSubjectToStudent(string userEmail, List<int> subjectId);
+
+
     }
 }

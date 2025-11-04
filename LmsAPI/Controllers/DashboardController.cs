@@ -546,5 +546,97 @@ namespace LMSAPI.Controllers
             // }
         }
         #endregion
+        //04/11/2025
+        #region list the degrees
+        [HttpGet("GetAllDegrees")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetAllDegrees()
+        {
+            try
+            {
+                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var degrees = new List<TblDegreeMaster>();
+                if (string.IsNullOrEmpty(email))
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
+                }
+                else
+                {
+                    string cacheKey = $"AllDegrees";
+                    var cachedDegrees = await _cache.GetStringAsync(cacheKey);
+                    if (!string.IsNullOrEmpty(cachedDegrees))
+                    {
+                        var getdegrees = System.Text.Json.JsonSerializer.Deserialize<List<TblDegreeMaster>>(cachedDegrees);
+                        return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully (from cache)", Data = getdegrees });
+                    }
+                    degrees = await _dashboardRepository.GetAllDegrees();
+                    var cacheOptions = new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+                    };
+                    var jsonData = System.Text.Json.JsonSerializer.Serialize(degrees);
+                    await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
+
+                }
+                return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully", Data = degrees, ErrorCode = null });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in GetAllDegrees method");
+                return StatusCode(500, "Internal server error");
+            }
+
+        }
+        #endregion
+
+        //#region user subject trail periods information
+        //[HttpPost("AddSubjectToStudent")]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        //public async Task<IActionResult> AddSubjectToStudent([FromBody] List<int> subjectId)
+        //{
+        //    try
+        //    {
+        //        //check user email from session
+        //        var userEmail = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //        if (string.IsNullOrEmpty(userEmail))
+        //        {
+        //            return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
+        //        }
+        //        else
+        //        {
+        //            var student = await _studentsRepository.GetStudentByEmailAsync(userEmail);
+        //            if (student == null)
+        //            {
+        //                return Ok(new ApiResponse { Success = false, Message = "Student not found", Data = null, ErrorCode = "404" });
+        //            }
+
+        //            //validate no of books per student
+        //            int maxBooksAllowed = await _dashboardRepository.GetBookLimitPerStudentAsync();
+        //            int currentBookCount = await _dashboardRepository.GetCurrentBookCountForStudentforTrailAsync(Convert.ToInt16(student.StudentUserId));
+        //            if (currentBookCount + subjectId.Count > maxBooksAllowed)
+        //            {
+        //                return Ok(new ApiResponse { Success = false, Message = $"Book limit exceeded. You can only add {maxBooksAllowed - currentBookCount} more books.", Data = null, ErrorCode = "400" });
+        //            }
+        //            else
+        //            {
+        //                //add books to student
+        //                await _dashboardRepository.AddBooksToStudent(userEmail, subjectId);
+        //                return Ok(new ApiResponse { Success = true, Message = "Books added to student successfully", Data = null, ErrorCode = null });
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error occurred in AddBooksToStudent method");
+        //        return StatusCode(500, "Internal server error");
+        //    }
+
+        //}
+        //#endregion
     }
 }

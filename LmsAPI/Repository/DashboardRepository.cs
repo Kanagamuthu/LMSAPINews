@@ -530,5 +530,69 @@ namespace LMSAPI.Repository
             return result;
         }
 
+        //04/11/2025
+        public async Task<List<TblDegreeMaster>> GetAllDegrees()
+        {
+            try
+            {
+                return await _context.TblDegreeMasters.Where(d => d.IsActive == 1).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+            }
+        }
+
+        public async Task<List<TblUserSubjectActivationHistory>> AddSubjectToStudent(string userEmail, List<int> subjectId)
+        {
+            try
+            {
+                var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
+                if (student == null)
+                {
+                    return new List<TblUserSubjectActivationHistory>();
+                }
+                //get subject details
+                var subjects = await _context.TblSubjectMasters.Where(s => subjectId.Contains((int)s.SubjectId)).ToListAsync();
+                if (subjects == null || subjects.Count == 0)
+                {
+                    return new List<TblUserSubjectActivationHistory>();
+                }
+                else
+                {
+                    //save
+                    var activationHistories = new List<TblUserSubjectActivationHistory>();
+                    foreach (var subject in subjects)
+                    {
+                        var activationHistory = new TblUserSubjectActivationHistory
+                        {
+                            SubjectId = (int)subject.SubjectId,
+                            UserId = (int)student.StudentUserId,
+                            SubjectCode = subject.SubjectCode,
+                            SubjectName = subject.SubjectName,
+                            SubjectVersion = subject.SubjectVersion,
+                            DepartmentId = student.DepartmentId,
+                            TusmId = (int)subject.SubjectId,
+                            ActivatedOn = DateTime.UtcNow,
+                            ActivatedBy = (int)student.StudentUserId,
+                            ActivationType = 1, // assuming 1 indicates manual activation
+                            ActivationProductType = 1 // assuming 1 indicates standard product type
+                        };
+                        activationHistories.Add(activationHistory);
+                    }
+                    await _context.TblUserSubjectActivationHistories.AddRangeAsync(activationHistories);
+                }
+                await _context.SaveChangesAsync();
+                return await _context.TblUserSubjectActivationHistories
+                    .Where(ush => ush.UserId == student.StudentUserId && subjectId.Contains((int)ush.SubjectId)).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+            }
+        }
+
     }
 }
