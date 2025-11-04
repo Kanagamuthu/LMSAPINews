@@ -19,6 +19,10 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<TblCollegeGroupMap> TblCollegeGroupMaps { get; set; }
 
+    public virtual DbSet<TblCountriesMaster> TblCountriesMasters { get; set; }
+
+    public virtual DbSet<TblDegreeMaster> TblDegreeMasters { get; set; }
+
     public virtual DbSet<TblDepartmentMaster> TblDepartmentMasters { get; set; }
 
     public virtual DbSet<TblDepartmentSubjectMapping> TblDepartmentSubjectMappings { get; set; }
@@ -28,6 +32,10 @@ public partial class LmsdbNewContext : DbContext
     public virtual DbSet<TblExceptionLog> TblExceptionLogs { get; set; }
 
     public virtual DbSet<TblOtpverification> TblOtpverifications { get; set; }
+
+    public virtual DbSet<TblPackageDetail> TblPackageDetails { get; set; }
+
+    public virtual DbSet<TblPackageMaster> TblPackageMasters { get; set; }
 
     public virtual DbSet<TblPaymentMaster> TblPaymentMasters { get; set; }
 
@@ -108,6 +116,64 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.EnterOn)
                 .HasColumnType("datetime")
                 .HasColumnName("enter_on");
+        });
+
+        modelBuilder.Entity<TblCountriesMaster>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Tbl_coun__3213E83FDF618DB2");
+
+            entity.ToTable("Tbl_countries_master");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CommonName)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("common_name");
+            entity.Property(e => e.FlagAlt)
+                .HasColumnType("text")
+                .HasColumnName("flag_alt");
+            entity.Property(e => e.FlagPng)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasColumnName("flag_png");
+            entity.Property(e => e.FlagSvg)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasColumnName("flag_svg");
+            entity.Property(e => e.IddRoot)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("idd_root");
+            entity.Property(e => e.IddSuffixes)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("idd_suffixes");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+            entity.Property(e => e.OfficialName)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("official_name");
+        });
+
+        modelBuilder.Entity<TblDegreeMaster>(entity =>
+        {
+            entity.HasKey(e => e.DId).HasName("PK__Tbl_degr__76B8FF5DD5BB6BA9");
+
+            entity.ToTable("Tbl_degree_master");
+
+            entity.Property(e => e.DId).HasColumnName("D_Id");
+            entity.Property(e => e.CrdBy)
+                .HasMaxLength(5)
+                .IsUnicode(false)
+                .HasColumnName("crd_by");
+            entity.Property(e => e.CrdOn)
+                .HasColumnType("datetime")
+                .HasColumnName("crd_On");
+            entity.Property(e => e.DegreeType)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("degree_type");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
         });
 
         modelBuilder.Entity<TblDepartmentMaster>(entity =>
@@ -234,6 +300,88 @@ public partial class LmsdbNewContext : DbContext
                 .HasMaxLength(6)
                 .HasColumnName("OTP");
             entity.Property(e => e.UId).HasColumnName("U_ID");
+        });
+
+        modelBuilder.Entity<TblPackageDetail>(entity =>
+        {
+            entity.HasKey(e => e.PackageDetailId).HasName("PK__Tbl_pack__CB759BDC26B7DE10");
+
+            entity.ToTable("Tbl_package_details");
+
+            entity.Property(e => e.PackageDetailId).HasColumnName("package_detail_id");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("created_by");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("created_on");
+            entity.Property(e => e.DepartmentId).HasColumnName("department_id");
+            entity.Property(e => e.DepartmentSubjectMappingId).HasColumnName("department_subject_mapping_id");
+            entity.Property(e => e.PackageId).HasColumnName("package_id");
+            entity.Property(e => e.Semester).HasColumnName("semester");
+            entity.Property(e => e.SubjectId).HasColumnName("subject_id");
+            entity.Property(e => e.SubjectUnitType).HasColumnName("subject_unit_type");
+            entity.Property(e => e.ValidityDays).HasColumnName("validity_days");
+            entity.Property(e => e.Year).HasColumnName("year");
+        });
+
+        modelBuilder.Entity<TblPackageMaster>(entity =>
+        {
+            entity.HasKey(e => e.PackageId).HasName("PK__Tbl_pack__63846AE845D38897");
+
+            entity.ToTable("Tbl_package_master");
+
+            entity.Property(e => e.PackageId).HasColumnName("package_id");
+            entity.Property(e => e.Activestatus).HasColumnName("activestatus");
+            entity.Property(e => e.ActualPrice).HasColumnName("actual_price");
+            entity.Property(e => e.CoverPath)
+                .IsUnicode(false)
+                .HasColumnName("cover_path");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("created_by");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasColumnName("created_on");
+            entity.Property(e => e.CurrentStatus).HasColumnName("current_status");
+            entity.Property(e => e.DepartmentId).HasColumnName("department_id");
+            entity.Property(e => e.IsBundle).HasColumnName("is_bundle");
+            entity.Property(e => e.IsOfferPackage).HasColumnName("is_offer_package");
+            entity.Property(e => e.Keywords)
+                .IsUnicode(false)
+                .HasColumnName("keywords");
+            entity.Property(e => e.LongDesc)
+                .IsUnicode(false)
+                .HasColumnName("long_desc");
+            entity.Property(e => e.OsType).HasColumnName("os_type");
+            entity.Property(e => e.PackageCode)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("package_code");
+            entity.Property(e => e.PackageDisplayName)
+                .HasMaxLength(250)
+                .IsUnicode(false)
+                .HasColumnName("package_display_name");
+            entity.Property(e => e.PackageDurationDays).HasColumnName("package_duration_days");
+            entity.Property(e => e.PackageName)
+                .HasMaxLength(250)
+                .IsUnicode(false)
+                .HasColumnName("package_name");
+            entity.Property(e => e.PackageVideoUrl)
+                .IsUnicode(false)
+                .HasColumnName("package_video_url");
+            entity.Property(e => e.RuleId).HasColumnName("rule_id");
+            entity.Property(e => e.SellingPrice).HasColumnName("selling_price");
+            entity.Property(e => e.Semester).HasColumnName("semester");
+            entity.Property(e => e.ShortDesc)
+                .IsUnicode(false)
+                .HasColumnName("short_desc");
+            entity.Property(e => e.SubjectId).HasColumnName("subject_id");
+            entity.Property(e => e.SubjectUnitType).HasColumnName("subject_unit_type");
+            entity.Property(e => e.UnivId).HasColumnName("univ_id");
+            entity.Property(e => e.Year).HasColumnName("year");
         });
 
         modelBuilder.Entity<TblPaymentMaster>(entity =>
