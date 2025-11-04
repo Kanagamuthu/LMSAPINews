@@ -11,6 +11,8 @@ public partial class TblUserSubscribeMaster
 
     public string? PaymentRefNo { get; set; }
 
+    public int? PackageId { get; set; }
+
     public decimal? Amount { get; set; }
 
     public int? Count { get; set; }
@@ -19,7 +21,7 @@ public partial class TblUserSubscribeMaster
 
     public int? DiscountAmt { get; set; }
 
-    public int? TransactionType { get; set; }
+    public string? TransactionType { get; set; }
 
     public string? PaymentStatus { get; set; }
 

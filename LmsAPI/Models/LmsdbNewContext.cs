@@ -189,6 +189,7 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.CreatedOn)
                 .HasColumnType("datetime")
                 .HasColumnName("created_on");
+            entity.Property(e => e.DegreeId).HasColumnName("degree_id");
             entity.Property(e => e.DepartmentCode)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -1030,7 +1031,7 @@ public partial class LmsdbNewContext : DbContext
 
         modelBuilder.Entity<TblUserSubscribeMaster>(entity =>
         {
-            entity.HasKey(e => e.UserSubscribeMasterId).HasName("PK__Tbl_user__E5DF7BB128650569");
+            entity.HasKey(e => e.UserSubscribeMasterId).HasName("PK__Tbl_user__E5DF7BB1526BFB16");
 
             entity.ToTable("Tbl_user_subscribe_master");
 
@@ -1060,6 +1061,7 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.RefundOn)
                 .HasColumnType("datetime")
                 .HasColumnName("refund_on");
+            entity.Property(e => e.TransactionType).HasMaxLength(50);
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.UserSubscribeDeliveryModeId).HasColumnName("user_subscribe_delivery_mode_id");
         });

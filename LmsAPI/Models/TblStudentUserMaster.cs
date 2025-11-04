@@ -44,4 +44,6 @@ public partial class TblStudentUserMaster
     public int? TradeId { get; set; }
 
     public string? Token { get; set; }
+
+    public bool? Istrail { get; set; }
 }

@@ -42,4 +42,6 @@ public partial class TblDepartmentMaster
     public string? DeptVideo { get; set; }
 
     public int? IsActive { get; set; }
+
+    public int? DegreeId { get; set; }
 }
