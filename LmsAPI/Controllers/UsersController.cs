@@ -73,8 +73,12 @@ namespace LmsAPI.Controllers
                     _logger.LogInfo($"Student found: {student.EmailId}, Status: {student.ActiveStatus}");
                     SetStudentSession(student);
 
-                    return Ok(new ApiResponse { Success = true,Message = "Email found. Please verify your email.", Data = new
-                        { student.StudentUserId,student.Username, student.EmailId,  student.Mobile, student.ActiveStatus, Token = base64Encoded }
+                    return Ok(new ApiResponse
+                    {
+                        Success = true,
+                        Message = "Email found. Please verify your email.",
+                        Data = new
+                        { student.StudentUserId, student.Username, student.EmailId, student.Mobile, student.ActiveStatus, Token = base64Encoded }
                     });
                 }
             }
@@ -95,14 +99,14 @@ namespace LmsAPI.Controllers
             try
             {
                 // Validate the incoming student data
-                if (studentDto.Username=="string")
+                if (studentDto.Username == "string")
                 {
                     return BadRequest(new ApiResponse
                     {
                         Success = false,
                         Message = "Please enter valid username.",
                         Data = null,
-                        ErrorCode= StatusCodes.Status400BadRequest.ToString()
+                        ErrorCode = StatusCodes.Status400BadRequest.ToString()
                     });
                 }
 
@@ -388,6 +392,14 @@ namespace LmsAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> TicketCreate([FromBody] TblSupportTicket request)
         {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(request.Subject))
+                errors.Add("Subject is required.");
+            else if (string.IsNullOrWhiteSpace(request.Message))
+                errors.Add("Message is required.");
+
+            if (errors.Any())
+                return Ok(new ApiResponse { Success = false, Message = string.Join(",", errors), ErrorCode = "400" });
 
             var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -451,7 +463,7 @@ namespace LmsAPI.Controllers
                         UserId = (int)student.StudentUserId,
                         VerificationCode = otp,
                         GeneratedTime = DateTime.UtcNow,
-                       
+
                     };
                     await _studentsRepository.RegenerateOtpAsync(otpRecord);
 
