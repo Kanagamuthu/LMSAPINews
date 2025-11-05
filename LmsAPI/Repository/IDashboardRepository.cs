@@ -46,5 +46,8 @@ namespace LMSAPI.Repository
         Task<List<TblUserSubjectActivationHistory>> AddSubjectToStudent(string userEmail, List<int> subjectId);
 
         Task<List<PaymentPackageDTO>> GetpaymentPackage(int packageId);
+
+        Task<DateTime?> GetActiveOnDateByUserId(long userId);
+        Task<int> GetTrialPeriodDaysAsync();
     }
 }

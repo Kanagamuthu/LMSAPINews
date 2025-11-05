@@ -638,5 +638,65 @@ namespace LMSAPI.Controllers
 
         //}
         //#endregion
+
+        [HttpPost("TrailSubscription")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> TrailSubscription(PaymentPayload model)
+        {
+            string Message = ""; var errors = new List<string>();
+
+
+            if (model.packageId == null || model.packageId <= 0)
+                errors.Add("packageId is required.");
+
+            if (errors.Any())
+                return Ok(new ApiResponse { Success = false, Message = string.Join(",", errors), ErrorCode = "400" });
+
+            var getpaymentPackage = await _dashboardRepository.GetpaymentPackage(model.packageId);
+            var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+
+            TblUserSubscribeMaster obj = new TblUserSubscribeMaster();
+            obj.UserId = userId;
+            obj.PackageId = model.packageId;
+            obj.Amount = getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
+            obj.PaymentStatus = "Success";
+            obj.CreatedOn = DateTime.Now;
+            obj.TransactionType = "Trail";
+
+            await _dashboardRepository.AddUserSubscribeMasterAsync(obj);
+
+            List<TblUserSubjectActivationHistory> obj2 = new List<TblUserSubjectActivationHistory>();
+
+            foreach (var item in getpaymentPackage?.FirstOrDefault()?.subjectmaster)
+            {
+                TblUserSubjectActivationHistory obj1 = new TblUserSubjectActivationHistory();
+                var DepartmentId = getpaymentPackage?.FirstOrDefault()?.departmentsubjectmapping.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
+                obj1.TusmId = obj.UserSubscribeMasterId;
+                obj1.SubjectId = Convert.ToInt32(item.SubjectId);
+                obj1.SubjectCode = item.SubjectCode;
+                obj1.SubjectName = item.SubjectName;
+                obj1.SubjectVersion = item.SubjectVersion;
+                obj1.UserId = Convert.ToInt32(userId);
+                obj1.DepartmentId = DepartmentId;
+                if (model.PaymentStatus.ToLower() == "success")
+                {
+                    var activeDate = await _dashboardRepository.GetActiveOnDateByUserId(userId);
+                    var trialDays = await _dashboardRepository.GetTrialPeriodDaysAsync();
+                    obj1.SubjectExpiryDate = (activeDate ?? DateTime.Now).AddDays(trialDays);
+
+                    obj1.ActivatedOn = DateTime.Now;
+                    obj1.ActivatedBy = Convert.ToInt32(userId);
+                }
+                obj2.Add(obj1);
+
+
+            }
+            await _dashboardRepository.AddUserSubjectActivationHistoryAsync(obj2);
+            Message = "Subscription Added successfully";
+            return Ok(new ApiResponse(true, Message, obj, ""));
+        }
     }
 }

@@ -619,5 +619,30 @@ namespace LMSAPI.Repository
 
             return result;
         }
+        public async Task<DateTime?> GetActiveOnDateByUserId(long userId)
+        {
+
+            var activeDate = await _context.TblStudentUserMasters
+                .Where(x => x.StudentUserId == userId)
+                .Select(x => x.AccActiveOn)
+                .OrderByDescending(x => x)
+                .FirstOrDefaultAsync();
+
+            return activeDate;
+        }
+
+        public async Task<int> GetTrialPeriodDaysAsync()
+        {
+            var value = await _context.TblAppConfigs
+                .Where(x => x.ConfigKey == "trial_period_days")
+                .Select(x => x.ConfigValue)
+                .FirstOrDefaultAsync();
+
+            int trialDays;
+            if (!int.TryParse(value, out trialDays))
+                trialDays = 0;
+
+            return trialDays;
+        }
     }
 }
