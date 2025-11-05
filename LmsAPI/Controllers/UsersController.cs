@@ -345,7 +345,7 @@ namespace LmsAPI.Controllers
         }
 
         [Authorize]
-        [HttpGet("byemail")]
+        [HttpGet("GetStudent-byemail")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
