@@ -433,6 +433,11 @@ namespace LMSAPI.Repository
             try
             {
                 var histories = await _context.TblReadHistories.Where(rh => rh.Readby == Id && rh.Status == true).ToListAsync();
+                var Getpurchase = from sm in _context.TblSubjectMasters
+                                  join h in _context.TblUserSubjectActivationHistories on Convert.ToInt32(sm.SubjectId) equals h.SubjectId
+                                  where h.UserId == Id && h.SubjectExpiryDate.Value.Date >= DateTime.Now.Date
+                                  select sm;
+                var getbook = Getpurchase.Distinct().ToList();
 
                 var videoCount = histories.Count(rh => rh.Type.ToLower() == "video");
                 var pageCount = histories.Count(rh => rh.Type.ToLower() != "video" && rh.Type.ToLower() != "bookmark" && rh.Type.ToLower() != "download");
@@ -445,7 +450,8 @@ namespace LMSAPI.Repository
                     VideoCount = videoCount,
                     PageCount = pageCount,
                     Bookmarks = bookmark,
-                    Downloads = download
+                    Downloads = download,
+                    Purchase= getbook
                 };
             }
             catch (Exception ex)
