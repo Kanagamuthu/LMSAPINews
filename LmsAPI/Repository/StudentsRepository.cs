@@ -151,5 +151,19 @@ namespace LMSAPI.Repository
             return await _context.TblSupportTickets.Where(x => x.ReadBy == id).ToListAsync() ?? new List<TblSupportTicket>();
 
         }
+
+        public async Task RegenerateOtpAsync(TblUserRandomPass otpRecord)
+        {
+            try
+            {
+                _context.TblUserRandomPasses.Update(otpRecord);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+            }
+        }
     }
 }

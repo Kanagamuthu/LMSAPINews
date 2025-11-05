@@ -77,13 +77,14 @@ namespace LMSAPI.Controllers
 
         #endregion
 
+
         #region post-register student info trade & department
-        [HttpPost("Post-RegisterStudentTrade")]
+        [HttpPost("Post-RegisterStudent")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> PostRegisterStudentTrade([FromBody] StudentTradeDepartmentDTO studentTradeDepartmentDTO)
+        public async Task<IActionResult> PostRegisterStudent([FromBody] StudentTradeDepartmentDTO studentTradeDepartmentDTO)
         {
             try
             {
@@ -95,8 +96,21 @@ namespace LMSAPI.Controllers
                 }
                 else
                 {
-                    await _dashboardRepository.PostRegisterStudentTradeDepartment(email, studentTradeDepartmentDTO);
-                    return Ok(new ApiResponse { Success = true, Message = "Student department updated successfully", Data = null, ErrorCode = null });
+                    if (studentTradeDepartmentDTO.DepartmentId != 0)
+                    {
+                        await _dashboardRepository.PostRegisterStudentTradeDepartment(email, studentTradeDepartmentDTO);
+                        return Ok(new ApiResponse { Success = true, Message = "Student department updated successfully", Data = null, ErrorCode = null });
+                    }
+                    else
+                    {
+                        return BadRequest(new ApiResponse
+                        {
+                            Success = false,
+                            Message = "DepartmentId is required",
+                            Data = null,
+                            ErrorCode = "400"
+                        });
+                    }
                 }
             }
             catch (Exception ex)
