@@ -394,7 +394,7 @@ namespace LMSAPI.Controllers
             if (errors.Any())
                 return Ok(new ApiResponse { Success = false, Message = string.Join(",", errors), ErrorCode = "400" });
 
-            var getpaymentPackage = await _dashboardRepository.GetpaymentPackage(model.packageId);
+            var getpaymentPackage = await _dashboardRepository.GetpaymentPackage(model.packageId ?? 0);
             var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
             if (model.Type.ToLower() == "insert")
             {
@@ -655,14 +655,14 @@ namespace LMSAPI.Controllers
             if (errors.Any())
                 return Ok(new ApiResponse { Success = false, Message = string.Join(",", errors), ErrorCode = "400" });
 
-            var getpaymentPackage = await _dashboardRepository.GetpaymentPackage(model.packageId);
+            var getpaymentPackage = await _dashboardRepository.GetpaymentPackage(model.packageId ?? 0);
             var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
 
             TblUserSubscribeMaster obj = new TblUserSubscribeMaster();
             obj.UserId = userId;
             obj.PackageId = model.packageId;
             obj.Amount = getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
-            obj.PaymentStatus = "Success";
+            obj.PaymentStatus = "success";
             obj.CreatedOn = DateTime.Now;
             obj.TransactionType = "Trail";
 
@@ -681,7 +681,7 @@ namespace LMSAPI.Controllers
                 obj1.SubjectVersion = item.SubjectVersion;
                 obj1.UserId = Convert.ToInt32(userId);
                 obj1.DepartmentId = DepartmentId;
-                if (model.PaymentStatus.ToLower() == "success")
+                if (obj.PaymentStatus.ToLower() == "success")
                 {
                     var activeDate = await _dashboardRepository.GetActiveOnDateByUserId(userId);
                     var trialDays = await _dashboardRepository.GetTrialPeriodDaysAsync();
