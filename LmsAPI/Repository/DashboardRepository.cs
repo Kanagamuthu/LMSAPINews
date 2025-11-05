@@ -286,11 +286,11 @@ namespace LMSAPI.Repository
                 throw;
             }
         }
-        public async Task AddUserSubjectActivationHistoryAsync(TblUserSubjectActivationHistory usersubjectactivationhistory)
+        public async Task AddUserSubjectActivationHistoryAsync(List<TblUserSubjectActivationHistory> usersubjectactivationhistory)
         {
             try
             {
-                await _context.TblUserSubjectActivationHistories.AddAsync(usersubjectactivationhistory);
+                await _context.TblUserSubjectActivationHistories.AddRangeAsync(usersubjectactivationhistory);
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -317,12 +317,12 @@ namespace LMSAPI.Repository
         public async Task<List<UserSubscriptionDetailDto>> GetUserSubscribeMasterAsync()
         {
             var Query = from u in _context.TblUserSubscribeMasters
-                        join h in _context.TblUserSubjectActivationHistories on u.UserSubscribeMasterId equals h.TusmId
+                        //join h in _context.TblUserSubjectActivationHistories on u.UserSubscribeMasterId equals h.TusmId
                         orderby u.UserSubscribeMasterId descending
                         select new UserSubscriptionDetailDto
                         {
                             UserSubscribeMaster = u,
-                            UserSubjectActivationHistory = h
+                            //UserSubjectActivationHistory = h
                         };
             return Query.ToList();
         }
@@ -594,5 +594,24 @@ namespace LMSAPI.Repository
             }
         }
 
+
+       public async Task<List<PaymentPackageDTO>> GetpaymentPackage(int packageId)
+        {
+            var result =await (from pd in _context.TblPackageDetails
+                         join tpm in _context.TblPackageMasters on pd.PackageId equals tpm.PackageId
+                         join dsm in _context.TblDepartmentSubjectMappings on pd.DepartmentSubjectMappingId equals dsm.DepartmentSubjectMappingId
+                         join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId
+                         where tpm.PackageId == packageId
+                         group new { pd, dsm, sm } by tpm into g
+                         select new PaymentPackageDTO
+                         {
+                             packagemaster = g.Key,
+                             packagedetails = g.Select(x => x.pd).ToList(),
+                             departmentsubjectmapping = g.Select(x => x.dsm).ToList(),
+                             subjectmaster = g.Select(x => x.sm).ToList()
+                         }).ToListAsync();
+
+            return result;
+        }
     }
 }

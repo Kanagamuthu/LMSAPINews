@@ -4,8 +4,9 @@ namespace LMSAPI.DTO
 {
     public class PaymentPayload
     {
-        public string subjectCode { get; set; }
-        public int DepartmentId { get; set; }
-        public TblUserSubscribeMaster SubscribeMaster { get; set; }
+        public int packageId { get; set; }
+        public string PaymentRefNo { get; set; }
+        public string PaymentStatus { get; set; }
+        public string  Type { get; set; }
     }
 }

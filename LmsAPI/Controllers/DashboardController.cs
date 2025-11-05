@@ -370,82 +370,68 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateSubscription(PaymentPayload model)
         {
+            string Message = ""; var errors = new List<string>();
 
-            if (model == null)
-                return BadRequest(new { Message = "Validation failed.", Errors = "Invalid request payload." });
-
-            var errors = new List<string>();
-
-            if (string.IsNullOrWhiteSpace(model.subjectCode))
-                errors.Add("SubjectCode is required.");
-
-            if (model.SubscribeMaster?.UserId == null || model.SubscribeMaster.UserId <= 0)
-                errors.Add("UserId is required.");
-
-            if (model.SubscribeMaster?.Amount == null || model.SubscribeMaster.Amount <= 0)
-                errors.Add("Amount is required.");
-
-            if (string.IsNullOrWhiteSpace(model.SubscribeMaster?.PaymentStatus))
-                errors.Add("PaymentStatus is required.");
+            if (string.IsNullOrWhiteSpace(model.Type))
+                errors.Add("Type is required.");
+            else if (model.packageId == null || model.packageId <= 0)
+                errors.Add("packageId is required.");
 
             if (errors.Any())
-                return BadRequest(new { Message = "Validation failed.", Errors = errors });
+                return Ok(new ApiResponse { Success = false, Message = string.Join(",", errors), ErrorCode = "400" });
 
-            var Message = ""; bool flag = false;
-            var subjectCodes = model?.subjectCode?.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
-            var UserSubscribeMaster = await _dashboardRepository.GetUserSubscribeMasterAsync();
-            var getData = UserSubscribeMaster.Where(x => x.UserSubscribeMaster.Amount == model?.SubscribeMaster?.Amount && x.UserSubscribeMaster.UserId == model?.SubscribeMaster?.UserId && x.UserSubjectActivationHistory.DepartmentId == model?.DepartmentId && x.UserSubscribeMaster.PaymentStatus == "Pending" && subjectCodes.Contains(x?.UserSubjectActivationHistory?.SubjectCode)).FirstOrDefault()?.UserSubscribeMaster ?? new TblUserSubscribeMaster();
-            model.SubscribeMaster.CreatedOn = DateTime.Now;
+            var getpaymentPackage = await _dashboardRepository.GetpaymentPackage(model.packageId);
+            var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            if (model.Type.ToLower() == "insert")
+            {
+                TblUserSubscribeMaster obj = new TblUserSubscribeMaster();
+                obj.UserId = userId;
+                obj.PackageId = model.packageId;
+                obj.Amount = getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
+                obj.PaymentStatus = "Pending";
+                obj.CreatedOn = DateTime.Now;
+                obj.TransactionType = "Pay";
 
-            if (!string.IsNullOrEmpty(model?.SubscribeMaster?.PaymentRefNo) && getData.UserSubscribeMasterId > 0)
-            {
-                Message = "Subscription successfully.";
-                getData.PaymentStatus = model.SubscribeMaster.PaymentStatus;
-                getData.PaymentRefNo = model.SubscribeMaster.PaymentRefNo;
-                getData.PaymentOn = DateTime.Now;
-                await _dashboardRepository.UpdateUserSubscribeMasterAsync(getData);
-            }
-            else if (string.IsNullOrEmpty(model?.SubscribeMaster?.PaymentRefNo) && getData.UserSubscribeMasterId > 0)
-            {
-                flag = true;
+                await _dashboardRepository.AddUserSubscribeMasterAsync(obj);
                 Message = "Subscription created successfully.";
-                getData.CreatedOn = model?.SubscribeMaster.CreatedOn;
-                await _dashboardRepository.UpdateUserSubscribeMasterAsync(getData);
+                return Ok(new ApiResponse(true, Message, obj, ""));
             }
             else
             {
-                flag = true;
-                Message = "Subscription created successfully.";
-                await _dashboardRepository.AddUserSubscribeMasterAsync(model.SubscribeMaster);
-            }
+                var UserSubscribeMaster = await _dashboardRepository.GetUserSubscribeMasterAsync();
+                var getData = UserSubscribeMaster.Where(x => x.UserSubscribeMaster.Amount == getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice && x.UserSubscribeMaster.UserId == userId && x.UserSubscribeMaster.PaymentStatus == "Pending").FirstOrDefault()?.UserSubscribeMaster ?? new TblUserSubscribeMaster();
+                getData.PaymentOn = DateTime.Now;
+                getData.PaymentRefNo = model.PaymentRefNo;
+                getData.PaymentStatus = model.PaymentStatus;
+                await _dashboardRepository.UpdateUserSubscribeMasterAsync(getData);
 
-            if (flag)
-            {
-                if (getData.UserSubscribeMasterId > 0)
-                    await _dashboardRepository.DeleteUserSubjectActivationHistoryAsync(getData.UserSubscribeMasterId);
-                foreach (var code in subjectCodes)
+                List<TblUserSubjectActivationHistory> obj2 = new List<TblUserSubjectActivationHistory>();
+
+                foreach (var item in getpaymentPackage?.FirstOrDefault()?.subjectmaster)
                 {
-                    var subject = await _dashboardRepository.GetPaymentSubject(code);
-                    if (subject == null) continue;
-
-                    var activation = new TblUserSubjectActivationHistory
+                    TblUserSubjectActivationHistory obj1 = new TblUserSubjectActivationHistory();
+                    var DepartmentId = getpaymentPackage?.FirstOrDefault()?.departmentsubjectmapping.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
+                    obj1.TusmId = getData.UserSubscribeMasterId;
+                    obj1.SubjectId = Convert.ToInt32(item.SubjectId);
+                    obj1.SubjectCode = item.SubjectCode;
+                    obj1.SubjectName = item.SubjectName;
+                    obj1.SubjectVersion = item.SubjectVersion;
+                    obj1.UserId = Convert.ToInt32(userId);
+                    obj1.DepartmentId = DepartmentId;
+                    if (model.PaymentStatus.ToLower() == "success")
                     {
-                        SubjectId = Convert.ToInt32(subject.SubjectId),
-                        SubjectCode = subject.SubjectCode,
-                        SubjectName = subject.SubjectName,
-                        SubjectVersion = subject.SubjectVersion,
-                        DepartmentId = model.DepartmentId,
-                        UserId = Convert.ToInt32(model.SubscribeMaster.UserId),
-                        ActivatedBy = Convert.ToInt32(model.SubscribeMaster.UserId),
-                        ActivatedOn = DateTime.Now,
-                        TusmId = model.SubscribeMaster.UserSubscribeMasterId == 0 ? getData.UserSubscribeMasterId : model.SubscribeMaster.UserSubscribeMasterId
-                    };
-                    await _dashboardRepository.AddUserSubjectActivationHistoryAsync(activation);
+                        obj1.SubjectExpiryDate = DateTime.Now.AddDays(getpaymentPackage?.FirstOrDefault()?.packagemaster.PackageDurationDays ?? 0);
+                        obj1.ActivatedOn = DateTime.Now;
+                        obj1.ActivatedBy = Convert.ToInt32(userId);
+                    }
+                    obj2.Add(obj1);
                 }
 
-            }
+                await _dashboardRepository.AddUserSubjectActivationHistoryAsync(obj2);
+                Message = "Subscription Added successfully";
+                return Ok(new ApiResponse(true, Message, getData, ""));
 
-            return Ok(new ApiResponse(true, Message, model, ""));
+            }
         }
         #endregion
 

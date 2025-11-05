@@ -26,7 +26,7 @@ namespace LMSAPI.Repository
         Task<List<StudentTradeDepartmentDTO>> GetSubjectsByStudentTrade(string userEmail, int tradeID);
 
         Task AddUserSubscribeMasterAsync(TblUserSubscribeMaster usersubscribemaster);
-        Task AddUserSubjectActivationHistoryAsync(TblUserSubjectActivationHistory usersubjectactivationhistory);
+        Task AddUserSubjectActivationHistoryAsync(List<TblUserSubjectActivationHistory> usersubjectactivationhistory);
         Task<bool> UpdateUserSubscribeMasterAsync(TblUserSubscribeMaster usersubscribemaster);
         Task<List<UserSubscriptionDetailDto>> GetUserSubscribeMasterAsync();
         Task DeleteUserSubjectActivationHistoryAsync(int Id);
@@ -45,6 +45,6 @@ namespace LMSAPI.Repository
 
         Task<List<TblUserSubjectActivationHistory>> AddSubjectToStudent(string userEmail, List<int> subjectId);
 
-
+        Task<List<PaymentPackageDTO>> GetpaymentPackage(int packageId);
     }
 }
