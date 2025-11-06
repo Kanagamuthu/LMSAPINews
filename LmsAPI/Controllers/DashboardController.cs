@@ -320,59 +320,42 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CheckTrialPeriodAndRemoveContent()
         {
-            try
+
+            var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            var student = await _studentsRepository.GetStudentByEmailAsync(email);
+
+            var trialDays = await _studentsRepository.GetTrialPeriodDaysAsync();
+            if (trialDays <= 0)
             {
-                var userEmail = HttpContext.Session.GetString("UserEmail");
-                var userID = HttpContext.Session.GetInt32("UserId");
-                var _userid = Convert.ToInt64(userID);
-
-                if (string.IsNullOrEmpty(userEmail))
-                {
-                    return Unauthorized(new ApiResponse(false, "User not logged in.", null, StatusCodes.Status401Unauthorized.ToString()));
-                }
-
-                var student = await _studentsRepository.GetStudentByEmailAsync(userEmail);
-                if (student == null)
-                {
-                    return Ok(new ApiResponse(false, "Student not found.", null, StatusCodes.Status404NotFound.ToString()));
-                }
-
-                var trialDays = await _studentsRepository.GetTrialPeriodDaysAsync();
-                if (trialDays <= 0)
-                {
-                    return Ok(new ApiResponse(false, "Trial period not configured.", null, StatusCodes.Status400BadRequest.ToString()));
-                }
-
-                if (student.AccActiveOn == null)
-                {
-                    return Ok(new ApiResponse(false, "Account not activated.", null, StatusCodes.Status400BadRequest.ToString()));
-                }
-
-                var activationDate = student.AccActiveOn.Value;
-                var currentDate = DateTime.UtcNow;
-                var difference = currentDate - activationDate;
-                int daysSinceActivation = (int)difference.TotalDays;
-                int daysLeft = trialDays - daysSinceActivation;
-
-                if (daysLeft > 0)
-                {
-                    return Ok(new ApiResponse(true, "Student is in trial period.", new { InTrialPeriod = true, DaysLeft = daysLeft }, StatusCodes.Status200OK.ToString()));
-                }
-                else
-                {
-                    //set trade active stats is 0 against the user
-                    var SetInActive = _dashboardRepository.SetInactive(_userid);
-                    //remove Trail button from clients
-
-                    return Ok(new ApiResponse(true, "Your trial period has been ended & contents are get limited.", new { InTrialPeriod = false, DaysLeft = 0 }, StatusCodes.Status200OK.ToString()));
-                }
+                return Ok(new ApiResponse(false, "Trial period not configured.", null, StatusCodes.Status400BadRequest.ToString()));
             }
-            catch (Exception ex)
+
+            if (student.AccActiveOn == null)
             {
-                _logger.LogError($"Error in IStudentInTrialPeriod: {ex}");
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ApiResponse(false, "An error occurred while checking trial period.", null, StatusCodes.Status500InternalServerError.ToString()));
+                return Ok(new ApiResponse(false, "Account not activated.", null, StatusCodes.Status400BadRequest.ToString()));
             }
+
+            var activationDate = student.AccActiveOn.Value;
+            var currentDate = DateTime.UtcNow;
+            var difference = currentDate - activationDate;
+            int daysSinceActivation = (int)difference.TotalDays;
+            int daysLeft = trialDays - daysSinceActivation;
+
+            if (daysLeft > 0)
+            {
+                return Ok(new ApiResponse(true, "Student is in trial period.", new { InTrialPeriod = true, DaysLeft = daysLeft }, StatusCodes.Status200OK.ToString()));
+            }
+            else
+            {
+                //set trade active stats is 0 against the user
+                var SetInActive = _dashboardRepository.SetInactive(userId);
+                //remove Trail button from clients
+
+                return Ok(new ApiResponse(true, "Your trial period has been ended & contents are get limited.", new { InTrialPeriod = false, DaysLeft = 0 }, StatusCodes.Status200OK.ToString()));
+            }
+
         }
         #endregion
 

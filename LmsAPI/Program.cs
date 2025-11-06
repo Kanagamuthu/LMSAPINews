@@ -63,7 +63,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ExceptionFilter>();
+    options.Filters.Add<TrialResponseFilter>();
 });
+
 #endregion
 
 #region FluentValidation
@@ -198,8 +200,8 @@ app.Use(async (context, next) =>
 
     await next();
 });
-
 #endregion
+app.UseMiddleware<TrialPeriodMiddleware>();
 
 app.UseCors("AllowAll");
 app.UseSession();//Use session middleware
