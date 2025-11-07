@@ -35,6 +35,7 @@ namespace LMSAPI.Controllers
             var request = new HttpRequestMessage(HttpMethod.Get, "https://restcountries.com/v3.1/all?fields=name,flags,idd");
             var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
+
             var Result = await response.Content.ReadAsStringAsync();
             return Ok(Result);
         }
