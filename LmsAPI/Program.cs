@@ -134,9 +134,12 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build(); 
 app.Use(async (context, next) =>
 {
+    context.Response.Headers.Remove("Server");
+    context.Response.Headers.Remove("X-Powered-By");
+    context.Response.Headers.Remove("X-AspNet-Version");
+
     var endpoint = context.GetEndpoint();
     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-
 
     async Task WriteApiResponseAsync(int statusCode, string message, string errorCode = "401")
     {
