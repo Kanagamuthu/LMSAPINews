@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Azure;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,12 +8,10 @@ namespace LMSAPI.Helpers
 {
     public static class EncryptionHelper
     {
-        //private static readonly string Key = "12345678901234567890123456789012"; // 32 bytes = AES-256
-        //private static readonly string IV = "1234567890123456";                   // 16 bytes = AES block size
-
-        private static readonly string Key = "InfoplusInfoplusInfoplusInfoplus"; // 32 bytes = AES-256
-        private static readonly string IV = "InfoplusInfoplus";                   // 16 bytes = AES block size
-        public static string Encrypt(string plainText)
+       
+        //private static readonly string Key = "InfoplusInfoplusInfoplusInfoplus"; // 32 bytes = AES-256
+        //private static readonly string IV = "InfoplusInfoplus";                   // 16 bytes = AES block size
+        public static string Encrypt(string plainText,string Key,string IV)
         {
             using var aes = Aes.Create();
             aes.Key = Encoding.UTF8.GetBytes(Key);
@@ -25,11 +24,10 @@ namespace LMSAPI.Helpers
             {
                 sw.Write(plainText);
             }
-
             return Convert.ToBase64String(ms.ToArray());
         }
 
-        public static string Decrypt(string cipherText)
+        public static string Decrypt(string cipherText, string Key, string IV)
         {
             using var aes = Aes.Create();
             aes.Key = Encoding.UTF8.GetBytes(Key);

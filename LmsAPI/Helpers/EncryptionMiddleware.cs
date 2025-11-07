@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Azure;
+using LmsAPI.Models;
+using Microsoft.AspNetCore.Http;
 using System.IO;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,12 +21,22 @@ namespace LMSAPI.Helpers
         {
             // Optional: only encrypt/decrypt when requested
             bool enableEncryption = context.Request.Headers.ContainsKey("X-Encrypted");
-
+           
             if (!enableEncryption)
             {
                 await _next(context);
                 return;
             }
+            var user = context.User;
+            var userId = user.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var Key = "InfoplusInfoplusInfoplusInfoplus";
+            string finalKey = $"{userId}{Key}";
+            Key = finalKey.Length > 32 ? finalKey.Substring(0, 32) : finalKey;
+
+            string IV = "";
+            if (context.Request.Headers.TryGetValue("X-Timestamp", out var timestampHeader))
+                IV = timestampHeader.ToString();
+
 
             var originalBodyStream = context.Response.Body;
             using var newResponseBody = new MemoryStream();
@@ -43,7 +56,7 @@ namespace LMSAPI.Helpers
                     {
                         try
                         {
-                            string decrypted = EncryptionHelper.Decrypt(encryptedBody);
+                            string decrypted = EncryptionHelper.Decrypt(encryptedBody, Key, IV);
                             byte[] bytes = Encoding.UTF8.GetBytes(decrypted);
                             context.Request.Body = new MemoryStream(bytes);
                         }
@@ -61,11 +74,14 @@ namespace LMSAPI.Helpers
                 newResponseBody.Seek(0, SeekOrigin.Begin);
                 var plainResponse = await new StreamReader(newResponseBody).ReadToEndAsync();
 
-                string encryptedResponse = EncryptionHelper.Encrypt(plainResponse);
+                // 16 bytes = AES block size
+                IV = DateTime.Now.ToString("yyyyMMddHHmmss") + "In";
+                string encryptedResponse = EncryptionHelper.Encrypt(plainResponse, Key, IV);
                 byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedResponse);
 
-                context.Response.ContentType = "text/plain";
+                context.Response.ContentType = "application/json";
                 context.Response.ContentLength = responseBytes.Length;
+                context.Response.Headers.Append("X-Timestamp", IV);
 
                 newResponseBody.Seek(0, SeekOrigin.Begin);
                 await originalBodyStream.WriteAsync(responseBytes, 0, responseBytes.Length);

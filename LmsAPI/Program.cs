@@ -201,7 +201,7 @@ app.Use(async (context, next) =>
     await next();
 });
 #endregion
-//app.UseMiddleware<EncryptionMiddleware>();
+app.UseMiddleware<EncryptionMiddleware>();
 app.UseMiddleware<TrialPeriodMiddleware>();
 
 
