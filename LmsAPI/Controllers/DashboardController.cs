@@ -1,4 +1,5 @@
-﻿using LmsAPI.Models;
+﻿using Azure.Core;
+using LmsAPI.Models;
 using LMSAPI.DTO;
 using LMSAPI.Helpers;
 using LMSAPI.Models;
@@ -84,40 +85,24 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> PostRegisterStudent([FromBody] StudentTradeDepartmentDTO studentTradeDepartmentDTO)
+        public async Task<IActionResult> PostRegisterStudent([FromBody] StudentTradeDepartmentDTO obj)
         {
-            try
+            var errors = new List<string>
             {
-                //check user email from session
-                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(email))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
-                }
-                else
-                {
-                    if (studentTradeDepartmentDTO.DepartmentId != 0)
-                    {
-                        await _dashboardRepository.PostRegisterStudentTradeDepartment(email, studentTradeDepartmentDTO);
-                        return Ok(new ApiResponse { Success = true, Message = "Student department updated successfully", Data = null, ErrorCode = null });
-                    }
-                    else
-                    {
-                        return BadRequest(new ApiResponse
-                        {
-                            Success = false,
-                            Message = "DepartmentId is required",
-                            Data = null,
-                            ErrorCode = "400"
-                        });
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred in PostRegisterStudentTradeDepartment method");
-                return StatusCode(500, "Internal server error");
-            }
+                string.IsNullOrWhiteSpace(obj.Collegename) ? "College name is required." : null,
+                (obj.EduType == null || obj.EduType <= 0) ? "Education type is required." : null,
+                (obj.DepartmentId == null || obj.DepartmentId <= 0) ? "Department is required." : null,
+                (obj.Batchyear == null || obj.Batchyear <= 0) ? "Batch year is required." : null
+            };
+
+            errors.RemoveAll(e => e == null);
+
+            if (errors.Count > 0)
+                return Ok(new ApiResponse { Success = false, Message = string.Join(", ", errors), ErrorCode = "400" });
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _dashboardRepository.PostRegisterStudentTradeDepartment(email, obj);
+            return Ok(new ApiResponse { Success = true, Message = "Education details added successfully.", Data = result });
+
         }
 
         #endregion
@@ -680,6 +665,14 @@ namespace LMSAPI.Controllers
             await _dashboardRepository.AddUserSubjectActivationHistoryAsync(obj2);
             Message = "Subscription Added successfully";
             return Ok(new ApiResponse(true, Message, obj, ""));
+        }
+
+
+        [HttpGet("GetRegisterDropdwonList")]
+        public async Task<IActionResult> GetRegisterDropdwonList()
+        {
+            var registerList = await _dashboardRepository.GetRegisterDropdwonList();
+            return Ok(new ApiResponse(true, "Register list fetched successfully.", registerList, ""));
         }
     }
 }

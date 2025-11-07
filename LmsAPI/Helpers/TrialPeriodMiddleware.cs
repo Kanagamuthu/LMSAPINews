@@ -19,37 +19,46 @@ namespace LMSAPI.Helpers
         {
             try
             {
-                var user = context.User;
-                if (user?.Identity?.IsAuthenticated == true)
+                var endpoint = context.GetEndpoint();
+                if (endpoint != null)
                 {
-                    var email = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    var userIdClaim = user.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+                    var allowedEndpoints = new[] { "GetPackageDetails", "TrailSubscription", "CreateSubscription" };
 
-                    if (!string.IsNullOrEmpty(email) && long.TryParse(userIdClaim, out long userId))
+                    if (endpoint?.DisplayName != null && allowedEndpoints.Any(name => endpoint.DisplayName.Contains(name, StringComparison.OrdinalIgnoreCase)))
                     {
-                        var student = await studentsRepository.GetStudentByEmailAsync(email);
-                        if (student != null && student.AccActiveOn.HasValue)
+                        var user = context.User;
+                        if (user?.Identity?.IsAuthenticated == true)
                         {
-                            var trialDays = await studentsRepository.GetTrialPeriodDaysAsync();
-                            var activationDate = student.AccActiveOn.Value;
-                            var daysSinceActivation = (DateTime.UtcNow - activationDate).Days;
-                            int daysLeft = trialDays - daysSinceActivation;
+                            var email = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                            var userIdClaim = user.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
 
-                            if (daysLeft <= 0)
+                            if (!string.IsNullOrEmpty(email) && long.TryParse(userIdClaim, out long userId))
                             {
-                                // trial expired
-                                await dashboardRepository.SetInactive(userId);
+                                var student = await studentsRepository.GetStudentByEmailAsync(email);
+                                if (student != null && student.AccActiveOn.HasValue)
+                                {
+                                    var trialDays = await studentsRepository.GetTrialPeriodDaysAsync();
+                                    var activationDate = student.AccActiveOn.Value;
+                                    var daysSinceActivation = (DateTime.Now - activationDate).Days;
+                                    int daysLeft = trialDays - daysSinceActivation;
 
-                                context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0 };
+                                    if (daysLeft <= 0)
+                                    {
+                                        // trial expired
+                                        await dashboardRepository.SetInactive(userId);
+
+                                        context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0 };
+                                    }
+                                    else
+                                    {
+                                        context.Items["TrialInfo"] = new { InTrialPeriod = true, DaysLeft = daysLeft };
+                                    }
+                                }
+                                else
+                                {
+                                    context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0 };
+                                }
                             }
-                            else
-                            {
-                                context.Items["TrialInfo"] = new { InTrialPeriod = true, DaysLeft = daysLeft };
-                            }
-                        }
-                        else
-                        {
-                            context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0 };
                         }
                     }
                 }

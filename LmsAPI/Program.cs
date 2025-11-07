@@ -201,7 +201,9 @@ app.Use(async (context, next) =>
     await next();
 });
 #endregion
+//app.UseMiddleware<EncryptionMiddleware>();
 app.UseMiddleware<TrialPeriodMiddleware>();
+
 
 app.UseCors("AllowAll");
 app.UseSession();//Use session middleware

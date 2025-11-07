@@ -217,29 +217,29 @@ namespace LMSAPI.Repository
                 .Where(t => t.UserId == userId && t.TradeActiveStatus == 1) // active trades only
                 .ToListAsync();
         }
-        public async Task<bool> PostRegisterStudentTradeDepartment(string userEmail, StudentTradeDepartmentDTO studentTradeDepartmentDTO)
+        public async Task<TblStudentUserMaster> PostRegisterStudentTradeDepartment(string userEmail, StudentTradeDepartmentDTO studentTradeDepartmentDTO)
         {
             try
             {
                 var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
-                if (student == null)
-                {
-                    return false;
-                }
+               
                 // update the department
                 student.DepartmentId = studentTradeDepartmentDTO.DepartmentId;
-                student.TradeId = studentTradeDepartmentDTO.TradeId;
+                student.Collegename = studentTradeDepartmentDTO.Collegename;
+                student.EduType = studentTradeDepartmentDTO.EduType;
+                student.Batchyear = studentTradeDepartmentDTO.Batchyear;
+                //student.TradeId = studentTradeDepartmentDTO.TradeId;
 
                 // mark entity as modified and save
 
                 _context.TblStudentUserMasters.Update(student);
                 await _context.SaveChangesAsync();
-                return true;
+                return student;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while registering student trade and department");
-                return false;
+                return new TblStudentUserMaster();
             }
         }
         public async Task<List<StudentTradeDepartmentDTO>> GetSubjectsByStudentTrade(string userEmail, int tradeID)
@@ -643,6 +643,17 @@ namespace LMSAPI.Repository
                 trialDays = 0;
 
             return trialDays;
+        }
+
+        public async Task<GetRegisterDropdwonList> GetRegisterDropdwonList()
+        {
+            var getDepartmentList = await _context.TblDepartmentMasters.Where(d => d.IsActive == 1).ToListAsync();
+            var getDegreeList = await _context.TblDegreeMasters.Where(d => d.IsActive == 1).ToListAsync();
+            return new GetRegisterDropdwonList
+            {
+                DepartmentList = getDepartmentList,
+                DegreeList = getDegreeList
+            };
         }
     }
 }
