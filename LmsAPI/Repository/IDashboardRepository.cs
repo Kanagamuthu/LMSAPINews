@@ -22,7 +22,7 @@ namespace LMSAPI.Repository
         Task SetInactive(long sud);
         //Task GetActiveTradesByUserIDAsync(long sud);
         Task<List<TblStudentTrialSubject>> GetActiveTradesByUserIDAsync(long userId);
-        Task<bool> PostRegisterStudentTradeDepartment(string userEmail, StudentTradeDepartmentDTO studentTradeDepartmentDTO);
+        Task<TblStudentUserMaster> PostRegisterStudentTradeDepartment(string userEmail, StudentTradeDepartmentDTO studentTradeDepartmentDTO);
         Task<List<StudentTradeDepartmentDTO>> GetSubjectsByStudentTrade(string userEmail, int tradeID);
 
         Task AddUserSubscribeMasterAsync(TblUserSubscribeMaster usersubscribemaster);
@@ -49,5 +49,7 @@ namespace LMSAPI.Repository
 
         Task<DateTime?> GetActiveOnDateByUserId(long userId);
         Task<int> GetTrialPeriodDaysAsync();
+
+        Task<GetRegisterDropdwonList> GetRegisterDropdwonList();
     }
 }

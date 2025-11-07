@@ -1,67 +1,47 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace LMSAPI.Helpers
 {
-    public class EncryptionService
+    public static class EncryptionHelper
     {
-        private readonly RSA _rsa;
-        private byte[]? _aesKey;
-        private byte[]? _iv;
+        //private static readonly string Key = "12345678901234567890123456789012"; // 32 bytes = AES-256
+        //private static readonly string IV = "1234567890123456";                   // 16 bytes = AES block size
 
-        public EncryptionService()
+        private static readonly string Key = "InfoplusInfoplusInfoplusInfoplus"; // 32 bytes = AES-256
+        private static readonly string IV = "InfoplusInfoplus";                   // 16 bytes = AES block size
+        public static string Encrypt(string plainText)
         {
-            _rsa = RSA.Create(2048);
-        }
-
-        public string GetPublicKey()
-        {
-            // Export as Base64 to simplify JSON response
-            return Convert.ToBase64String(_rsa.ExportRSAPublicKey());
-        }
-
-        public void SetAesKey(string encryptedKeyB64, string ivB64)
-        {
-            var encryptedKey = Convert.FromBase64String(encryptedKeyB64);
-            var decryptedKey = _rsa.Decrypt(encryptedKey, RSAEncryptionPadding.OaepSHA256);
-            _aesKey = decryptedKey;
-            _iv = Convert.FromBase64String(ivB64);
-        }
-
-        public string EncryptString(string plaintext)
-        {
-            if (_aesKey == null || _iv == null)
-                throw new InvalidOperationException("AES key not initialized.");
-
             using var aes = Aes.Create();
-            aes.Key = _aesKey;
-            aes.IV = _iv;
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.PKCS7;
+            aes.Key = Encoding.UTF8.GetBytes(Key);
+            aes.IV = Encoding.UTF8.GetBytes(IV);
 
-            using var encryptor = aes.CreateEncryptor();
-            var inputBytes = Encoding.UTF8.GetBytes(plaintext);
-            var encrypted = encryptor.TransformFinalBlock(inputBytes, 0, inputBytes.Length);
-            return Convert.ToBase64String(encrypted);
+            using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+            using var ms = new MemoryStream();
+            using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+            using (var sw = new StreamWriter(cs))
+            {
+                sw.Write(plainText);
+            }
+
+            return Convert.ToBase64String(ms.ToArray());
         }
 
-        public string DecryptString(string base64Cipher)
+        public static string Decrypt(string cipherText)
         {
-            if (_aesKey == null || _iv == null)
-                throw new InvalidOperationException("AES key not initialized.");
-
-            var cipherBytes = Convert.FromBase64String(base64Cipher);
             using var aes = Aes.Create();
-            aes.Key = _aesKey;
-            aes.IV = _iv;
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.PKCS7;
+            aes.Key = Encoding.UTF8.GetBytes(Key);
+            aes.IV = Encoding.UTF8.GetBytes(IV);
 
-            using var decryptor = aes.CreateDecryptor();
-            var plainBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
-            return Encoding.UTF8.GetString(plainBytes);
+            using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+            using var ms = new MemoryStream(Convert.FromBase64String(cipherText));
+            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            using var sr = new StreamReader(cs);
+            return sr.ReadToEnd();
         }
-
-        public bool IsSessionActive => _aesKey != null && _iv != null;
     }
+
+
 }
