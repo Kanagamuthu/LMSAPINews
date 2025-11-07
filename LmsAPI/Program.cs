@@ -7,18 +7,48 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Text.Json;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+
 // Add services to the container.
 builder.Services.AddControllers();
 
+#region Add ratelimit 
+builder.Services.AddRateLimiter(options =>
+{
+    // Customize the 429 response
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/json";
 
+        var response = new
+        {
+            success = false,
+            message = "Rate limit exceeded. Please try again later."
+        };
 
+        await context.HttpContext.Response.WriteAsync(JsonSerializer.Serialize(response), token);
+    };
+
+    // Fixed Window Policy — 5 requests per 10 seconds
+    options.AddFixedWindowLimiter("fixed", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 5;
+        limiterOptions.Window = TimeSpan.FromSeconds(10);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 0;
+    });
+});
+#endregion
 
 #region smtp
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
@@ -204,9 +234,13 @@ app.Use(async (context, next) =>
     await next();
 });
 #endregion
+
+
 app.UseMiddleware<EncryptionMiddleware>();
 app.UseMiddleware<TrialPeriodMiddleware>();
 
+// ✅ Enable Rate Limiting globally
+app.UseRateLimiter();
 
 app.UseCors("AllowAll");
 app.UseSession();//Use session middleware
@@ -220,7 +254,7 @@ app.MapGet("/", async context =>
 {
     context.Response.ContentType = "text/html";
     await context.Response.WriteAsync("<title>LMS API</title><h2 style='font-family: century gothic;font-size: 36px;'>Welcome to LMS API</h2>");
-});
+}).RequireRateLimiting("fixed");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

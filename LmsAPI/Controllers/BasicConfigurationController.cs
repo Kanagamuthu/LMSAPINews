@@ -2,15 +2,17 @@
 using LMSAPI.Helpers;
 using LMSAPI.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Text;
 using System.Text.Json;
 
 namespace LMSAPI.Controllers
 {
     [ApiController]
-    [TypeFilter(typeof(ExceptionFilter))]
+    [ApiVersion("1.0")] // 👈 Define version
+    [EnableRateLimiting("fixed")] // 👈 Apply rate limit policy
+    [TypeFilter(typeof(ExceptionFilter))] // 👈 Custom exception filter (optional)
     [Route("api/v{version:apiVersion}/[controller]")]
-    [ApiVersion("1.0")]
     public class BasicConfigurationController : Controller
     {
         private readonly string _serverKey = "YOUR_FCM_SERVER_KEY_HERE"; // from Firebase console
@@ -38,6 +40,24 @@ namespace LMSAPI.Controllers
 
             var Result = await response.Content.ReadAsStringAsync();
             return Ok(Result);
+        }
+
+        [HttpGet("GetRate")]
+        public IActionResult Get()
+        {
+            return Ok(new
+            {
+                message = "Hello from a rate-limited API!",
+                timestamp = DateTime.UtcNow
+            });
+        }
+
+        // Optional — disable rate limit for this one
+        [HttpGet("open")]
+        [DisableRateLimiting]
+        public IActionResult OpenEndpoint()
+        {
+            return Ok(new { message = "This endpoint has no rate limit!" });
         }
 
         #region send notification
