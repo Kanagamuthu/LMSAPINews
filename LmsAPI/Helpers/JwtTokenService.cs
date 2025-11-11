@@ -31,7 +31,8 @@ namespace LMSAPI.Helpers
                 issuer: _config["JwtSettings:Issuer"],
                 audience: _config["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddYears(2),
+                //expires: DateTime.UtcNow.AddYears(2),
+                expires: DateTime.UtcNow.AddDays(Convert.ToInt32(_config["JwtSettings:RefreshTokenExpiryDays"])),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
