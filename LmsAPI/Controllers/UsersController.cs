@@ -5,6 +5,7 @@ using LMSAPI.Models;
 using LMSAPI.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Security.Claims;
 using System.Text;
@@ -24,8 +25,9 @@ namespace LmsAPI.Controllers
         private readonly EmailService _emailService;
         private readonly JwtTokenService _jwtTokenService;
         private readonly IDistributedCache _cache;
+        private readonly LmsdbNewContext _context;
         public UsersController(IStudentsRepository studentsRepository, ILoggerManager logger, IValidator<string> emailValidator,
-            IValidator<StudentRegisterDto> validator, EmailService emailService, JwtTokenService jwtTokenService, IDistributedCache cache)
+            IValidator<StudentRegisterDto> validator, EmailService emailService, JwtTokenService jwtTokenService, IDistributedCache cache, LmsdbNewContext context)
         {
             _studentsRepository = studentsRepository;
             _logger = logger;
@@ -34,6 +36,7 @@ namespace LmsAPI.Controllers
             _emailService = emailService;
             _jwtTokenService = jwtTokenService;
             _cache = cache;
+            _context = context;
         }
 
         #region student login
@@ -407,5 +410,29 @@ namespace LmsAPI.Controllers
         }
 
         #endregion
+
+
+        [HttpPost("RefreshToken")]
+        public async Task<IActionResult> RefreshToken([FromBody] TokenRequest model)
+        {
+            if(string.IsNullOrEmpty(model.AccessToken))
+                return Ok(new ApiResponse(false, "Token is required", null, "400"));
+
+            string tokendecoded = Encoding.UTF8.GetString(Convert.FromBase64String(model.AccessToken));
+            var principal = _jwtTokenService.GetPrincipalFromExpiredToken(tokendecoded);
+            var userId = principal.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+
+            var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(x => x.StudentUserId.ToString() == userId);
+
+            if (student == null)
+                return Unauthorized(new ApiResponse(false, "Invalid student", null, "401"));
+
+            var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
+            string base64Encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
+            student.Token = base64Encoded;
+            await _studentsRepository.UpdateStudentAsync(student);
+            return Ok(new ApiResponse { Success = true, Message = "Token refreshed successfully", Data = new { AccessToken = base64Encoded } });
+        }
+
     }
 }
