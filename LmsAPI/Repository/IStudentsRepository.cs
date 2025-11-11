@@ -25,5 +25,7 @@ namespace LMSAPI.Repository
         //re-generate otp
         Task RegenerateOtpAsync(TblUserRandomPass otpRecord);
 
+        Task<List<TblCountriesCode>> GetCountriesCodesAsync();
+
     }
 }

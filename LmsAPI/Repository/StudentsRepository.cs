@@ -165,5 +165,22 @@ namespace LMSAPI.Repository
                 throw;
             }
         }
+
+        #region get country
+
+        public async Task<List<TblCountriesCode>> GetCountriesCodesAsync()
+        {
+            try
+            {
+                return await _context.TblCountriesCodes.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

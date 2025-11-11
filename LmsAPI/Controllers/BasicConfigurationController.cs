@@ -9,21 +9,22 @@ using System.Text.Json;
 namespace LMSAPI.Controllers
 {
     [ApiController]
-    [ApiVersion("1.0")] // 👈 Define version
-    [EnableRateLimiting("fixed")] // 👈 Apply rate limit policy
-    [TypeFilter(typeof(ExceptionFilter))] // 👈 Custom exception filter (optional)
+    [ApiVersion("1.0")] // Define version
+    [EnableRateLimiting("fixed")] // Apply rate limit policy
+    [TypeFilter(typeof(ExceptionFilter))] // Custom exception filter (optional)
     [Route("api/v{version:apiVersion}/[controller]")]
     public class BasicConfigurationController : Controller
     {
         private readonly string _serverKey = "YOUR_FCM_SERVER_KEY_HERE"; // from Firebase console
         private readonly string _fcmUrl = "https://fcm.googleapis.com/fcm/send";
         private readonly ILoggerManager _logger;
+        private readonly IStudentsRepository _studentsRepository;
         private readonly IMeUserRepository _meUserRepository;
 
-        public BasicConfigurationController(ILoggerManager logger,IMeUserRepository meUserRepository)
+        public BasicConfigurationController(ILoggerManager logger, IStudentsRepository studentsRepository, IMeUserRepository meUserRepository)
         {
-                
             _logger = logger;
+            _studentsRepository = studentsRepository;
             _meUserRepository = meUserRepository;
         }
 
@@ -33,13 +34,17 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetFlags()
         {
-            var client = new HttpClient();
-            var request = new HttpRequestMessage(HttpMethod.Get, "https://restcountries.com/v3.1/all?fields=name,flags,idd");
-            var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            try
+            {
+                var flags = await _studentsRepository.GetCountriesCodesAsync();
+                return Ok(new ApiResponse(true, "Flags retrieved successfully.", flags, ""));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in GetFlags: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(false, "An error occurred while retrieving flags.", null, ex.Message));
+            }
 
-            var Result = await response.Content.ReadAsStringAsync();
-            return Ok(Result);
         }
 
         [HttpGet("GetRate")]

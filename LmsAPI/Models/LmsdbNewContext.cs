@@ -19,6 +19,8 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<TblCollegeGroupMap> TblCollegeGroupMaps { get; set; }
 
+    public virtual DbSet<TblCountriesCode> TblCountriesCodes { get; set; }
+
     public virtual DbSet<TblCountriesMaster> TblCountriesMasters { get; set; }
 
     public virtual DbSet<TblDegreeMaster> TblDegreeMasters { get; set; }
@@ -116,6 +118,27 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.EnterOn)
                 .HasColumnType("datetime")
                 .HasColumnName("enter_on");
+        });
+
+        modelBuilder.Entity<TblCountriesCode>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Tbl_Coun__3213E83F174E044D");
+
+            entity.ToTable("Tbl_CountriesCode");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CCode)
+                .HasMaxLength(5)
+                .IsUnicode(false)
+                .HasColumnName("c_code");
+            entity.Property(e => e.CName)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("c_name");
+            entity.Property(e => e.DialCode)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("dial_code");
         });
 
         modelBuilder.Entity<TblCountriesMaster>(entity =>
