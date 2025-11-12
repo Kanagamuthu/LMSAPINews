@@ -231,11 +231,28 @@ app.Use(async (context, next) =>
         return;
     }
 
+    //check db connection
+    //var dbContext = context.RequestServices.GetRequiredService<LmsdbNewContext>();
+    //if (!await dbContext.Database.CanConnectAsync())
+    //{
+    //    var dbcon=new ApiResponse
+    //    {
+    //        Success = false,
+    //        Message = "Database connection error",
+    //        Data = null,
+    //        ErrorCode = "503"
+    //    };
+       
+    //   await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(dbcon));
+    //    return;
+    //}
+
     await next();
 });
 
 app.UseMiddleware<EncryptionMiddleware>();
 app.UseMiddleware<TrialPeriodMiddleware>();
+app.UseMiddleware<DatabaseConnectionMiddleware>();
 
 // ✅ Enable Rate Limiting globally
 app.UseRateLimiter();
