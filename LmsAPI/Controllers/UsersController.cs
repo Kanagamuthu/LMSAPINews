@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
+using static System.Net.WebRequestMethods;
 
 namespace LmsAPI.Controllers
 {
@@ -43,7 +45,8 @@ namespace LmsAPI.Controllers
         [HttpGet("Student-login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> GetStudentInfo(string email)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetStudentInfo(string email,string device_mac)
         {
             try
             {
@@ -89,15 +92,52 @@ namespace LmsAPI.Controllers
         [HttpPost("RegisterStudent")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RegisterStudent([FromBody] StudentRegisterDto studentDto)
         {
             var validationResult = await _validator.ValidateAsync(studentDto);
             if (!validationResult.IsValid)
                 return Ok(new ApiResponse { Success = false, Message = string.Join(",", validationResult.Errors.Select(e => e.ErrorMessage)), ErrorCode = "400" });
-
             var existing = await _studentsRepository.GetStudentByEmailAsync(studentDto.EmailId);
-
-            if (existing != null) return Ok(new ApiResponse { Success = false, Message = "Email already registered", ErrorCode = "400" });
+            if (existing != null && existing?.ActiveStatus==1) return Ok(new ApiResponse { Success = true, Message = "Email already registered", ErrorCode ="" });
+            else if (existing!=null && existing?.ActiveStatus==0)
+            {
+                //update user with new details
+                existing.Username = studentDto.Username;
+                existing.UserFirstName = studentDto.Username;
+                existing.Mobile = studentDto.Mobile;
+                existing.PrimaryMac = studentDto.DeviceMacId;
+                existing.CountryCode = studentDto.CountryCode;
+                await  _studentsRepository.UpdateStudentAsync(existing);
+                // 1) Optionally delete OTP
+                await _studentsRepository.DeleteOtpAsync((int)existing.StudentUserId);
+                //create otp
+                var _againotp = GenOPT(6);
+                var otpRecord = new TblUserRandomPass
+                {
+                    UserRandomId = 0,
+                    UserId = (int)existing.StudentUserId,
+                    VerificationCode = _againotp,
+                    GeneratedTime = DateTime.Now,
+                    ActionType = 1,
+                    UserType = 2,
+                };
+                //user info in session
+                SetStudentSession(existing);
+                bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+                //validate db otp save or not
+                if (is_saved == false)
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", ErrorCode = "500" });
+                }
+                else
+                {
+                    //send email
+                    await _emailService.SendEmailAsync(existing.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                    // TODO: send OTP via email (using a mail service)
+                    return Ok(new ApiResponse { Success = true, Message = "OTP again sent to your email", Data = _againotp });
+                }
+            }
             else
             {
                 var student = new TblStudentUserMaster
@@ -113,9 +153,7 @@ namespace LmsAPI.Controllers
                 };
                 //user info in session
                 SetStudentSession(student);
-
                 await _studentsRepository.AddStudentAsync(student);
-                //var otp = new Random().Next(100000, 999999).ToString();
                 // Generate OTP
                 var otp = GenOPT(6);
                 var otpRecord = new TblUserRandomPass
@@ -127,11 +165,17 @@ namespace LmsAPI.Controllers
                     ActionType = 1, // 1 for registration
                     UserType = 2, // 2 for student
                 };
-                await _studentsRepository.SaveOtpAsync(otpRecord);
-                //send email
-                await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {otp}");
-                // TODO: send OTP via email (using a mail service)
-                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = otp }); // return OTP only for testing
+                bool is_saved= await _studentsRepository.SaveOtpAsync(otpRecord);
+                //validate db otp save or not
+                if (is_saved==false)
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", ErrorCode = "500" });
+                }
+                else
+                {
+                    await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {otp}");
+                    return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = otp });
+                }   
             }
         }
 
@@ -146,7 +190,7 @@ namespace LmsAPI.Controllers
         {
             const string errorCode = "400";
 
-            // 1️⃣ Validate input
+            // 1️) Validate input
             if (otpDto == null || string.IsNullOrEmpty(otpDto.EmailId) || string.IsNullOrEmpty(otpDto.Otp))
                 return Ok(new ApiResponse(false, "Email and OTP are required.", null, errorCode));
 
@@ -154,30 +198,26 @@ namespace LmsAPI.Controllers
             if (!emailValidation.IsValid)
                 return Ok(new ApiResponse(false, string.Join(", ", emailValidation.Errors.Select(e => e.ErrorMessage)), null, errorCode));
 
-            // 2️⃣ Get student
+            // 2️) Get student
             var student = await _studentsRepository.GetStudentByEmailAsync(otpDto.EmailId);
             if (student == null)
                 return Ok(new ApiResponse(false, "Student not found.", null, errorCode));
 
-            // 3️⃣ Get latest OTP
+            // 3️) Get latest OTP
             var otpRecord = await _studentsRepository.GetLatestOtpAsync((int)student.StudentUserId, 1, 2);
             if (otpRecord == null || otpRecord.VerificationCode != otpDto.Otp)
                 return Ok(new ApiResponse(false, "Enter valid OTP", null, errorCode));
 
             if (otpRecord.GeneratedTime.AddMinutes(10) < DateTime.Now)
                 return Ok(new ApiResponse(false, "OTP has expired", null, errorCode));
-
-            // 4️⃣ Activate student
+            // 4️) Activate student
             student.ActiveStatus = 1;
             student.Istrail = true;
             student.AccActiveOn = DateTime.Now;
-
             var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
             student.Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
-
             await _studentsRepository.UpdateStudentAsync(student);
-
-            // 5️⃣ Optionally delete OTP
+            // 5️) Optionally delete OTP
             await _studentsRepository.DeleteOtpAsync(otpRecord.UserId);
 
             return Ok(new ApiResponse(true, "Account activated successfully.", student));
@@ -413,6 +453,9 @@ namespace LmsAPI.Controllers
 
 
         [HttpPost("RefreshToken")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RefreshToken([FromBody] TokenRequest model)
         {
             if(string.IsNullOrEmpty(model.AccessToken))
@@ -433,6 +476,29 @@ namespace LmsAPI.Controllers
             await _studentsRepository.UpdateStudentAsync(student);
             return Ok(new ApiResponse { Success = true, Message = "Token refreshed successfully", Data = new { AccessToken = base64Encoded } });
         }
+
+        #region validate email id, device id wether same device or not
+        [HttpPost("Validate-MultiDevice")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ValidateMultiDevice([FromBody] ValidMailDeviceDto request)
+        {
+            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.DeviceId))
+            {
+                return BadRequest(new ApiResponse(false, "Email and Device MAC are required.", null, "400"));
+            }
+            bool issame_device = await _studentsRepository.ValidDeviceAsync(request.Email, request.DeviceId);
+            if (issame_device==false)
+            {
+                return Ok(new ApiResponse(true,"This is diffrent device", new { IsSameDevice = false }));
+            }
+            else
+            {
+                return Ok(new ApiResponse(true, "Device validated successfully.", new { IsSameDevice = true }));
+            }
+        }
+        #endregion
 
     }
 }

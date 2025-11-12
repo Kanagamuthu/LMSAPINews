@@ -40,18 +40,29 @@ namespace LMSAPI.Repository
             }
         }
         #region OTP function
-        public async Task SaveOtpAsync(TblUserRandomPass otpRecord)
+        public async Task<bool> SaveOtpAsync(TblUserRandomPass otpRecord)
         {
             try
             {
                 await _context.TblUserRandomPasses.AddAsync(otpRecord);
-                await _context.SaveChangesAsync();
+                int result = await _context.SaveChangesAsync();
+                return result > 0;
             }
             catch (Exception ex)
             {
-                string message = ex.Message;
-                throw;
+                Console.WriteLine($"Error saving OTP: {ex.Message}");
+                return false;
             }
+            //try
+            //{
+            //    await _context.TblUserRandomPasses.AddAsync(otpRecord);
+            //    await _context.SaveChangesAsync();
+            //}
+            //catch (Exception ex)
+            //{
+            //    string message = ex.Message;
+            //    throw;
+            //}
         }
         #endregion
         public async Task<int> GetTrialPeriodDaysAsync()
@@ -167,7 +178,6 @@ namespace LMSAPI.Repository
         }
 
         #region get country
-
         public async Task<List<TblCountriesCode>> GetCountriesCodesAsync()
         {
             try
@@ -182,5 +192,18 @@ namespace LMSAPI.Repository
         }
 
         #endregion
+        public async Task<bool> ValidDeviceAsync(string email, string deviceMac)
+        {
+            try
+            {
+                return await _context.TblStudentUserMasters.AnyAsync(s => s.EmailId == email && s.PrimaryMac == deviceMac);
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+
+            }
+        }
     }
 }

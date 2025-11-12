@@ -9,8 +9,8 @@ namespace LMSAPI.Helpers
         {
             RuleFor(x => x.Username)
                 .NotEmpty().WithMessage("Full name is required.")
-                .Length(3, 100).WithMessage("Full name must be between 3 and 100 characters.")
-                .Matches(@"^[a-zA-Z\s]+$").WithMessage("Full name must contain only letters.");
+                .Length(3, 100).WithMessage("Full name must be between 3 and 100 characters.");
+                //.Matches(@"^[a-zA-Z\s]+$").WithMessage("Full name must contain only letters.");
 
             RuleFor(x => x.EmailId)
                .NotEmpty().WithMessage("Email is required.")

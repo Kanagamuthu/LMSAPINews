@@ -6,17 +6,15 @@ namespace LMSAPI.Repository
     {
         Task<TblStudentUserMaster?> GetStudentByEmailAsync(string email);
         Task AddStudentAsync(TblStudentUserMaster student);
-        Task SaveOtpAsync(TblUserRandomPass otpRecord);
+        Task<bool> SaveOtpAsync(TblUserRandomPass otpRecord);
         //GEt GetLatestOtpAsync
         Task<TblUserRandomPass?> GetLatestOtpAsync(int userId, int actionType, int userType);
         //update student status
         Task<bool> UpdateStudentAsync(TblStudentUserMaster student);
         //delete otp
         Task<bool> DeleteOtpAsync(int userId);
-
         //get trail period days
         Task<int> GetTrialPeriodDaysAsync();
-
         Task<bool> GetStudentTokenAsync(string token);
 
         Task TicketCreateAsync(TblSupportTicket request);
@@ -27,5 +25,7 @@ namespace LMSAPI.Repository
 
         Task<List<TblCountriesCode>> GetCountriesCodesAsync();
 
+        //multi device logout
+        Task<bool> ValidDeviceAsync(string email, string device_mac);
     }
 }
