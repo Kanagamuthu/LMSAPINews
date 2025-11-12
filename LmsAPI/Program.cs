@@ -159,7 +159,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
+#endregion
 
 var app = builder.Build(); 
 app.Use(async (context, next) =>
@@ -233,8 +233,6 @@ app.Use(async (context, next) =>
 
     await next();
 });
-#endregion
-
 
 app.UseMiddleware<EncryptionMiddleware>();
 app.UseMiddleware<TrialPeriodMiddleware>();

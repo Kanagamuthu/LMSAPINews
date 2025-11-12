@@ -222,7 +222,7 @@ namespace LMSAPI.Repository
             try
             {
                 var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
-               
+
                 // update the department
                 student.DepartmentId = studentTradeDepartmentDTO.DepartmentId;
                 student.Collegename = studentTradeDepartmentDTO.Collegename;
@@ -317,7 +317,7 @@ namespace LMSAPI.Repository
         public async Task<List<UserSubscriptionDetailDto>> GetUserSubscribeMasterAsync()
         {
             var Query = from u in _context.TblUserSubscribeMasters
-                        //join h in _context.TblUserSubjectActivationHistories on u.UserSubscribeMasterId equals h.TusmId
+                            //join h in _context.TblUserSubjectActivationHistories on u.UserSubscribeMasterId equals h.TusmId
                         orderby u.UserSubscribeMasterId descending
                         select new UserSubscriptionDetailDto
                         {
@@ -451,7 +451,7 @@ namespace LMSAPI.Repository
                     PageCount = pageCount,
                     Bookmarks = bookmark,
                     Downloads = download,
-                    Purchase= getbook
+                    Purchase = getbook
                 };
             }
             catch (Exception ex)
@@ -487,9 +487,9 @@ namespace LMSAPI.Repository
                                   pd.PackageId,
                                   pm.SellingPrice,
                                   sm
-                              }).ToListAsync(); 
+                              }).ToListAsync();
 
-           
+
             var result = data.Select(x => new PackageDetailsDTO
             {
                 DepartmentSubjectMappingId = x.DepartmentSubjectMappingId,
@@ -601,21 +601,21 @@ namespace LMSAPI.Repository
         }
 
 
-       public async Task<List<PaymentPackageDTO>> GetpaymentPackage(int packageId)
+        public async Task<List<PaymentPackageDTO>> GetpaymentPackage(int packageId)
         {
-            var result =await (from pd in _context.TblPackageDetails
-                         join tpm in _context.TblPackageMasters on pd.PackageId equals tpm.PackageId
-                         join dsm in _context.TblDepartmentSubjectMappings on pd.DepartmentSubjectMappingId equals dsm.DepartmentSubjectMappingId
-                         join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId
-                         where tpm.PackageId == packageId
-                         group new { pd, dsm, sm } by tpm into g
-                         select new PaymentPackageDTO
-                         {
-                             packagemaster = g.Key,
-                             packagedetails = g.Select(x => x.pd).ToList(),
-                             departmentsubjectmapping = g.Select(x => x.dsm).ToList(),
-                             subjectmaster = g.Select(x => x.sm).ToList()
-                         }).ToListAsync();
+            var result = await (from pd in _context.TblPackageDetails
+                                join tpm in _context.TblPackageMasters on pd.PackageId equals tpm.PackageId
+                                join dsm in _context.TblDepartmentSubjectMappings on pd.DepartmentSubjectMappingId equals dsm.DepartmentSubjectMappingId
+                                join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId
+                                where tpm.PackageId == packageId
+                                group new { pd, dsm, sm } by tpm into g
+                                select new PaymentPackageDTO
+                                {
+                                    packagemaster = g.Key,
+                                    packagedetails = g.Select(x => x.pd).ToList(),
+                                    departmentsubjectmapping = g.Select(x => x.dsm).ToList(),
+                                    subjectmaster = g.Select(x => x.sm).ToList()
+                                }).ToListAsync();
 
             return result;
         }
@@ -644,7 +644,6 @@ namespace LMSAPI.Repository
 
             return trialDays;
         }
-
         public async Task<GetRegisterDropdwonList> GetRegisterDropdwonList()
         {
             var getDepartmentList = await _context.TblDepartmentMasters.Where(d => d.IsActive == 1).ToListAsync();
@@ -654,6 +653,29 @@ namespace LMSAPI.Repository
                 DepartmentList = getDepartmentList,
                 DegreeList = getDegreeList
             };
+        }
+
+        public async Task<List<EducationListDto>> GetEducationTypeListAsync()
+        {
+            try
+            {
+                var educationTypes = await _context.TblEducationTypes.Where(et => et.IsActive == 1).ToListAsync();
+                var degreesDto = new List<EducationListDto>();
+                foreach (var item in educationTypes)
+                {
+                    degreesDto.Add(new EducationListDto
+                    {
+                        id = item.EduId,
+                        degree_name = item.EduDes
+                    });
+                }
+                return degreesDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving education type list.");
+                throw;
+            }
         }
     }
 }

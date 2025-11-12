@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using LmsAPI.Models;
+﻿using LmsAPI.Models;
 using LMSAPI.DTO;
 using LMSAPI.Helpers;
 using LMSAPI.Models;
@@ -674,5 +673,18 @@ namespace LMSAPI.Controllers
             var registerList = await _dashboardRepository.GetRegisterDropdwonList();
             return Ok(new ApiResponse(true, "Register list fetched successfully.", registerList, ""));
         }
+
+        #region get education list
+        [HttpGet("GetEducationTypeList")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetEducationTypeList()
+        {
+            var educationTypeList = await _dashboardRepository.GetEducationTypeListAsync();
+            return Ok(new ApiResponse(true, "Education type list fetched successfully.", educationTypeList, ""));
+        }
+        #endregion
     }
 }
