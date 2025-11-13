@@ -49,7 +49,7 @@ namespace LMSAPI.Repository
 
         Task<DateTime?> GetActiveOnDateByUserId(long userId);
         Task<int> GetTrialPeriodDaysAsync();
-        Task<GetRegisterDropdwonList> GetRegisterDropdwonList();
+        Task<List<DepartmentMasterDto>> GetRegisterDropdwonList();
 
         Task <List<EducationListDto>> GetEducationTypeListAsync();
     }

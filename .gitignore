@@ -5,3 +5,4 @@
 /LmsAPI/Models/LMSDbContext.cs
 /LmsAPI/Models/LMSDbContext.cs
 /LmsAPI/Repository
+/LmsAPI/DTO/GetRegisterDropdwonList.cs

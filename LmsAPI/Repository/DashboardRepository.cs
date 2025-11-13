@@ -644,15 +644,15 @@ namespace LMSAPI.Repository
 
             return trialDays;
         }
-        public async Task<GetRegisterDropdwonList> GetRegisterDropdwonList()
+        public async Task<List<DepartmentMasterDto>> GetRegisterDropdwonList()
         {
             var getDepartmentList = await _context.TblDepartmentMasters.Where(d => d.IsActive == 1).ToListAsync();
-            var getDegreeList = await _context.TblDegreeMasters.Where(d => d.IsActive == 1).ToListAsync();
-            return new GetRegisterDropdwonList
+           
+            return getDepartmentList.Select(item => new DepartmentMasterDto
             {
-                DepartmentList = getDepartmentList,
-                DegreeList = getDegreeList
-            };
+                Id = item.DepartmentId,
+                Department_name = item.DepartmentName
+            }).ToList();
         }
 
         public async Task<List<EducationListDto>> GetEducationTypeListAsync()

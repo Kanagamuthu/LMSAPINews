@@ -480,8 +480,9 @@ namespace LmsAPI.Controllers
                 VerificationCode = otp,
                 GeneratedTime = DateTime.Now
             };
-            await _studentsRepository.RegenerateOtpAsync(otpRecord);
 
+            await _studentsRepository.DeleteOtpAsync((int)student.StudentUserId);
+            await _studentsRepository.RegenerateOtpAsync(otpRecord);
             // Send email
             await _emailService.SendEmailAsync(student.EmailId, "Your New OTP Code", $"Your new OTP code is: {otp}");
 

@@ -667,11 +667,11 @@ namespace LMSAPI.Controllers
         }
 
 
-        [HttpGet("GetRegisterDropdwonList")]
-        public async Task<IActionResult> GetRegisterDropdwonList()
+        [HttpGet("GetDepartmentMaster")]
+        public async Task<IActionResult> GetDepartmentMaster()
         {
             var registerList = await _dashboardRepository.GetRegisterDropdwonList();
-            return Ok(new ApiResponse(true, "Register list fetched successfully.", registerList, ""));
+            return Ok(new ApiResponse(true, "Department list fetched successfully.", registerList, ""));
         }
 
         #region get education list
