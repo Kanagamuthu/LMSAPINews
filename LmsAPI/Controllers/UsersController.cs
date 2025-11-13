@@ -54,8 +54,10 @@ namespace LmsAPI.Controllers
             if (!validationResult.IsValid)
                 return Ok(new ApiResponse { Success = false, Message = string.Join(",", validationResult.Errors.Select(e => e.ErrorMessage)), ErrorCode = "400" });
             var existing = await _studentsRepository.GetStudentByEmailAsync(studentDto.EmailId);
-            if (existing != null && existing?.ActiveStatus==1) return Ok(new ApiResponse { Success = true, Message = "Email already registered", ErrorCode ="" });
-            else if (existing!=null && existing?.ActiveStatus==0)
+
+
+            if (existing != null && existing?.ActiveStatus == 1) return Ok(new ApiResponse { Success = true, Message = "Email already registered", ErrorCode = "" });
+            else if (existing != null && existing?.ActiveStatus == 0)
             {
                 //update user with new details
                 existing.Username = studentDto.Username;
@@ -63,35 +65,9 @@ namespace LmsAPI.Controllers
                 existing.Mobile = studentDto.Mobile;
                 existing.PrimaryMac = studentDto.DeviceMacId;
                 existing.CountryCode = studentDto.CountryCode;
-                await  _studentsRepository.UpdateStudentAsync(existing);
+                await _studentsRepository.UpdateStudentAsync(existing);
                 // 1) Optionally delete OTP
                 await _studentsRepository.DeleteOtpAsync((int)existing.StudentUserId);
-                //create otp
-                var _againotp = GenOPT(6);
-                var otpRecord = new TblUserRandomPass
-                {
-                    UserRandomId = 0,
-                    UserId = (int)existing.StudentUserId,
-                    VerificationCode = _againotp,
-                    GeneratedTime = DateTime.Now,
-                    ActionType = 1,
-                    UserType = 2,
-                };
-                //user info in session
-                SetStudentSession(existing);
-                bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
-                //validate db otp save or not
-                if (is_saved == false)
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", ErrorCode = "500" });
-                }
-                else
-                {
-                    //send email
-                    await _emailService.SendEmailAsync(existing.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
-                    // TODO: send OTP via email (using a mail service)
-                    return Ok(new ApiResponse { Success = true, Message = "OTP again sent to your email", Data = _againotp });
-                }
             }
             else
             {
@@ -107,30 +83,34 @@ namespace LmsAPI.Controllers
                     ActiveStatus = 0, // inactive until email verification
                 };
                 //user info in session
-                SetStudentSession(student);
+                //SetStudentSession(student);
                 await _studentsRepository.AddStudentAsync(student);
-                // Generate OTP
-                var otp = GenOPT(6);
-                var otpRecord = new TblUserRandomPass
-                {
-                    UserRandomId = 0,
-                    UserId = (int)student.StudentUserId,
-                    VerificationCode = otp,
-                    GeneratedTime = DateTime.Now,
-                    ActionType = 1, // 1 for registration
-                    UserType = 2, // 2 for student
-                };
-                bool is_saved= await _studentsRepository.SaveOtpAsync(otpRecord);
-                //validate db otp save or not
-                if (is_saved==false)
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", ErrorCode = "500" });
-                }
-                else
-                {
-                    await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {otp}");
-                    return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = otp });
-                }   
+            }
+
+            var _againotp = GenOPT(6);
+            var otpRecord = new TblUserRandomPass
+            {
+                UserRandomId = 0,
+                UserId = (int)existing.StudentUserId,
+                VerificationCode = _againotp,
+                GeneratedTime = DateTime.Now,
+                ActionType = 1,
+                UserType = 2,
+            };
+            //user info in session
+            //SetStudentSession(existing);
+            bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+            //validate db otp save or not
+            if (is_saved == false)
+            {
+                return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", ErrorCode = "500" });
+            }
+            else
+            {
+                //send email
+                await _emailService.SendEmailAsync(existing.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                // TODO: send OTP via email (using a mail service)
+                return Ok(new ApiResponse { Success = true, Message = "OTP again sent to your email", Data = _againotp });
             }
         }
 
@@ -198,7 +178,7 @@ namespace LmsAPI.Controllers
                     }
                 }
             }
-  
+
             else if ((student == null || student != null) || student?.ActiveStatus == 0)
             {
                 _logger.LogInfo($"Student not found: {logInDto.EmailId}");
@@ -515,7 +495,7 @@ namespace LmsAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RefreshToken([FromBody] TokenRequest model)
         {
-            if(string.IsNullOrEmpty(model.AccessToken))
+            if (string.IsNullOrEmpty(model.AccessToken))
                 return Ok(new ApiResponse(false, "Token is required", null, "400"));
 
             string tokendecoded = Encoding.UTF8.GetString(Convert.FromBase64String(model.AccessToken));
@@ -546,9 +526,9 @@ namespace LmsAPI.Controllers
                 return BadRequest(new ApiResponse(false, "Email and Device MAC are required.", null, "400"));
             }
             bool issame_device = await _studentsRepository.ValidDeviceAsync(request.Email, request.DeviceId);
-            if (issame_device==false)
+            if (issame_device == false)
             {
-                return Ok(new ApiResponse(true,"This is diffrent device", new { IsSameDevice = false }));
+                return Ok(new ApiResponse(true, "This is diffrent device", new { IsSameDevice = false }));
             }
             else
             {
