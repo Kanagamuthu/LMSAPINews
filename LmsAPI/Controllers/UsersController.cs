@@ -56,7 +56,7 @@ namespace LmsAPI.Controllers
             var existing = await _studentsRepository.GetStudentByEmailAsync(studentDto.EmailId);
 
 
-            if (existing != null && existing?.ActiveStatus == 1) return Ok(new ApiResponse { Success = true, Message = "Email already registered", ErrorCode = "" });
+            if (existing != null && existing?.ActiveStatus == 1) return Ok(new ApiResponse { Success = false, Message = "Email already registered", ErrorCode = "" });
             else if (existing != null && existing?.ActiveStatus == 0)
             {
                 //update user with new details
@@ -85,6 +85,7 @@ namespace LmsAPI.Controllers
                 //user info in session
                 //SetStudentSession(student);
                 await _studentsRepository.AddStudentAsync(student);
+                existing = await _studentsRepository.GetStudentByEmailAsync(studentDto.EmailId);
             }
 
             var _againotp = GenOPT(6);
