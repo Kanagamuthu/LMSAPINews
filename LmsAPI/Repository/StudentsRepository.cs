@@ -129,7 +129,6 @@ namespace LMSAPI.Repository
                 return false;
             }
         }
-
         public async Task<bool> GetStudentTokenAsync(string token)
         {
             try
@@ -203,6 +202,19 @@ namespace LMSAPI.Repository
                 string message = ex.Message;
                 throw;
 
+            }
+        }
+
+        public async Task<bool> ValidateOtpAsync(int userId, string otp)
+        {
+            try
+            {
+                return await _context.TblUserRandomPasses.AnyAsync(o => o.UserId == userId && o.VerificationCode == otp);
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
             }
         }
     }

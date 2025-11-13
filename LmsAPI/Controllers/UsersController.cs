@@ -3,8 +3,10 @@ using LMSAPI.DTO;
 using LMSAPI.Helpers;
 using LMSAPI.Models;
 using LMSAPI.Repository;
+using log4net.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
@@ -40,53 +42,6 @@ namespace LmsAPI.Controllers
             _cache = cache;
             _context = context;
         }
-
-        #region student login
-        [HttpGet("Student-login")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetStudentInfo(string email,string device_mac)
-        {
-            try
-            {
-                // Validate the email format
-                var validationResult = await _emailValidator.ValidateAsync(email);
-                if (!validationResult.IsValid)
-                {
-                    return Ok(new { Message = "Invalid email format.", Errors = validationResult.Errors.Select(e => e.ErrorMessage) });
-                }
-
-                var student = await _studentsRepository.GetStudentByEmailAsync(email);
-                if (student == null)
-                {
-                    return NotFound(new { Message = "Student not found." });
-                }
-                else
-                {
-                    var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
-                    string base64Encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
-                    student.Token = base64Encoded;
-                    await _studentsRepository.UpdateStudentAsync(student);
-                    _logger.LogInfo($"Student found: {student.EmailId}, Status: {student.ActiveStatus}");
-                    SetStudentSession(student);
-
-                    return Ok(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "Email found. Please verify your email.",
-                        Data = new
-                        { student.StudentUserId, student.Username, student.EmailId, student.Mobile, student.ActiveStatus, Token = base64Encoded }
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the exception (ex) here as needed
-                return StatusCode(500, new { Message = "An error occurred while processing your request.", Details = ex.Message });
-            }
-        }
-        #endregion
 
         #region student register
         [HttpPost("RegisterStudent")]
@@ -179,6 +134,109 @@ namespace LmsAPI.Controllers
             }
         }
 
+        #endregion
+
+        #region student login
+        [HttpPost("Student-login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetStudentInfo(StudentLoginDto logInDto)
+        {
+            //check mail, decice mac null
+            if (string.IsNullOrEmpty(logInDto.EmailId) || string.IsNullOrEmpty(logInDto.DeviceMac))
+            {
+                return BadRequest(new ApiResponse(false, "Email and Device MAC ID are required.", null, "400"));
+            }
+            //validate email format
+            var emailValidation = await _emailValidator.ValidateAsync(logInDto.EmailId);
+            if (!emailValidation.IsValid)
+            {
+                return Ok(new ApiResponse(false, "Invalid email format.", emailValidation.Errors.Select(e => e.ErrorMessage), "400"));
+            }
+            var student = await _studentsRepository.GetStudentByEmailAsync(logInDto.EmailId);
+            //check student info is active or incative
+            if (student != null && student.ActiveStatus == 1)
+            {
+                //here cheack same device or different device
+                var isSameDevice = await _studentsRepository.ValidDeviceAsync(logInDto.EmailId, logInDto.DeviceMac);
+                if (!isSameDevice)
+                {
+                    return Ok(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Login attempt from a different device. do you want login?",
+                        Data = null,
+                        ErrorCode = "403"
+                    });
+                }
+                else
+                {
+                    // 1) Optionally delete OTP
+                    await _studentsRepository.DeleteOtpAsync((int)student.StudentUserId);
+                    //create otp
+                    var _againotp = GenOPT(6);
+                    var otpRecord = new TblUserRandomPass
+                    {
+                        UserRandomId = 0,
+                        UserId = (int)student.StudentUserId,
+                        VerificationCode = _againotp,
+                        GeneratedTime = DateTime.Now,
+                        ActionType = 1,
+                        UserType = 2,
+                    };
+                    bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+                    //validate db otp save or not
+                    if (is_saved == false)
+                    {
+                        return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", ErrorCode = "500" });
+                    }
+                    else
+                    {
+                        await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                        return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp });
+                    }
+                }
+            }
+  
+            else if ((student == null || student != null) || student?.ActiveStatus == 0)
+            {
+                _logger.LogInfo($"Student not found: {logInDto.EmailId}");
+                return Ok(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Email not registered. Please register first.",
+                    Data = null,
+                    ErrorCode = "404"
+                });
+            }
+            //check mi-match email and device mac id
+            else
+            {
+                var isSameDevice = await _studentsRepository.ValidDeviceAsync(logInDto.EmailId, logInDto.DeviceMac);
+                if (!isSameDevice)
+                {
+                    return Ok(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Login attempt from a different device. do you want login?",
+                        Data = null,
+                        ErrorCode = "403"
+                    });
+                }
+                else
+                {
+                    return Ok(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Email not registered. Please register first.",
+                        Data = null,
+                        ErrorCode = "404"
+                    });
+                }
+
+            }
+        }
         #endregion
 
         #region Validate OTP
@@ -451,7 +509,6 @@ namespace LmsAPI.Controllers
 
         #endregion
 
-
         [HttpPost("RefreshToken")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -500,5 +557,81 @@ namespace LmsAPI.Controllers
         }
         #endregion
 
+        #region login
+        [HttpPost("Enter-OTP")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UserLogin(OTPVerificationDto oTPVerificationDto)
+        {
+            if (string.IsNullOrEmpty(oTPVerificationDto.EmailId) || string.IsNullOrEmpty(oTPVerificationDto.deviceMacId) || string.IsNullOrEmpty(oTPVerificationDto.Otp))
+            {
+                return BadRequest(new ApiResponse(false, "Email, Device MAC, and OTP are required.", null, "400"));
+            }
+            var student = await _studentsRepository.GetStudentByEmailAsync(oTPVerificationDto.EmailId);
+            if (student == null || student.ActiveStatus != 1)
+            {
+                return Ok(new ApiResponse(false, "Invalid student or inactive account.", null, "401"));
+            }
+            var isValidOtp = await _studentsRepository.ValidateOtpAsync((int)student.StudentUserId, oTPVerificationDto.Otp);
+            if (!isValidOtp)
+            {
+                return Ok(new ApiResponse(false, "Invalid OTP. Please try again.", null, "402"));
+            }
+            //update mac-id
+            student.PrimaryMac = oTPVerificationDto.deviceMacId;
+            bool isUpdated = await _studentsRepository.UpdateStudentAsync(student);
+            if (!isUpdated)
+            {
+                return Ok(new ApiResponse(false, "Failed to update device information.", null, "500"));
+            }
+            // If we reach here, the login is successful
+            SetStudentSession(student);
+            return Ok(new ApiResponse(true, "Login successful.", null));
+        }
+        #endregion
+
+        #region otp generation
+        [HttpPost("Generate-OTP")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GenerateOtp(GenerateOtpDto generateOtp)
+        {
+            if (string.IsNullOrEmpty(generateOtp.EmailId) || string.IsNullOrEmpty(generateOtp.deviceMacId))
+            {
+                return BadRequest(new ApiResponse(false, "Email, Device MAC are required.", null, "400"));
+            }
+            var student = await _studentsRepository.GetStudentByEmailAsync(generateOtp.EmailId);
+            if (student == null || student.ActiveStatus != 1)
+            {
+                return Ok(new ApiResponse(false, "Invalid student or inactive account.", null, "401"));
+            }
+            // 1) Optionally delete OTP
+            await _studentsRepository.DeleteOtpAsync((int)student.StudentUserId);
+            //create otp
+            var _againotp = GenOPT(6);
+            var otpRecord = new TblUserRandomPass
+            {
+                UserRandomId = 0,
+                UserId = (int)student.StudentUserId,
+                VerificationCode = _againotp,
+                GeneratedTime = DateTime.Now,
+                ActionType = 1,
+                UserType = 2,
+            };
+            bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+            //validate db otp save or not
+            if (is_saved == false)
+            {
+                return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", ErrorCode = "500" });
+            }
+            else
+            {
+                await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp });
+            }
+        }
+        #endregion
     }
 }

@@ -27,5 +27,8 @@ namespace LMSAPI.Repository
 
         //multi device logout
         Task<bool> ValidDeviceAsync(string email, string device_mac);
+
+        //validate OTP for student
+        Task<bool> ValidateOtpAsync(int userId, string otp);
     }
 }
