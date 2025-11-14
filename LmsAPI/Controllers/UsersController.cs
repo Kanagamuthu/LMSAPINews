@@ -616,12 +616,12 @@ namespace LmsAPI.Controllers
         {
             if (string.IsNullOrEmpty(generateOtp.EmailId) || string.IsNullOrEmpty(generateOtp.deviceMacId))
             {
-                return BadRequest(new ApiResponse(false, "Email, Device MAC are required.", null, "400"));
+                return BadRequest(new ApiResponse(false, "Email, Device MAC are required.", data:"", "400"));
             }
             var student = await _studentsRepository.GetStudentByEmailAsync(generateOtp.EmailId);
             if (student == null || student.ActiveStatus != 1)
             {
-                return Ok(new ApiResponse(false, "Invalid student or inactive account.", null, "401"));
+                return Ok(new ApiResponse(false, "Invalid student or inactive account.", data:"", "401"));
             }
             // 1) Optionally delete OTP
             await _studentsRepository.DeleteOtpAsync((int)student.StudentUserId);
@@ -640,12 +640,12 @@ namespace LmsAPI.Controllers
             //validate db otp save or not
             if (is_saved == false)
             {
-                return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", ErrorCode = "500" });
+                return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", Data = "", ErrorCode = "500" });
             }
             else
             {
                 await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
-                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp });
+                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp, ErrorCode = "200" });
             }
         }
         #endregion

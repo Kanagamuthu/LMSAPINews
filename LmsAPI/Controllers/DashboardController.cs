@@ -88,19 +88,22 @@ namespace LMSAPI.Controllers
         {
             var errors = new List<string>
             {
-                string.IsNullOrWhiteSpace(obj.Collegename) ? "College name is required." : null,
-                (obj.EduType == null || obj.EduType <= 0) ? "Education type is required." : null,
-                (obj.DepartmentId == null || obj.DepartmentId <= 0) ? "Department is required." : null,
-                (obj.Batchyear == null || obj.Batchyear <= 0) ? "Batch year is required." : null
+                (obj.edutype == null || obj.edutype <= 0) ? "Education type is required." : null,
+                (obj.department_name == null || obj.department_name == null) ? "Department is required." : null,
+                (obj.department_name=="string") ? "Please enter valid department." : null,
+                (obj.batchyear == null || obj.batchyear ==null) ? "Batch year is required." : null,
+                (obj.batchyear=="string") ? "Please enter valid batch year." : null,
+                string.IsNullOrWhiteSpace(obj.collegename) ? "College name is required." : null,
+                (obj.collegename=="string") ? "Please enter valid college name." : null,
             };
 
             errors.RemoveAll(e => e == null);
 
             if (errors.Count > 0)
-                return Ok(new ApiResponse { Success = false, Message = string.Join(", ", errors), ErrorCode = "400" });
+                return Ok(new ApiResponse { Success = false, Message = string.Join(", ", errors),Data="",ErrorCode="400" });
             var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _dashboardRepository.PostRegisterStudentTradeDepartment(email, obj);
-            return Ok(new ApiResponse { Success = true, Message = "Education details added successfully.", Data = result });
+            return Ok(new ApiResponse { Success = true, Message = "Education details added successfully.", Data = result,ErrorCode="200" });
 
         }
 

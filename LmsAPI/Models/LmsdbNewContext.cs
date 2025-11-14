@@ -542,7 +542,10 @@ public partial class LmsdbNewContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("acc_active_on");
             entity.Property(e => e.ActiveStatus).HasColumnName("active_status");
-            entity.Property(e => e.Batchyear).HasColumnName("batchyear");
+            entity.Property(e => e.Batchyear)
+                .HasMaxLength(4)
+                .IsUnicode(false)
+                .HasColumnName("batchyear");
             entity.Property(e => e.Collegename)
                 .HasMaxLength(100)
                 .IsUnicode(false)

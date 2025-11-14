@@ -224,10 +224,10 @@ namespace LMSAPI.Repository
                 var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
 
                 // update the department
-                student.DepartmentId = studentTradeDepartmentDTO.DepartmentId;
-                student.Collegename = studentTradeDepartmentDTO.Collegename;
-                student.EduType = studentTradeDepartmentDTO.EduType;
-                student.Batchyear = studentTradeDepartmentDTO.Batchyear;
+                student.DepartmentName = studentTradeDepartmentDTO.department_name;
+                student.Collegename = studentTradeDepartmentDTO.collegename;
+                student.EduType = studentTradeDepartmentDTO.edutype;
+                student.Batchyear = studentTradeDepartmentDTO.batchyear;
                 //student.TradeId = studentTradeDepartmentDTO.TradeId;
 
                 // mark entity as modified and save
@@ -253,13 +253,22 @@ namespace LMSAPI.Repository
                 }
                 var subjects = await (from stu in _context.TblStudentUserMasters
                                       join sub in _context.TblSubjectMasters on stu.TradeId equals sub.TradeId
-                                      where stu.StudentUserId == student.StudentUserId && sub.TradeId == tradeID
+                                      where stu.StudentUserId == student.StudentUserId
                                       select new StudentTradeDepartmentDTO
                                       {
-                                          DepartmentId = stu.DepartmentId ?? 0,
-                                          TradeId = stu.TradeId ?? 0,
-                                          SubjectName = sub.SubjectName
+                                          edutype = stu.EduType,
+                                          department_name = stu.DepartmentName,
+                                          batchyear = stu.Batchyear,
+                                          collegename = stu.Collegename,
+                                          //SubjectName = sub.SubjectName
                                       }
+                                      //where stu.StudentUserId == student.StudentUserId && sub.TradeId == tradeID
+                                      //select new StudentTradeDepartmentDTO
+                                      //{
+                                      //    DepartmentId = stu.DepartmentId ?? 0,
+                                      //    TradeId = stu.TradeId ?? 0,
+                                      //    SubjectName = sub.SubjectName
+                                      //}
                                  ).ToListAsync();
 
                 return subjects;

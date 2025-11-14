@@ -61,10 +61,11 @@ builder.Services.AddCors(options =>
         policy =>
         {
             policy.WithOrigins("http://192.168.0.92", "http://localhost:5050", "http://localhost/LMSAPI", "http://10.0.2.2","null") // your Android emulator/device IP , localhost for testing
-           .AllowAnyHeader()
+           .AllowAnyOrigin()
            .AllowAnyMethod()
-           .AllowCredentials()
+           //.AllowCredentials()
            .AllowAnyHeader();
+
         });
 });
 #endregion

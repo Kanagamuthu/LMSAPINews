@@ -29,7 +29,7 @@ public partial class TblStudentUserMaster
 
     public string? DepartmentName { get; set; }
 
-    public int? Batchyear { get; set; }
+    public string? Batchyear { get; set; }
 
     public string? Country { get; set; }
 

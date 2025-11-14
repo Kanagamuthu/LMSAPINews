@@ -2,12 +2,12 @@
 {
     public class StudentTradeDepartmentDTO
     {
-        public int? EduType { get; set; }
-        public int? DepartmentId { get; set; }
-        public int? Batchyear { get; set; }
-        public string? Collegename { get; set; }
-        public string? SubjectName { get; set; }
-        public int? TradeId { get; set; }
-
+        public int? edutype { get; set; }
+        //public int? DepartmentId { get; set; }
+        public string? department_name { get; set; }
+        public string? batchyear { get; set; }
+        public string? collegename { get; set; }
+        //public string? SubjectName { get; set; }
+        //public int? TradeId { get; set; }
     }
 }
