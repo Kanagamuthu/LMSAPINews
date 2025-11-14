@@ -259,8 +259,41 @@ namespace LmsAPI.Controllers
             // 5️) Optionally delete OTP
             await _studentsRepository.DeleteOtpAsync(otpRecord.UserId);
 
-            //return Ok(new ApiResponse(true, "Account activated successfully.", student));
-            return Ok(new ApiResponse(true, "Account activated successfully.", null));
+            //validate student 
+            if (student!=null)
+            {
+                var result = new
+                {
+                    StudentUserId = student.StudentUserId.ToString(),
+                    UserFirstName = student.UserFirstName,
+                    Username = student.Username,
+                    EmailId = student.EmailId,
+                    Mobile = student.Mobile,
+                    ActiveStatus = student.ActiveStatus.ToString(),
+                    AccActiveOn = student.AccActiveOn,
+                    CreatedBy = student.CreatedBy?.ToString(),
+                    CreatedOn = student.CreatedOn,
+                    Collegename = student.Collegename,
+                    DepartmentId = student.DepartmentId?.ToString(),
+                    DepartmentName = student.DepartmentName,
+                    Batchyear = student.Batchyear?.ToString(),
+                    Country = student.Country,
+                    PrimaryImei = student.PrimaryImei,
+                    PrimaryMac = student.PrimaryMac,
+                    CountryCode = student.CountryCode,
+                    EduType = student.EduType?.ToString(),
+                    TradeId = student.TradeId?.ToString(),
+                    Token = student.Token,
+                    Istrail = student.Istrail
+                };
+                return Ok(new ApiResponse(true, "Account activated successfully.", data: result, errorCode: "200"));
+            }
+            else
+            {
+                return Ok(new ApiResponse(false, "Failed to activate account.", "", errorCode: "500"));
+            }
+
+
         }
 
         #endregion
