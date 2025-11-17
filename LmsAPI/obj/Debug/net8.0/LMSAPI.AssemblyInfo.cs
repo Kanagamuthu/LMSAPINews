@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LMSAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+24727c3ee07972de1383b27137274c878abf9312")]
 [assembly: System.Reflection.AssemblyProductAttribute("LMSAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LMSAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
