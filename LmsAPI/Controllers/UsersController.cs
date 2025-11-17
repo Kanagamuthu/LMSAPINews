@@ -231,24 +231,24 @@ namespace LmsAPI.Controllers
 
             // 1️) Validate input
             if (otpDto == null || string.IsNullOrEmpty(otpDto.EmailId) || string.IsNullOrEmpty(otpDto.Otp))
-                return Ok(new ApiResponse(false, "Email and OTP are required.", null, errorCode));
+                return Ok(new ApiResponse(false, "Email and OTP are required.", "", errorCode));
 
             var emailValidation = await _emailValidator.ValidateAsync(otpDto.EmailId);
             if (!emailValidation.IsValid)
-                return Ok(new ApiResponse(false, string.Join(", ", emailValidation.Errors.Select(e => e.ErrorMessage)), null, errorCode));
+                return Ok(new ApiResponse(false, string.Join(", ", emailValidation.Errors.Select(e => e.ErrorMessage)), "", errorCode));
 
             // 2️) Get student
             var student = await _studentsRepository.GetStudentByEmailAsync(otpDto.EmailId);
             if (student == null)
-                return Ok(new ApiResponse(false, "Student not found.", null, errorCode));
+                return Ok(new ApiResponse(false, "Student not found.", "", errorCode));
 
             // 3️) Get latest OTP
             var otpRecord = await _studentsRepository.GetLatestOtpAsync((int)student.StudentUserId, 1, 2);
             if (otpRecord == null || otpRecord.VerificationCode != otpDto.Otp)
-                return Ok(new ApiResponse(false, "Enter valid OTP", null, errorCode));
+                return Ok(new ApiResponse(false, "Enter valid OTP", "", errorCode));
 
             if (otpRecord.GeneratedTime.AddMinutes(10) < DateTime.Now)
-                return Ok(new ApiResponse(false, "OTP has expired", null, errorCode));
+                return Ok(new ApiResponse(false, "OTP has expired", "", errorCode));
             // 4️) Activate student
             student.ActiveStatus = 1;
             student.Istrail = true;
@@ -310,24 +310,24 @@ namespace LmsAPI.Controllers
                 var userEmail = HttpContext.Session.GetString("UserEmail");
                 if (string.IsNullOrEmpty(userEmail))
                 {
-                    return Unauthorized(new ApiResponse(false, "User not logged in.", null, StatusCodes.Status401Unauthorized.ToString()));
+                    return Unauthorized(new ApiResponse(false, "User not logged in.", "", StatusCodes.Status401Unauthorized.ToString()));
                 }
 
                 var student = await _studentsRepository.GetStudentByEmailAsync(userEmail);
                 if (student == null)
                 {
-                    return Ok(new ApiResponse(false, "Student not found.", null, StatusCodes.Status404NotFound.ToString()));
+                    return Ok(new ApiResponse(false, "Student not found.", "", StatusCodes.Status404NotFound.ToString()));
                 }
 
                 var trialDays = await _studentsRepository.GetTrialPeriodDaysAsync();
                 if (trialDays <= 0)
                 {
-                    return Ok(new ApiResponse(false, "Trial period not configured.", null, StatusCodes.Status400BadRequest.ToString()));
+                    return Ok(new ApiResponse(false, "Trial period not configured.", "", StatusCodes.Status400BadRequest.ToString()));
                 }
 
                 if (student.AccActiveOn == null)
                 {
-                    return Ok(new ApiResponse(false, "Account not activated.", null, StatusCodes.Status400BadRequest.ToString()));
+                    return Ok(new ApiResponse(false, "Account not activated.", "", StatusCodes.Status400BadRequest.ToString()));
                 }
 
                 var activationDate = student.AccActiveOn.Value;
@@ -355,7 +355,7 @@ namespace LmsAPI.Controllers
             {
                 _logger.LogError($"Error in IStudentInTrialPeriod: {ex}");
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ApiResponse(false, "An error occurred while checking trial period.", null, StatusCodes.Status500InternalServerError.ToString()));
+                    new ApiResponse(false, "An error occurred while checking trial period.", "", StatusCodes.Status500InternalServerError.ToString()));
             }
         }
         #endregion
@@ -394,7 +394,15 @@ namespace LmsAPI.Controllers
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             if (string.IsNullOrEmpty(token))
-                return Ok("No token found.");
+                //return Ok("No token found.");
+                return  Ok(new ApiResponse
+                {
+                    Success = false,
+                    Message = "No token found.",
+                    Data = "",
+                    ErrorCode = "400"
+
+                });
 
             var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var student = await _studentsRepository.GetStudentByEmailAsync(email);
@@ -423,13 +431,13 @@ namespace LmsAPI.Controllers
             {
                 var user = await _studentsRepository.GetStudentByEmailAsync(email);
                 if (user == null)
-                    return NotFound(new { success = false, message = "User not found." });
+                    return NotFound(new { success = false, message = "User not found.", data = "", ErrorCode = "404" });
 
-                return Ok(new { success = true, data = user });
+                return Ok(new { success = true, message = "User found.", data = user, ErrorCode = "200" });
             }
             catch (ArgumentException ex)
             {
-                return Ok(new { success = false, message = ex.Message });
+                return Ok(new { success = false, message = ex.Message, ErrorCode = "400" });
             }
         }
 
@@ -441,7 +449,7 @@ namespace LmsAPI.Controllers
         public async Task<IActionResult> UpdateUserFields([FromBody] TblStudentUserMaster request)
         {
             var result = await _studentsRepository.UpdateStudentAsync(request);
-            return Ok(new ApiResponse { Success = true, Message = "User fields updated successfully.", Data = result });
+            return Ok(new ApiResponse { Success = true, Message = "User fields updated successfully.", Data = result,ErrorCode="200" });
         }
 
         [Authorize]
@@ -463,13 +471,13 @@ namespace LmsAPI.Controllers
             var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
             if (email == null)
-                return NotFound(new { success = false, message = "User not found." });
+                return NotFound(new { success = false, message = "User not found.", data = "", ErrorCode = "404" });
             request.EmailId = email;
             request.Createdon = DateTime.Now;
             request.ActiveStatus = true;
             request.ReadBy = Convert.ToInt32(userId);
             await _studentsRepository.TicketCreateAsync(request);
-            return Ok(new { success = true, message = "Ticket created", data = request });
+            return Ok(new { success = true, message = "Ticket created", data = request, ErrorCode = "200" });
 
         }
 
@@ -495,7 +503,7 @@ namespace LmsAPI.Controllers
         public async Task<IActionResult> RegenerateOtp([FromBody] OtpRegenerateDto otpDto)
         {
             if (otpDto == null || string.IsNullOrEmpty(otpDto.EmailId))
-                return Ok(new ApiResponse(false, "Email is required.", null, "400"));
+                return Ok(new ApiResponse(false, "Email is required.", "", "400"));
 
             var emailValidation = await _emailValidator.ValidateAsync(otpDto.EmailId);
             if (!emailValidation.IsValid)
@@ -503,7 +511,7 @@ namespace LmsAPI.Controllers
 
             var student = await _studentsRepository.GetStudentByEmailAsync(otpDto.EmailId);
             if (student == null)
-                return Ok(new ApiResponse(false, "Student not found.", null, "400"));
+                return Ok(new ApiResponse(false, "Student not found.", "", "400"));
 
             // Generate and save new OTP
             var otp = GenOPT(6);
@@ -532,7 +540,7 @@ namespace LmsAPI.Controllers
         public async Task<IActionResult> RefreshToken([FromBody] TokenRequest model)
         {
             if (string.IsNullOrEmpty(model.AccessToken))
-                return Ok(new ApiResponse(false, "Token is required", null, "400"));
+                return Ok(new ApiResponse(false, "Token is required", "", "400"));
 
             string tokendecoded = Encoding.UTF8.GetString(Convert.FromBase64String(model.AccessToken));
             var principal = _jwtTokenService.GetPrincipalFromExpiredToken(tokendecoded);
@@ -541,7 +549,7 @@ namespace LmsAPI.Controllers
             var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(x => x.StudentUserId.ToString() == userId);
 
             if (student == null)
-                return Unauthorized(new ApiResponse(false, "Invalid student", null, "401"));
+                return Unauthorized(new ApiResponse(false, "Invalid student", "", "401"));
 
             var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
             string base64Encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
@@ -559,16 +567,16 @@ namespace LmsAPI.Controllers
         {
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.DeviceId))
             {
-                return BadRequest(new ApiResponse(false, "Email and Device MAC are required.", null, "400"));
+                return BadRequest(new ApiResponse(false, "Email and Device MAC are required.", "", "400"));
             }
             bool issame_device = await _studentsRepository.ValidDeviceAsync(request.Email, request.DeviceId);
             if (issame_device == false)
             {
-                return Ok(new ApiResponse(true, "This is diffrent device", new { IsSameDevice = false }));
+                return Ok(new ApiResponse(true, "This is diffrent device", new { IsSameDevice = false, ErrorCode = "200" }));
             }
             else
             {
-                return Ok(new ApiResponse(true, "Device validated successfully.", new { IsSameDevice = true }));
+                return Ok(new ApiResponse(true, "Same Device", new { IsSameDevice = true, ErrorCode = "200" }));
             }
         }
         #endregion
@@ -587,23 +595,23 @@ namespace LmsAPI.Controllers
             var student = await _studentsRepository.GetStudentByEmailAsync(oTPVerificationDto.EmailId);
             if (student == null || student.ActiveStatus != 1)
             {
-                return Ok(new ApiResponse(false, "Invalid student or inactive account.", null, "401"));
+                return Ok(new ApiResponse(false, "Invalid student or inactive account.", "", "401"));
             }
             var isValidOtp = await _studentsRepository.ValidateOtpAsync((int)student.StudentUserId, oTPVerificationDto.Otp);
             if (!isValidOtp)
             {
-                return Ok(new ApiResponse(false, "Invalid OTP. Please try again.", null, "402"));
+                return Ok(new ApiResponse(false, "Invalid OTP. Please try again.", "", "402"));
             }
             //update mac-id
             student.PrimaryMac = oTPVerificationDto.deviceMacId;
             bool isUpdated = await _studentsRepository.UpdateStudentAsync(student);
             if (!isUpdated)
             {
-                return Ok(new ApiResponse(false, "Failed to update device information.", null, "500"));
+                return Ok(new ApiResponse(false, "Failed to update device information.", "", "500"));
             }
             // If we reach here, the login is successful
             SetStudentSession(student);
-            return Ok(new ApiResponse(true, "Login successful.", null));
+            return Ok(new ApiResponse(true, "Login successful.", "", "200"));
         }
         #endregion
 
