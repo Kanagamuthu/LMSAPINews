@@ -147,7 +147,7 @@ namespace LmsAPI.Controllers
                     {
                         Success = false,
                         Message = "Login attempt from a different device. do you want login?",
-                        Data = null,
+                        Data = student,
                         ErrorCode = "403"
                     });
                 }
@@ -201,7 +201,7 @@ namespace LmsAPI.Controllers
                     {
                         Success = false,
                         Message = "Login attempt from a different device. do you want login?",
-                        Data = null,
+                        Data = student,
                         ErrorCode = "403"
                     });
                 }
@@ -290,7 +290,7 @@ namespace LmsAPI.Controllers
             }
             else
             {
-                return Ok(new ApiResponse(false, "Failed to activate account.", "", errorCode: "500"));
+                return Ok(new ApiResponse(false, "Failed to activate account.", data:"", errorCode: "500"));
             }
 
 
@@ -611,7 +611,34 @@ namespace LmsAPI.Controllers
             }
             // If we reach here, the login is successful
             SetStudentSession(student);
-            return Ok(new ApiResponse(true, "Login successful.", "", "200"));
+
+            var result = new
+            {
+                StudentUserId = student.StudentUserId.ToString(),
+                UserFirstName = student.UserFirstName,
+                Username = student.Username,
+                EmailId = student.EmailId,
+                Mobile = student.Mobile,
+                ActiveStatus = student.ActiveStatus.ToString(),
+                AccActiveOn = student.AccActiveOn,
+                CreatedBy = student.CreatedBy?.ToString(),
+                CreatedOn = student.CreatedOn,
+                Collegename = student.Collegename,
+                DepartmentId = student.DepartmentId?.ToString(),
+                DepartmentName = student.DepartmentName,
+                Batchyear = student.Batchyear?.ToString(),
+                Country = student.Country,
+                PrimaryImei = student.PrimaryImei,
+                PrimaryMac = student.PrimaryMac,
+                CountryCode = student.CountryCode,
+                EduType = student.EduType?.ToString(),
+                TradeId = student.TradeId?.ToString(),
+                Token = student.Token,
+                Istrail = student.Istrail
+            };
+
+
+            return Ok(new ApiResponse(true, "Login successful.", result, "200"));
         }
         #endregion
 

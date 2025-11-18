@@ -89,13 +89,13 @@ namespace LMSAPI.Controllers
             var errors = new List<string>
             {
                 (obj.edutype == null || obj.edutype <= 0) ? "Education type is required." : null,
-                (obj.department_name == null || obj.department_name == null) ? "Department is required." : null,
-                (obj.department_name=="string") ? "Please enter valid department." : null,
-                (obj.batchyear == null || obj.batchyear ==null) ? "Batch year is required." : null,
-                (obj.batchyear=="string") ? "Please enter valid batch year." : null,
-                string.IsNullOrWhiteSpace(obj.collegename) ? "College name is required." : null,
-                (obj.collegename=="string") ? "Please enter valid college name." : null,
+                string.IsNullOrWhiteSpace(obj.department_name)  ? "Department is required." : null,
+                string.IsNullOrWhiteSpace(obj.batchyear)  ? "Batch year is required." : null,
+                string.IsNullOrWhiteSpace(obj.collegename)  ? "College name is required." : null,
+
             };
+
+         
 
             errors.RemoveAll(e => e == null);
 
@@ -476,21 +476,65 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllPackage()
         {
-            var getAllPackage = await _dashboardRepository.GetAllPackage();
-            return Ok(new ApiResponse(true, "Packages fetched successfully.", getAllPackage, ""));
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(email))
+            {
+                return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = "", ErrorCode = "401" });
+            }
+            else
+            {
+                //get package id based on user id
+                var stddepartment = await _dashboardRepository.GetAllPackageByUserEmailAsync(email); 
+                string depName = stddepartment.FirstOrDefault()?.DepartmentName;
+                int education = stddepartment.FirstOrDefault()?.EduType ?? 0 ;
+
+                //get department id based on user email
+                if (education>0)
+                {
+                    //get department name based on education type
+                   var edulist = await _dashboardRepository.GetDepartmentByEduTypeIdAsync(education);
+                    //get depart based on edu id
+                    var res=await _dashboardRepository.GetPackageDetailsByUserEmailAsync(stddepartment.FirstOrDefault()?.StudentUserId??0, edulist.FirstOrDefault()?.Edu_type_id ?? 0);
+                    return Ok(new ApiResponse { Success = true, Message = "Departments fetched successfully for the user", Data = res, ErrorCode = "200" });
+                }
+                else
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "There is no package available for the user", Data = "", ErrorCode = "404" });
+                }
+
+            }
         }
         #endregion
 
         #region get Particular Package list 
-        [HttpGet("GetPackageDetails")]
+        [HttpPost("GetPackageDetailsByID")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetPackageDetails(int? PackageId)
+        public async Task<IActionResult> GetPackageDetails(GetPackageByIdDto PackageId)
         {
-            if (PackageId == null || PackageId <= 0)
-                return Ok(new ApiResponse { Success = false, Message = "PackageId Reuired", Data = null });
+            if (PackageId == null || PackageId.PackageID <= 0)
+                return Ok(new ApiResponse { Success = false, Message = "PackageId Reuired", Data = "", ErrorCode = "400" });
+            else
+            {
+                var getAllPackage = await _dashboardRepository.GetPackageDetails();
+                var jsonData = System.Text.Json.JsonSerializer.Serialize(getAllPackage);
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+                };
+                //await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
+                getAllPackage = getAllPackage.Where(x => x.PackageId == PackageId.PackageID).ToList();
 
+                if (getAllPackage.Count==0)
+                {
+                    return Ok(new ApiResponse(false, "No package found with the given PackageId.", "", errorCode: "404"));
+                }
+                else
+                {
+                    return Ok(new ApiResponse(true, "Packages details fetched successfully.", getAllPackage, errorCode: "200"));
+                }
+            }
             //string cacheKey = $"PackageDetails";
             //var cachedData = await _cache.GetStringAsync(cacheKey);
             //if (!string.IsNullOrEmpty(cachedData))
@@ -501,18 +545,7 @@ namespace LMSAPI.Controllers
             //}
             //else
             //{
-            var getAllPackage = await _dashboardRepository.GetPackageDetails();
-
-            var jsonData = System.Text.Json.JsonSerializer.Serialize(getAllPackage);
-            var cacheOptions = new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
-            };
-            //await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
-
-
-            getAllPackage = getAllPackage.Where(x => x.PackageId == PackageId).ToList();
-            return Ok(new ApiResponse(true, "Packages details fetched successfully.", getAllPackage, ""));
+          
             // }
         }
         #endregion

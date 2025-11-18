@@ -472,9 +472,7 @@ namespace LMSAPI.Repository
 
         public async Task<List<TblPackageMaster>> GetAllPackage()
         {
-            var Query = from p in _context.TblPackageMasters
-                        where p.Activestatus == true
-                        select p;
+            var Query = from p in _context.TblPackageMasters where p.Activestatus == true select p;
             return await Query.OrderByDescending(x => x.CreatedOn).ToListAsync();
         }
 
@@ -656,7 +654,7 @@ namespace LMSAPI.Repository
         public async Task<List<DepartmentMasterDto>> GetRegisterDropdwonList()
         {
             var getDepartmentList = await _context.TblDepartmentMasters.Where(d => d.IsActive == 1).ToListAsync();
-           
+
             return getDepartmentList.Select(item => new DepartmentMasterDto
             {
                 Id = item.DepartmentId,
@@ -684,6 +682,100 @@ namespace LMSAPI.Repository
             {
                 _logger.LogError(ex, "Error occurred while retrieving education type list.");
                 throw;
+            }
+        }
+
+        public async Task<List<TblStudentUserMaster>> GetAllPackageByUserEmailAsync(string email)
+        {
+            try
+            {
+                var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == email);
+                if (student == null)
+                {
+                    return new List<TblStudentUserMaster>();
+                }
+                var packages = await _context.TblStudentUserMasters.Where(s => s.StudentUserId == student.StudentUserId).ToListAsync();
+                return packages;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving packages by user email.");
+                return new List<TblStudentUserMaster>();
+            }
+        }
+
+        public async Task<List<DepartmentMasterDto>> GetDepartmentByEduTypeIdAsync(int eduTypeId)
+        {
+            try
+            {
+                var departments = await _context.TblDepartmentMasters
+                    .Where(d => d.DegreeId == eduTypeId && d.IsActive == 1)
+                    .ToListAsync();
+                return departments.Select(item => new DepartmentMasterDto
+                {
+                    Id = item.DepartmentId,
+                    Department_name = item.DepartmentName,
+                    Department_description = item.DepartmentName,
+                    Edu_type_id = item.DegreeId
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving departments by education type ID.");
+                return new List<DepartmentMasterDto>();
+            }
+        }
+
+        public async Task<List<StudentPackageDetailsDTO>> GetPackageDetailsByUserEmailAsync(long studentUserId, int educationId)
+        {
+            try
+            {
+                var result = await (from tsum in _context.TblStudentUserMasters
+                     join dm in _context.TblDepartmentMasters on tsum.EduType equals dm.DegreeId
+                     join dsm in _context.TblDepartmentSubjectMappings on dm.DepartmentId equals dsm.DepartmentId
+                     join pd in _context.TblPackageDetails on dsm.DepartmentSubjectMappingId equals pd.DepartmentSubjectMappingId
+                     join pm in _context.TblPackageMasters on pd.PackageId equals pm.PackageId
+                     where tsum.EduType == educationId && tsum.StudentUserId == studentUserId
+                     select new StudentPackageDetailsDTO
+                     {
+                         DepartmentName = dm.DepartmentName,
+                         //PackageId = pm.PackageId,
+                         //PackageName = pm.PackageName,
+                         //PackageDisplayName = pm.PackageDisplayName
+                         packageMasterDto = new PackageMasterDto
+                         {
+                             PackageId = pm.PackageId,
+                             PackageCode = pm.PackageCode,
+                             PackageDisplayName = pm.PackageDisplayName,
+                             PackageName = pm.PackageName,
+                             PackageDurationDays = pm.PackageDurationDays,
+                             //LongDesc = pm.LongDesc,
+                             ShortDesc = pm.ShortDesc,
+                             SellingPrice = pm.SellingPrice,
+                             ActualPrice = pm.ActualPrice,
+                             DepartmentId = pm.DepartmentId,
+                             SubjectId = pm.SubjectId,
+                             //RuleId = pm.RuleId,
+                             //SubjectUnitType = pm.SubjectUnitType,
+                             CurrentStatus = pm.CurrentStatus,
+                             Activestatus = pm.Activestatus,
+                             IsOfferPackage = pm.IsOfferPackage,
+                             CoverPath = pm.CoverPath,
+                             //UnivId = pm.UnivId,
+                             //Year = pm.Year,
+                             //Semester = pm.Semester,
+                             IsBundle = pm.IsBundle,
+                             Keywords = pm.Keywords,
+                             PackageVideoUrl = pm.PackageVideoUrl
+                         }
+                     }).Distinct().ToListAsync();
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving package details by user.");
+                return new List<StudentPackageDetailsDTO>();
             }
         }
     }
