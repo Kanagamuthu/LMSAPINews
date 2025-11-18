@@ -476,21 +476,17 @@ namespace LMSAPI.Repository
             return await Query.OrderByDescending(x => x.CreatedOn).ToListAsync();
         }
 
-        public async Task<List<PackageDetailsDTO>> GetPackageDetails()
+        public async Task<List<PackageDetailsDTO>> GetPackageDetails(int PackageId)
         {
 
-            var data = await (from dsm in _context.TblDepartmentSubjectMappings
-                              join dm in _context.TblDepartmentMasters on dsm.DepartmentId equals dm.DepartmentId
-                              join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId
-                              join pd in _context.TblPackageDetails on dsm.DepartmentSubjectMappingId equals pd.DepartmentSubjectMappingId
-                              join pm in _context.TblPackageMasters on pd.PackageId equals pm.PackageId
+            var data = await (from pm in _context.TblPackageMasters
+                              join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
+                              join sm in _context.TblSubjectMasters on pd.SubjectId equals sm.SubjectId
+                              where pm.PackageId == PackageId && pm.Activestatus == true
                               select new
                               {
-                                  dsm.DepartmentSubjectMappingId,
-                                  dm.DepartmentId,
-                                  dm.DepartmentCode,
-                                  dm.DepartmentName,
-                                  pd.PackageDetailId,
+                                  pd.DepartmentId,
+                                  //pd.PackageDetailId,
                                   pd.PackageId,
                                   pm.SellingPrice,
                                   sm
@@ -499,13 +495,11 @@ namespace LMSAPI.Repository
 
             var result = data.Select(x => new PackageDetailsDTO
             {
-                DepartmentSubjectMappingId = x.DepartmentSubjectMappingId,
+               
                 DepartmentId = x.DepartmentId,
-                PackageDetailId = x.PackageDetailId,
+               // PackageDetailId = x.PackageDetailId,
                 PackageId = x.PackageId,
                 Price = x.SellingPrice,
-                DepartmentCode = x.DepartmentCode,
-                DepartmentName = x.DepartmentName,
                 SubjectMaster = new List<SubjectMasterDto>
         {
             new SubjectMasterDto(_httpContextAccessor, this, _context)
@@ -538,7 +532,7 @@ namespace LMSAPI.Repository
                 SubjectSyllabusPath = x.sm.SubjectSyllabusPath
             }
         }
-            }).OrderByDescending(x => x.DepartmentSubjectMappingId).ToList();
+            }).Distinct().ToList();
 
             return result;
         }
