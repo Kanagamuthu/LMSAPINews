@@ -95,15 +95,15 @@ namespace LMSAPI.Controllers
 
             };
 
-         
+
 
             errors.RemoveAll(e => e == null);
 
             if (errors.Count > 0)
-                return Ok(new ApiResponse { Success = false, Message = string.Join(", ", errors),Data="",ErrorCode="400" });
+                return Ok(new ApiResponse { Success = false, Message = string.Join(", ", errors), Data = "", ErrorCode = "400" });
             var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _dashboardRepository.PostRegisterStudentTradeDepartment(email, obj);
-            return Ok(new ApiResponse { Success = true, Message = "Education details added successfully.", Data = result,ErrorCode="200" });
+            return Ok(new ApiResponse { Success = true, Message = "Education details added successfully.", Data = result, ErrorCode = "200" });
 
         }
 
@@ -477,32 +477,21 @@ namespace LMSAPI.Controllers
         public async Task<IActionResult> GetAllPackage()
         {
             var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(email))
+            //get package id based on user id
+            var stddepartment = await _dashboardRepository.GetAllPackageByUserEmailAsync(email);
+            int education = stddepartment.FirstOrDefault()?.EduType ?? 0;
+
+            //get department id based on user email
+            if (education > 0)
             {
-                return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = "", ErrorCode = "401" });
+                var res = await _dashboardRepository.GetPackageDetailsByUserEmailAsync(education);
+                return Ok(new ApiResponse { Success = true, Message = "Departments fetched successfully for the user", Data = res, ErrorCode = "200" });
             }
             else
             {
-                //get package id based on user id
-                var stddepartment = await _dashboardRepository.GetAllPackageByUserEmailAsync(email); 
-                string depName = stddepartment.FirstOrDefault()?.DepartmentName;
-                int education = stddepartment.FirstOrDefault()?.EduType ?? 0 ;
-
-                //get department id based on user email
-                if (education>0)
-                {
-                    //get department name based on education type
-                   var edulist = await _dashboardRepository.GetDepartmentByEduTypeIdAsync(education);
-                    //get depart based on edu id
-                    var res=await _dashboardRepository.GetPackageDetailsByUserEmailAsync(stddepartment.FirstOrDefault()?.StudentUserId??0, edulist.FirstOrDefault()?.Edu_type_id ?? 0);
-                    return Ok(new ApiResponse { Success = true, Message = "Departments fetched successfully for the user", Data = res, ErrorCode = "200" });
-                }
-                else
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "There is no package available for the user", Data = "", ErrorCode = "404" });
-                }
-
+                return Ok(new ApiResponse { Success = false, Message = "There is no package available for the user", Data = "", ErrorCode = "404" });
             }
+
         }
         #endregion
 
@@ -526,7 +515,7 @@ namespace LMSAPI.Controllers
                 //await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
                 getAllPackage = getAllPackage.Where(x => x.PackageId == PackageId.PackageID).ToList();
 
-                if (getAllPackage.Count==0)
+                if (getAllPackage.Count == 0)
                 {
                     return Ok(new ApiResponse(false, "No package found with the given PackageId.", "", errorCode: "404"));
                 }
@@ -545,7 +534,7 @@ namespace LMSAPI.Controllers
             //}
             //else
             //{
-          
+
             // }
         }
         #endregion

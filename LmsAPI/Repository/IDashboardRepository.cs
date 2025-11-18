@@ -57,6 +57,6 @@ namespace LMSAPI.Repository
         Task<List<DepartmentMasterDto>> GetDepartmentByEduTypeIdAsync(int eduTypeId);
 
         Task<List<TblStudentUserMaster>> GetAllPackageByUserEmailAsync(string email);
-        Task <List<StudentPackageDetailsDTO>> GetPackageDetailsByUserEmailAsync(long studentUserId, int educationId);
+        Task<List<StudentPackageDetailsDTO>> GetPackageDetailsByUserEmailAsync(int DegreeId);
     }
 }

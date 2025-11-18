@@ -726,57 +726,44 @@ namespace LMSAPI.Repository
             }
         }
 
-        public async Task<List<StudentPackageDetailsDTO>> GetPackageDetailsByUserEmailAsync(long studentUserId, int educationId)
+        public async Task<List<StudentPackageDetailsDTO>> GetPackageDetailsByUserEmailAsync(int DegreeId)
         {
             try
             {
-                var result = await (from tsum in _context.TblStudentUserMasters
-                     join dm in _context.TblDepartmentMasters on tsum.EduType equals dm.DegreeId
-                     join dsm in _context.TblDepartmentSubjectMappings on dm.DepartmentId equals dsm.DepartmentId
-                     join pd in _context.TblPackageDetails on dsm.DepartmentSubjectMappingId equals pd.DepartmentSubjectMappingId
-                     join pm in _context.TblPackageMasters on pd.PackageId equals pm.PackageId
-                     where tsum.EduType == educationId && tsum.StudentUserId == studentUserId
-                     select new StudentPackageDetailsDTO
-                     {
-                         DepartmentName = dm.DepartmentName,
-                         //PackageId = pm.PackageId,
-                         //PackageName = pm.PackageName,
-                         //PackageDisplayName = pm.PackageDisplayName
-                         packageMasterDto = new PackageMasterDto
-                         {
-                             PackageId = pm.PackageId,
-                             PackageCode = pm.PackageCode,
-                             PackageDisplayName = pm.PackageDisplayName,
-                             PackageName = pm.PackageName,
-                             PackageDurationDays = pm.PackageDurationDays,
-                             //LongDesc = pm.LongDesc,
-                             ShortDesc = pm.ShortDesc,
-                             SellingPrice = pm.SellingPrice,
-                             ActualPrice = pm.ActualPrice,
-                             DepartmentId = pm.DepartmentId,
-                             SubjectId = pm.SubjectId,
-                             //RuleId = pm.RuleId,
-                             //SubjectUnitType = pm.SubjectUnitType,
-                             CurrentStatus = pm.CurrentStatus,
-                             Activestatus = pm.Activestatus,
-                             IsOfferPackage = pm.IsOfferPackage,
-                             CoverPath = pm.CoverPath,
-                             //UnivId = pm.UnivId,
-                             //Year = pm.Year,
-                             //Semester = pm.Semester,
-                             IsBundle = pm.IsBundle,
-                             Keywords = pm.Keywords,
-                             PackageVideoUrl = pm.PackageVideoUrl
-                         }
-                     }).Distinct().ToListAsync();
+                var result = (from pm in _context.TblPackageMasters
+                              join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
+                              join dm in _context.TblDepartmentMasters on pd.DepartmentId equals dm.DepartmentId
+                              where dm.DegreeId == DegreeId && pm.Activestatus == true
+                              select new
+                              {
+                                  dm.DepartmentName,
+                                  pm
+                              })
+                              .AsEnumerable()
+                              .GroupBy(x => x.DepartmentName)
+                              .Select(g => new StudentPackageDetailsDTO
+                              {
+                                  DepartmentName = g.Key,
+                                  packageMasterDto = g.Select(x => new PackageMasterDto
+                                  {
+                                      PackageId = x.pm.PackageId,
+                                      PackageCode = x.pm.PackageCode,
+                                      PackageName = x.pm.PackageName,
+                                      SellingPrice = x.pm.SellingPrice,
+                                      CoverPath = x.pm.CoverPath,
+
+                                  }).ToList()
+                              })
+                              .ToList();
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving package details by user.");
+                _logger.LogError(ex, "Error while retrieving package details by user.");
                 return new List<StudentPackageDetailsDTO>();
             }
+
         }
     }
 }
