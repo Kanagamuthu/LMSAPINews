@@ -501,37 +501,37 @@ namespace LMSAPI.Repository
                 PackageId = x.PackageId,
                 Price = x.SellingPrice,
                 SubjectMaster = new List<SubjectMasterDto>
-        {
-            new SubjectMasterDto(_httpContextAccessor, this, _context)
-            {
-                SubjectId = x.sm.SubjectId,
-                SubjectCode = x.sm.SubjectCode,
-                SubjectName = x.sm.SubjectName,
-                SubjectCoverPath = x.sm.SubjectCoverPath,
-                SubjectDescription = x.sm.SubjectDescription,
-                ActiveStatus = x.sm.ActiveStatus,
-                RuleId = x.sm.RuleId,
-                CreatedOn = x.sm.CreatedOn,
-                ReleasedOn = x.sm.ReleasedOn,
-                UniversityId = x.sm.UniversityId,
-                HavingQuestionpaper = x.sm.HavingQuestionpaper,
-                SubjectVersion = x.sm.SubjectVersion,
-                ActiveDurationDays = x.sm.ActiveDurationDays,
-                ActiveDurationDate = x.sm.ActiveDurationDate,
-                Syllabus = x.sm.Syllabus,
-                DeptImgPath = x.sm.DeptImgPath,
-                Coursehours = x.sm.Coursehours,
-                Visuals = x.sm.Visuals,
-                Pagecontent = x.sm.Pagecontent ?? 0,
-                Solvedproblem = x.sm.Solvedproblem,
-                Multichoice = x.sm.Multichoice,
-                DeptVideo = x.sm.DeptVideo,
-                IsInTrail = x.sm.IsInTrail,
-                IsInDemo = x.sm.IsInDemo,
-                TradeId = x.sm.TradeId,
-                SubjectSyllabusPath = x.sm.SubjectSyllabusPath
-            }
-        }
+                {
+                     new SubjectMasterDto(_httpContextAccessor, this, _context)
+                     {
+                         SubjectId = x.sm.SubjectId,
+                         SubjectCode = x.sm.SubjectCode,
+                         SubjectName = x.sm.SubjectName,
+                         SubjectCoverPath = x.sm.SubjectCoverPath,
+                         SubjectDescription = x.sm.SubjectDescription,
+                         ActiveStatus = x.sm.ActiveStatus,
+                        //RuleId = x.sm.RuleId,
+                         //CreatedOn = x.sm.CreatedOn,
+                        //ReleasedOn = x.sm.ReleasedOn,
+                         //UniversityId = x.sm.UniversityId,
+                         //HavingQuestionpaper = x.sm.HavingQuestionpaper,
+                         SubjectVersion = x.sm.SubjectVersion,
+                         ActiveDurationDays = x.sm.ActiveDurationDays,
+                         ActiveDurationDate = x.sm.ActiveDurationDate,
+                         //Syllabus = x.sm.Syllabus,
+                         DeptImgPath = x.sm.DeptImgPath,
+                         Coursehours = x.sm.Coursehours,
+                         Visuals = x.sm.Visuals,
+                         Pagecontent = x.sm.Pagecontent ?? 0,
+                         //Solvedproblem = x.sm.Solvedproblem,
+                         //Multichoice = x.sm.Multichoice,
+                         //DeptVideo = x.sm.DeptVideo,
+                         //IsInTrail = x.sm.IsInTrail,
+                         IsInDemo = x.sm.IsInDemo,
+                         //TradeId = x.sm.TradeId,
+                         SubjectSyllabusPath = x.sm.SubjectSyllabusPath
+                     }
+                }
             }).Distinct().ToList();
 
             return result;
