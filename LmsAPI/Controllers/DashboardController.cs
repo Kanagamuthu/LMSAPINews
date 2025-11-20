@@ -689,5 +689,6 @@ namespace LMSAPI.Controllers
             return Ok(new ApiResponse(true, "Education type list fetched successfully.", educationTypeList, ""));
         }
         #endregion
+
     }
 }

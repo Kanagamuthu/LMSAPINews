@@ -742,7 +742,7 @@ namespace LMSAPI.Repository
                                   {
                                       PackageId = x.pm.PackageId,
                                       PackageCode = x.pm.PackageCode,
-                                      PackageName = x.pm.PackageName,
+                                      PackageName = x.pm.PackageDisplayName,
                                       SellingPrice = x.pm.SellingPrice,
                                       CoverPath = x.pm.CoverPath,
 

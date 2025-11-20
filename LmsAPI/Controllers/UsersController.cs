@@ -457,12 +457,12 @@ namespace LmsAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> TicketCreate([FromBody] TblSupportTicket request)
+        public async Task<IActionResult> TicketCreate([FromBody] CreateTicketDto request)
         {
             var errors = new List<string>();
-            if (string.IsNullOrWhiteSpace(request.Subject))
+            if (string.IsNullOrWhiteSpace(request.subject))
                 errors.Add("Subject is required.");
-            else if (string.IsNullOrWhiteSpace(request.Message))
+            else if (string.IsNullOrWhiteSpace(request.message))
                 errors.Add("Message is required.");
 
             if (errors.Any())
@@ -472,25 +472,35 @@ namespace LmsAPI.Controllers
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
             if (email == null)
                 return NotFound(new { success = false, message = "User not found.", data = "", ErrorCode = "404" });
-            request.EmailId = email;
-            request.Createdon = DateTime.Now;
-            request.ActiveStatus = true;
-            request.ReadBy = Convert.ToInt32(userId);
-            await _studentsRepository.TicketCreateAsync(request);
-            return Ok(new { success = true, message = "Ticket created", data = request, ErrorCode = "200" });
+
+            var newticket = new TblSupportTicket
+            {
+                EmailId=email,
+                Subject = request.subject,
+                Message = request.message,
+                Createdon = DateTime.Now,
+                ActiveStatus = true,
+                //ReadBy = Convert.ToInt32(userId)
+            };
+
+            await _studentsRepository.TicketCreateAsync(newticket);
+            return Ok(new { success = true, message = "Ticket created", data = newticket, ErrorCode = "200" });
 
         }
 
         [Authorize]
-        [HttpGet("GetTickets")]
+        [HttpGet("GetTicketsList")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetActiveTickets()
         {
-            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            var activeTickets = await _studentsRepository.GetTicketByIdAsync(Convert.ToInt32(userId));
-            return Ok(new ApiResponse(true, "Ticket fetched successfully", activeTickets));
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var activeTickets = await _studentsRepository.GetTicketByEmailAsync(email);
+            if (activeTickets.Count == 0)
+                return Ok(new ApiResponse(false, "No active tickets found.", "", "404"));
+            else
+                return Ok(new ApiResponse(true, "Ticket fetched successfully", activeTickets, "200"));
         }
 
         //04/11/2025

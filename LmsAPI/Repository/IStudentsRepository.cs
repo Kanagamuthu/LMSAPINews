@@ -18,7 +18,7 @@ namespace LMSAPI.Repository
         Task<bool> GetStudentTokenAsync(string token);
 
         Task TicketCreateAsync(TblSupportTicket request);
-        Task<List<TblSupportTicket>> GetTicketByIdAsync(int id);
+        Task<List<TblSupportTicket>> GetTicketByEmailAsync(string emailid);
 
         //re-generate otp
         Task RegenerateOtpAsync(TblUserRandomPass otpRecord);

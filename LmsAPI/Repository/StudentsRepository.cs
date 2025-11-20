@@ -155,10 +155,10 @@ namespace LMSAPI.Repository
             }
         }
 
-        public async Task<List<TblSupportTicket>> GetTicketByIdAsync(int id)
+        public async Task<List<TblSupportTicket>> GetTicketByEmailAsync(string email)
         {
 
-            return await _context.TblSupportTickets.Where(x => x.ReadBy == id).ToListAsync() ?? new List<TblSupportTicket>();
+            return await _context.TblSupportTickets.Where(x => x.EmailId == email).ToListAsync() ?? new List<TblSupportTicket>();
 
         }
 
