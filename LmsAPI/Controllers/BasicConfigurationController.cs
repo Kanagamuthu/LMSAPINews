@@ -137,14 +137,18 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetCurrentDate()
         {
-            // System local date/time
-            DateTime now = DateTime.Now;
+            try
+            {
+                DateTime now = DateTime.Now;
+                string formattedDate = now.ToString("yyyy-MM-dd");
 
-            // yyyy-MM-dd format (e.g. 2025-11-20)
-            string formatted = now.ToString("yyyy-MM-dd");
-
-            // Return JSON: { "date": "yyyy-MM-dd" }
-            return Ok(new { success = true, message = "Current system date fetched successfully", SystemDate = formatted });
+                return Ok(new { success = true, statusCode = 200, message = "Current system date fetched successfully", SystemDate = formattedDate });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, statusCode = 500, message = "Failed to get current date", error = ex.Message });
+            }
         }
+
     }
 }
