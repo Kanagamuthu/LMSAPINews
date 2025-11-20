@@ -569,24 +569,77 @@ namespace LmsAPI.Controllers
         }
 
         #region validate email id, device id wether same device or not
-        [HttpPost("Validate-MultiDevice")]
+        [HttpPost("Validate-Device")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ValidateMultiDevice([FromBody] ValidMailDeviceDto request)
+        public async Task<IActionResult> ValidateDevice([FromBody] ValidMailDeviceDto request)
         {
-            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.DeviceId))
+           var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (email==null)
+            {
+                return NotFound(new { success = false, message = "User not logged in.", data = "", ErrorCode = "404" });
+
+            }
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(request.DeviceMacId))
             {
                 return BadRequest(new ApiResponse(false, "Email and Device MAC are required.", "", "400"));
             }
-            bool issame_device = await _studentsRepository.ValidDeviceAsync(request.Email, request.DeviceId);
-            if (issame_device == false)
+            else 
             {
-                return Ok(new ApiResponse(true, "This is diffrent device", new { IsSameDevice = false, ErrorCode = "200" }));
+                bool issame_device = await _studentsRepository.ValidDeviceAsync(email, request.DeviceMacId);
+                if (issame_device == false)
+                {
+                    return Ok(new ApiResponse(true, "This is diffrent device", new { IsSameDevice = false }, "200"));
+                }
+                else
+                {
+                    return Ok(new ApiResponse(true, "Same Device", new { IsSameDevice = true }, "200"));
+                }
+            }  
+        }
+        #endregion
+
+
+        #region otp generation
+        [HttpPost("Generate-OTP")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GenerateOtp(GenerateOtpDto generateOtp)
+        {
+            if (string.IsNullOrEmpty(generateOtp.EmailId) || string.IsNullOrEmpty(generateOtp.deviceMacId))
+            {
+                return BadRequest(new ApiResponse(false, "Email, Device MAC are required.", data: "", "400"));
+            }
+            var student = await _studentsRepository.GetStudentByEmailAsync(generateOtp.EmailId);
+            if (student == null || student.ActiveStatus != 1)
+            {
+                return Ok(new ApiResponse(false, "Invalid student or inactive account.", data: "", "401"));
+            }
+            // 1) Optionally delete OTP
+            await _studentsRepository.DeleteOtpAsync((int)student.StudentUserId);
+            //create otp
+            var _againotp = GenOPT(6);
+            var otpRecord = new TblUserRandomPass
+            {
+                UserRandomId = 0,
+                UserId = (int)student.StudentUserId,
+                VerificationCode = _againotp,
+                GeneratedTime = DateTime.Now,
+                ActionType = 1,
+                UserType = 2,
+            };
+            bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+            //validate db otp save or not
+            if (is_saved == false)
+            {
+                return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", Data = "", ErrorCode = "500" });
             }
             else
             {
-                return Ok(new ApiResponse(true, "Same Device", new { IsSameDevice = true, ErrorCode = "200" }));
+                await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp, ErrorCode = "200" });
             }
         }
         #endregion
@@ -652,47 +705,6 @@ namespace LmsAPI.Controllers
         }
         #endregion
 
-        #region otp generation
-        [HttpPost("Generate-OTP")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GenerateOtp(GenerateOtpDto generateOtp)
-        {
-            if (string.IsNullOrEmpty(generateOtp.EmailId) || string.IsNullOrEmpty(generateOtp.deviceMacId))
-            {
-                return BadRequest(new ApiResponse(false, "Email, Device MAC are required.", data:"", "400"));
-            }
-            var student = await _studentsRepository.GetStudentByEmailAsync(generateOtp.EmailId);
-            if (student == null || student.ActiveStatus != 1)
-            {
-                return Ok(new ApiResponse(false, "Invalid student or inactive account.", data:"", "401"));
-            }
-            // 1) Optionally delete OTP
-            await _studentsRepository.DeleteOtpAsync((int)student.StudentUserId);
-            //create otp
-            var _againotp = GenOPT(6);
-            var otpRecord = new TblUserRandomPass
-            {
-                UserRandomId = 0,
-                UserId = (int)student.StudentUserId,
-                VerificationCode = _againotp,
-                GeneratedTime = DateTime.Now,
-                ActionType = 1,
-                UserType = 2,
-            };
-            bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
-            //validate db otp save or not
-            if (is_saved == false)
-            {
-                return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", Data = "", ErrorCode = "500" });
-            }
-            else
-            {
-                await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
-                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp, ErrorCode = "200" });
-            }
-        }
-        #endregion
+        
     }
 }

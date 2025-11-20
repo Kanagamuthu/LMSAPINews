@@ -63,11 +63,11 @@ namespace LMSAPI.Controllers
 
         #region get Read History list for user
 
-        [HttpGet("ReadHistory")]
+        [HttpGet("StudentReadHistory")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ReadHistory()
+        public async Task<IActionResult> StudentReadHistory()
         {
             try
             {
@@ -79,7 +79,15 @@ namespace LMSAPI.Controllers
                 }
 
                 var GetList = await _dashboardRepository.ReadHistory(Convert.ToInt32(userId));
-                return Ok(new ApiResponse(true, "ReadHistory fetched successfully.", GetList, ""));
+                if (GetList == null) {
+                    return Ok(new ApiResponse { Success = false, Message = "No read history found.", Data = "", ErrorCode = "404" });
+                }
+                else
+                {
+                    _logger.LogInfo($"ReadHistory fetched successfully for user: {email}");
+                    return Ok(new ApiResponse(true, "ReadHistory fetched successfully.", GetList, "200"));
+
+                } 
             }
             catch (Exception ex)
             {

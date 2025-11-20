@@ -2,7 +2,6 @@
 {
     public class ValidMailDeviceDto
     {
-        public string? Email { get; set; }
-        public string? DeviceId { get; set; }
+        public string? DeviceMacId { get; set; }
     }
 }

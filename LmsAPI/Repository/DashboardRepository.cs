@@ -491,11 +491,8 @@ namespace LMSAPI.Repository
                                   pm.SellingPrice,
                                   sm
                               }).ToListAsync();
-
-
             var result = data.Select(x => new PackageDetailsDTO
             {
-               
                 DepartmentId = x.DepartmentId,
                // PackageDetailId = x.PackageDetailId,
                 PackageId = x.PackageId,
