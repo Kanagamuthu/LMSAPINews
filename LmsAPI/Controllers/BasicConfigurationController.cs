@@ -129,5 +129,22 @@ namespace LMSAPI.Controllers
             return Ok(Result);
         }
         #endregion
+
+
+        [HttpGet("CurrentDate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult GetCurrentDate()
+        {
+            // System local date/time
+            DateTime now = DateTime.Now;
+
+            // yyyy-MM-dd format (e.g. 2025-11-20)
+            string formatted = now.ToString("yyyy-MM-dd");
+
+            // Return JSON: { "date": "yyyy-MM-dd" }
+            return Ok(new { success = true, message = "Current system date fetched successfully", SystemDate = formatted });
+        }
     }
 }
