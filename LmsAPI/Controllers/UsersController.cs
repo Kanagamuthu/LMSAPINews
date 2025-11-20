@@ -446,10 +446,39 @@ namespace LmsAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateUserFields([FromBody] TblStudentUserMaster request)
+        public async Task<IActionResult> UpdateUserFields(StudentProfileUpdateDto request)
         {
-            var result = await _studentsRepository.UpdateStudentAsync(request);
-            return Ok(new ApiResponse { Success = true, Message = "User fields updated successfully.", Data = result,ErrorCode="200" });
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (email == null)
+                return NotFound(new { success = false, message = "User not found.", data = "", ErrorCode = "404" });
+            else
+            {
+                // Get existing student from DB
+                var student = await _studentsRepository.GetStudentByEmailAsync(email);
+
+                if (student == null)
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "Student not found", ErrorCode = "404" });
+                }
+                // Update only required fields
+                student.Username = request.studentname;
+                student.UserFirstName = request.studentname;
+                student.Collegename = request.collegename;
+                student.DepartmentName = request.department;
+                student.EduType = request.educationtype;
+                student.Batchyear = string.IsNullOrEmpty(request.batch) ? null : request.batch;
+                student.CreatedOn = DateTime.Now;   
+
+                // Update in DB
+                bool is_updated = await _studentsRepository.UpdateStudentAsync(student);
+
+                if (!is_updated)
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "Failed to update profile. Please try again.", ErrorCode = "500" });
+                }
+
+                return Ok(new ApiResponse { Success = true, Message = "Profile updated successfully", Data = student, ErrorCode = "200" });
+            }
         }
 
         [Authorize]
