@@ -129,5 +129,26 @@ namespace LMSAPI.Controllers
             return Ok(Result);
         }
         #endregion
+
+
+        [HttpGet("CurrentDate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult GetCurrentDate()
+        {
+            try
+            {
+                DateTime now = DateTime.Now;
+                string formattedDate = now.ToString("yyyy-MM-dd");
+
+                return Ok(new { success = true, statusCode = 200, message = "Current system date fetched successfully", SystemDate = formattedDate });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, statusCode = 500, message = "Failed to get current date", error = ex.Message });
+            }
+        }
+
     }
 }
