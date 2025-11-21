@@ -502,11 +502,12 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetPackageDetails(GetPackageByIdDto PackageId)
         {
+            int userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
             if (PackageId == null || PackageId.PackageID <= 0)
                 return Ok(new ApiResponse { Success = false, Message = "PackageId Reuired", Data = "", ErrorCode = "400" });
             else
             {
-                var getAllPackage = await _dashboardRepository.GetPackageDetails(PackageId.PackageID);
+                var getAllPackage = await _dashboardRepository.GetPackageDetails(PackageId.PackageID, userId);
                 if (getAllPackage == null || getAllPackage?.Count == 0)
                     return Ok(new ApiResponse(false, "No package found with the given PackageId.", "", errorCode: "404"));
                 else

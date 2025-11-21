@@ -475,82 +475,188 @@ namespace LMSAPI.Repository
             var Query = from p in _context.TblPackageMasters where p.Activestatus == true select p;
             return await Query.OrderByDescending(x => x.CreatedOn).ToListAsync();
         }
-
-        public async Task<List<PackageDetailsDTO>> GetPackageDetails(int PackageId)
+        public async Task<List<PackageDetailsDTO>> GetPackageDetails(int PackageId, int userId)
         {
-            var data = await (from pm in _context.TblPackageMasters
-                              join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
-                              join sm in _context.TblSubjectMasters on pd.SubjectId equals sm.SubjectId
-                              join d in _context.TblDepartmentMasters on pd.DepartmentId equals d.DepartmentId
-                              where pm.PackageId == PackageId && pm.Activestatus == true
-                              select new
-                              {
-                                  pd.DepartmentId,
-                                  d.DepartmentName,
-                                  //pd.PackageDetailId,
-                                  pd.PackageId,
-                                  pm.PackageName,
-                                  pm.SellingPrice,
-                                  pm.CoverPath,
-                                  pm.PackageDurationDays,
-                                  sm
-                              }).ToListAsync();
+            DateTime now = DateTime.Now;
 
-            // ✔Validity calculation
-            int validityDays = data.Max(x => x.PackageDurationDays ?? 0);
-            //current date+ validity days
-            DateTime currentDate = DateTime.Now;
-            DateTime expiryDate = currentDate.AddDays(validityDays);
+            // Single merged left-join query
+            var data = await (
+                from pm in _context.TblPackageMasters
+                join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
+                join sm in _context.TblSubjectMasters on pd.SubjectId equals sm.SubjectId
+                join d in _context.TblDepartmentMasters on pd.DepartmentId equals d.DepartmentId
 
-            var result = data.Select(x => new PackageDetailsDTO
-            {
-               
-                DepartmentId = x.DepartmentId,
-                DepartmentName = x.DepartmentName,
-                PackageId = x.PackageId,
-                PackageName = x.PackageName,
-                Coverpath = x.CoverPath,
-                //
-                Validity = validityDays + " Days",
-                Validitydate = expiryDate.ToString("yyyy-MM-dd"),
-
-                Price = x.SellingPrice,
-                SubjectMaster = new List<SubjectMasterDto>
+                // LEFT JOIN: User purchase history
+                join usm in _context.TblUserSubscribeMasters
+                    on pm.PackageId equals usm.PackageId into usmGroup
+                from usm in usmGroup.Where(x => x.UserId == userId && x.PaymentStatus == "Success").DefaultIfEmpty()
+                    // LEFT JOIN: Activation history
+                join sah in _context.TblUserSubjectActivationHistories
+                    on (usm != null ? usm.UserSubscribeMasterId : 0) equals sah.TusmId into sahGroup
+                from sah in sahGroup.DefaultIfEmpty()
+                where pm.PackageId == PackageId && pm.Activestatus == true
+                select new
                 {
-                     new SubjectMasterDto(_httpContextAccessor, this, _context)
-                     {
-                         SubjectId = x.sm.SubjectId,
-                         SubjectCode = x.sm.SubjectCode,
-                         SubjectName = x.sm.SubjectName,
-                         SubjectCoverPath = x.sm.SubjectCoverPath,
-                         SubjectDescription = x.sm.SubjectDescription,
-                         ActiveStatus = x.sm.ActiveStatus,
-                        //RuleId = x.sm.RuleId,
-                         //CreatedOn = x.sm.CreatedOn,
-                        //ReleasedOn = x.sm.ReleasedOn,
-                         //UniversityId = x.sm.UniversityId,
-                         //HavingQuestionpaper = x.sm.HavingQuestionpaper,
-                         SubjectVersion = x.sm.SubjectVersion,
-                         ActiveDurationDays = x.sm.ActiveDurationDays,
-                         ActiveDurationDate = x.sm.ActiveDurationDate,
-                         //Syllabus = x.sm.Syllabus,
-                         DeptImgPath = x.sm.DeptImgPath,
-                         Coursehours = x.sm.Coursehours,
-                         Visuals = x.sm.Visuals,
-                         Pagecontent = x.sm.Pagecontent ?? 0,
-                         //Solvedproblem = x.sm.Solvedproblem,
-                         //Multichoice = x.sm.Multichoice,
-                         //DeptVideo = x.sm.DeptVideo,
-                         //IsInTrail = x.sm.IsInTrail,
-                         IsInDemo = x.sm.IsInDemo,
-                         //TradeId = x.sm.TradeId,
-                         SubjectSyllabusPath = x.sm.SubjectSyllabusPath
-                     }
+                    pd.DepartmentId,
+                    d.DepartmentName,
+                    pd.PackageId,
+                    pm.PackageName,
+                    pm.SellingPrice,
+                    pm.CoverPath,
+                    pm.PackageDurationDays,
+                    // Subject
+                    sm,
+
+                    // User data
+                    PaymentOn = usm.PaymentOn,
+                    SubjectExpiryDate = sah.SubjectExpiryDate
                 }
-            }).Distinct().ToList();
+            )
+            .ToListAsync();
+
+
+            // Compute validity
+            int validityDays = data.Max(x => x.PackageDurationDays ?? 0);
+            DateTime expiryDate = now.AddDays(validityDays);
+            // Group by Package (pack all subjects inside)
+            var result = data
+                .GroupBy(x => new{ x.DepartmentId,x.DepartmentName,x.PackageId,x.PackageName,x.SellingPrice,x.CoverPath,x.PackageDurationDays})
+                .Select(pkg => new PackageDetailsDTO
+                {
+                    DepartmentId = pkg.Key.DepartmentId,
+                    DepartmentName = pkg.Key.DepartmentName,
+                    PackageId = pkg.Key.PackageId,
+                    PackageName = pkg.Key.PackageName,
+                    Coverpath = pkg.Key.CoverPath,
+                    Price = pkg.Key.SellingPrice,
+                    Validity = pkg.Key.PackageDurationDays + " Days",
+                    Validitydate = expiryDate.ToString("yyyy-MM-dd"),
+                    // ✔ Using Max() ensures correct values
+                    PaymentOn = pkg.Max(x => x.PaymentOn),
+                    SubjectExpiryDate = pkg.Max(x => x.SubjectExpiryDate),
+                    // ✔ Correct isPurchased logic
+                    IsPurchased = pkg.Max(x => x.PaymentOn) != null,
+                    // Pack all subjects
+                    SubjectMaster = pkg.Select(x => new SubjectMasterDto(_httpContextAccessor, this, _context)
+                    {
+                        SubjectId = x.sm.SubjectId,
+                        SubjectCode = x.sm.SubjectCode,
+                        SubjectName = x.sm.SubjectName,
+                        SubjectCoverPath = x.sm.SubjectCoverPath,
+                        SubjectDescription = x.sm.SubjectDescription,
+                        ActiveStatus = x.sm.ActiveStatus,
+                        RuleId = x.sm.RuleId,
+                        CreatedOn = x.sm.CreatedOn,
+                        ReleasedOn = x.sm.ReleasedOn,
+                        UniversityId = x.sm.UniversityId,
+                        HavingQuestionpaper = x.sm.HavingQuestionpaper,
+                        SubjectVersion = x.sm.SubjectVersion,
+                        ActiveDurationDays = x.sm.ActiveDurationDays,
+                        ActiveDurationDate = x.sm.ActiveDurationDate,
+                        Syllabus = x.sm.Syllabus,
+                        DeptImgPath = x.sm.DeptImgPath,
+                        Coursehours = x.sm.Coursehours,
+                        Visuals = x.sm.Visuals,
+                        Pagecontent = x.sm.Pagecontent ?? 0,
+                        Solvedproblem = x.sm.Solvedproblem,
+                        Multichoice = x.sm.Multichoice,
+                        DeptVideo = x.sm.DeptVideo,
+                        IsInTrail = x.sm.IsInTrail,
+                        IsInDemo = x.sm.IsInDemo,
+                        TradeId = x.sm.TradeId,
+                        SubjectSyllabusPath = x.sm.SubjectSyllabusPath
+                    }).ToList()
+                })
+                .ToList();
 
             return result;
         }
+
+        //public async Task<List<PackageDetailsDTO>> GetPackageDetails(int PackageId, int userId)
+        //{
+
+        //    var data = await (from pm in _context.TblPackageMasters
+        //                join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
+        //                join sm in _context.TblSubjectMasters on pd.SubjectId equals sm.SubjectId
+        //                join d in _context.TblDepartmentMasters on pd.DepartmentId equals d.DepartmentId
+        //                join usm in _context.TblUserSubscribeMasters
+        //                on pm.PackageId equals usm.PackageId into usmGroup
+        //                from usm in usmGroup .Where(x => x.UserId == userId && x.PaymentStatus == "Success").DefaultIfEmpty()
+        //                join sah in _context.TblUserSubjectActivationHistories
+        //                    on usm.UserSubscribeMasterId equals sah.TusmId into sahGroup
+        //                from sah in sahGroup.DefaultIfEmpty()
+        //                where pm.PackageId == PackageId && pm.Activestatus == true
+        //                select new
+        //                {
+        //                    pd.DepartmentId,
+        //                    d.DepartmentName,
+        //                    pd.PackageDetailId,
+        //                    pd.PackageId,
+        //                    pm.PackageName,
+        //                    pm.SellingPrice,
+        //                    pm.CoverPath,
+        //                    pm.PackageDurationDays,
+        //                    sm,
+        //                    PaymentOn = usm != null ? usm.PaymentOn : null,
+        //                    SubjectExpiryDate = sah != null ? sah.SubjectExpiryDate : null
+        //                }).ToListAsync();
+
+        //                 //Validity calculation
+        //                 int validityDays = data.Max(x => x.PackageDurationDays ?? 0);
+        //                 //current date+validity days
+        //                 DateTime currentDate = DateTime.Now;
+        //                 DateTime expiryDate = currentDate.AddDays(validityDays);
+        //                 //map to is purchase details dto
+        //    var result = data.Select(x => new PackageDetailsDTO
+        //    {
+        //        DepartmentId = x.DepartmentId,
+        //        DepartmentName = x.DepartmentName,
+        //        PackageId = x.PackageId,
+        //        PackageName = x.PackageName,
+        //        Coverpath = x.CoverPath,
+        //        Validity = validityDays + " Days",
+        //        Validitydate = expiryDate.ToString("yyyy-MM-dd"),
+        //        Price = x.SellingPrice,
+        //        IsPurchased = x.PaymentOn !=null?true:false,
+        //        PaymentOn = x.PaymentOn,
+        //        SubjectExpiryDate = x.SubjectExpiryDate,
+        //        SubjectMaster = new List<SubjectMasterDto>
+        //        {
+        //             new SubjectMasterDto(_httpContextAccessor, this, _context)
+        //             {
+        //                 SubjectId = x.sm.SubjectId,
+        //                 SubjectCode = x.sm.SubjectCode,
+        //                 SubjectName = x.sm.SubjectName,
+        //                 SubjectCoverPath = x.sm.SubjectCoverPath,
+        //                 SubjectDescription = x.sm.SubjectDescription,
+        //                 ActiveStatus = x.sm.ActiveStatus,
+        //                 RuleId = x.sm.RuleId,
+        //                 CreatedOn = x.sm.CreatedOn,
+        //                 ReleasedOn = x.sm.ReleasedOn,
+        //                 UniversityId = x.sm.UniversityId,
+        //                 HavingQuestionpaper = x.sm.HavingQuestionpaper,
+        //                 SubjectVersion = x.sm.SubjectVersion,
+        //                 ActiveDurationDays = x.sm.ActiveDurationDays,
+        //                 ActiveDurationDate = x.sm.ActiveDurationDate,
+        //                 Syllabus = x.sm.Syllabus,
+        //                 DeptImgPath = x.sm.DeptImgPath,
+        //                 Coursehours = x.sm.Coursehours,
+        //                 Visuals = x.sm.Visuals,
+        //                 Pagecontent = x.sm.Pagecontent ?? 0,
+        //                 Solvedproblem = x.sm.Solvedproblem,
+        //                 Multichoice = x.sm.Multichoice,
+        //                 DeptVideo = x.sm.DeptVideo,
+        //                 IsInTrail = x.sm.IsInTrail,
+        //                 IsInDemo = x.sm.IsInDemo,
+        //                 TradeId = x.sm.TradeId,
+        //                 SubjectSyllabusPath = x.sm.SubjectSyllabusPath,
+
+        //             }
+        //        }
+        //    }).Distinct().ToList();
+
+        //    return result;
+        //}
 
         //04/11/2025
         public async Task<List<TblDegreeMaster>> GetAllDegrees()
