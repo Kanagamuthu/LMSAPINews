@@ -777,20 +777,49 @@ namespace LMSAPI.Repository
 
         public async Task<List<StudentpurchaseitemsDto>> GetUserPurchaseExpiryAsync(long userId)
         {
+            //var result = await (from usm in _context.TblUserSubscribeMasters
+            //                    join ah in _context.TblUserSubjectActivationHistories
+            //                        on usm.UserSubscribeMasterId equals ah.TusmId
+            //                    where usm.PaymentStatus == "success"
+            //                          && usm.UserId == userId
+            //                    group new { usm, ah } by ah.SubjectCode into g
+            //                    orderby g.Max(x => x.usm.PaymentOn) descending
+            //                    select new StudentpurchaseitemsDto
+            //                    {
+            //                        SubjectCode = g.Key,
+            //                        SubjectExpiryDate = g.Max(x => x.ah.SubjectExpiryDate),
+            //                        PaymentOn = g.Max(x => x.usm.PaymentOn)
+            //                    })
+            //                    .ToListAsync();
+
             var result = await (from usm in _context.TblUserSubscribeMasters
-                                join ah in _context.TblUserSubjectActivationHistories
-                                    on usm.UserSubscribeMasterId equals ah.TusmId
-                                where usm.PaymentStatus == "success"
-                                      && usm.UserId == userId
-                                group new { usm, ah } by ah.SubjectCode into g
-                                orderby g.Max(x => x.usm.PaymentOn) descending
-                                select new StudentpurchaseitemsDto
+                                join ah in _context.TblUserSubjectActivationHistories on usm.UserSubscribeMasterId equals ah.TusmId
+                                join pm in _context.TblPackageMasters on usm.PackageId equals pm.PackageId
+                                where usm.PaymentStatus == "success" && usm.UserId == userId
+                                group new { usm, ah, pm } by new
                                 {
-                                    SubjectCode = g.Key,
-                                    SubjectExpiryDate = g.Max(x => x.ah.SubjectExpiryDate),
-                                    PaymentOn = g.Max(x => x.usm.PaymentOn)
-                                })
-                                .ToListAsync();
+                                    pm.PackageId,
+                                    pm.PackageCode,
+                                    pm.PackageName,
+                                    pm.SellingPrice,
+                                    pm.CoverPath,
+                                    ah.SubjectExpiryDate,
+                                    usm.PaymentOn,
+                                    
+                                } into g
+                                orderby g.Max(x => x.usm.PaymentOn) descending
+                             select new StudentpurchaseitemsDto
+                             {
+                                 PackageId = g.Key.PackageId,
+                                 PackageCode =g.Key.PackageCode,
+                                 PackageName = g.Key.PackageName,
+                                 SellingPrice = g.Key.SellingPrice,
+                                 CoverPath = g.Key.CoverPath,
+                                 
+                                 SubjectExpiryDate = g.Max(x => x.ah.SubjectExpiryDate),
+                                 PaymentOn = g.Max(x => x.usm.PaymentOn)
+                             })
+                             .ToListAsync();
 
             return result;
         }
