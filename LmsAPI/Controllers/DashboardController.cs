@@ -690,5 +690,20 @@ namespace LMSAPI.Controllers
         }
         #endregion
 
+
+        #region get student purchase item list
+        [HttpGet("GetUserPurchaseItems")]
+        public async Task<IActionResult> GetUserPurchaseItems()
+        {
+            var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            var result = await _dashboardRepository.GetUserPurchaseExpiryAsync(userId);
+            if (result==null || result.Count==0)
+                return Ok(new ApiResponse(false, "No purchase items found for the user.", "", "404"));
+            else
+                return Ok(new ApiResponse(true, "User purchase items fetched successfully.", result, "200"));
+        }
+
+
+        #endregion
     }
 }

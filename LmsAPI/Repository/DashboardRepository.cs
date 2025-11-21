@@ -478,24 +478,42 @@ namespace LMSAPI.Repository
 
         public async Task<List<PackageDetailsDTO>> GetPackageDetails(int PackageId)
         {
-
             var data = await (from pm in _context.TblPackageMasters
                               join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
                               join sm in _context.TblSubjectMasters on pd.SubjectId equals sm.SubjectId
+                              join d in _context.TblDepartmentMasters on pd.DepartmentId equals d.DepartmentId
                               where pm.PackageId == PackageId && pm.Activestatus == true
                               select new
                               {
                                   pd.DepartmentId,
+                                  d.DepartmentName,
                                   //pd.PackageDetailId,
                                   pd.PackageId,
+                                  pm.PackageName,
                                   pm.SellingPrice,
+                                  pm.CoverPath,
+                                  pm.PackageDurationDays,
                                   sm
                               }).ToListAsync();
+
+            // ✔Validity calculation
+            int validityDays = data.Max(x => x.PackageDurationDays ?? 0);
+            //current date+ validity days
+            DateTime currentDate = DateTime.Now;
+            DateTime expiryDate = currentDate.AddDays(validityDays);
+
             var result = data.Select(x => new PackageDetailsDTO
             {
+               
                 DepartmentId = x.DepartmentId,
-               // PackageDetailId = x.PackageDetailId,
+                DepartmentName = x.DepartmentName,
                 PackageId = x.PackageId,
+                PackageName = x.PackageName,
+                Coverpath = x.CoverPath,
+                //
+                Validity = validityDays + " Days",
+                Validitydate = expiryDate.ToString("yyyy-MM-dd"),
+
                 Price = x.SellingPrice,
                 SubjectMaster = new List<SubjectMasterDto>
                 {
@@ -755,6 +773,26 @@ namespace LMSAPI.Repository
                 return new List<StudentPackageDetailsDTO>();
             }
 
+        }
+
+        public async Task<List<StudentpurchaseitemsDto>> GetUserPurchaseExpiryAsync(long userId)
+        {
+            var result = await (from usm in _context.TblUserSubscribeMasters
+                                join ah in _context.TblUserSubjectActivationHistories
+                                    on usm.UserSubscribeMasterId equals ah.TusmId
+                                where usm.PaymentStatus == "success"
+                                      && usm.UserId == userId
+                                group new { usm, ah } by ah.SubjectCode into g
+                                orderby g.Max(x => x.usm.PaymentOn) descending
+                                select new StudentpurchaseitemsDto
+                                {
+                                    SubjectCode = g.Key,
+                                    SubjectExpiryDate = g.Max(x => x.ah.SubjectExpiryDate),
+                                    PaymentOn = g.Max(x => x.usm.PaymentOn)
+                                })
+                                .ToListAsync();
+
+            return result;
         }
     }
 }
