@@ -142,11 +142,11 @@ namespace LMSAPI.Controllers
                 DateTime now = DateTime.Now;
                 string formattedDate = now.ToString("yyyy-MM-dd");
 
-                return Ok(new { success = true, statusCode = 200, message = "Current system date fetched successfully", SystemDate = formattedDate });
+                return Ok(new ApiResponse(true, "Current date retrieved successfully.", formattedDate, "200"));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, statusCode = 500, message = "Failed to get current date", error = ex.Message });
+                return StatusCode(500, new ApiResponse(false, "Failed to get current date", null, ex.Message));
             }
         }
 
