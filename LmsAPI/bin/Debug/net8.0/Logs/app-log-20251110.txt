@@ -1,0 +1,8 @@
+2025-11-10 15:38:50,206 [9] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-11-10 15:38:52,951 [10] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-11-10 15:39:57,268 [7] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-11-10 15:57:17,298 [7] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-11-10 15:57:17,691 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-11-10 15:58:31,264 [5] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-11-10 16:00:29,332 [6] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully
+2025-11-10 16:00:29,603 [6] INFO  LMSAPI.Helpers.LoggerManager - LoggerManager initialized successfully

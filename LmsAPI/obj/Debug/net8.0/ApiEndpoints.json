@@ -1,6 +1,36 @@
 [
   {
     "ContainingType": "LMSAPI.Controllers.BasicConfigurationController",
+    "Method": "GetCurrentDate",
+    "RelativePath": "api/v1/BasicConfiguration/CurrentDate",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      },
+      {
+        "Type": "Microsoft.AspNetCore.Mvc.ProblemDetails",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 500
+      }
+    ]
+  },
+  {
+    "ContainingType": "LMSAPI.Controllers.BasicConfigurationController",
     "Method": "GetFlags",
     "RelativePath": "api/v1/BasicConfiguration/GetFlags",
     "HttpMethod": "GET",
@@ -462,14 +492,14 @@
     "ContainingType": "LMSAPI.Controllers.DashboardController",
     "Method": "GetPackageDetails",
     "RelativePath": "api/v1/Dashboard/GetPackageDetails",
-    "HttpMethod": "GET",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "PackageId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
+        "Type": "LMSAPI.DTO.GetPackageByIdDto",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": [
@@ -532,6 +562,16 @@
         "StatusCode": 500
       }
     ]
+  },
+  {
+    "ContainingType": "LMSAPI.Controllers.DashboardController",
+    "Method": "GetUserPurchaseItems",
+    "RelativePath": "api/v1/Dashboard/GetUserPurchaseItems",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "LMSAPI.Controllers.DashboardController",
@@ -700,8 +740,8 @@
   },
   {
     "ContainingType": "LMSAPI.Controllers.MeController",
-    "Method": "ReadHistory",
-    "RelativePath": "api/v1/Me/ReadHistory",
+    "Method": "StudentReadHistory",
+    "RelativePath": "api/v1/Me/StudentReadHistory",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -869,7 +909,7 @@
   {
     "ContainingType": "LmsAPI.Controllers.UsersController",
     "Method": "GetActiveTickets",
-    "RelativePath": "api/v1/Users/GetTickets",
+    "RelativePath": "api/v1/Users/GetTicketsList",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -1044,7 +1084,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "LMSAPI.Models.TblStudentUserMaster",
+        "Type": "LMSAPI.DTO.StudentProfileUpdateDto",
         "IsRequired": true
       }
     ],
@@ -1116,7 +1156,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "LMSAPI.Models.TblSupportTicket",
+        "Type": "LMSAPI.DTO.CreateTicketDto",
         "IsRequired": true
       }
     ],
@@ -1144,8 +1184,8 @@
   },
   {
     "ContainingType": "LmsAPI.Controllers.UsersController",
-    "Method": "ValidateMultiDevice",
-    "RelativePath": "api/v1/Users/Validate-MultiDevice",
+    "Method": "ValidateDevice",
+    "RelativePath": "api/v1/Users/Validate-Device",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
