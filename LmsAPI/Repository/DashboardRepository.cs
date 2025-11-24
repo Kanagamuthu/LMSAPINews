@@ -911,7 +911,8 @@ namespace LMSAPI.Repository
                   pm.PackageCode,
                   pm.PackageDisplayName,
                   pm.SellingPrice,
-                  pm.CoverPath
+                  pm.CoverPath,
+                  ah.SubjectName
               } into g
               orderby g.Max(x => x.usm.PaymentOn) descending
               select new StudentpurchaseitemsDto
@@ -921,7 +922,7 @@ namespace LMSAPI.Repository
                   packagedisplayname = g.Key.PackageDisplayName,
                   SellingPrice = g.Key.SellingPrice,
                   CoverPath = g.Key.CoverPath,
-             
+                  SubjectName = g.Key.SubjectName,
                   SubjectExpiryDate = g.Max(x => x.ah.SubjectExpiryDate),
                   PaymentOn = g.Max(x => x.usm.PaymentOn)
               }
