@@ -56,4 +56,6 @@ public partial class TblPackageMaster
     public string? PackageVideoUrl { get; set; }
 
     public int? OsType { get; set; }
+
+    public virtual ICollection<TblPackageDetail> TblPackageDetails { get; set; } = new List<TblPackageDetail>();
 }

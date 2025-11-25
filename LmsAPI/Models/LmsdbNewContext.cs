@@ -23,6 +23,8 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<TblCountriesMaster> TblCountriesMasters { get; set; }
 
+    public virtual DbSet<TblDegreeDepartmentMapping> TblDegreeDepartmentMappings { get; set; }
+
     public virtual DbSet<TblDegreeMaster> TblDegreeMasters { get; set; }
 
     public virtual DbSet<TblDepartmentMaster> TblDepartmentMasters { get; set; }
@@ -76,6 +78,10 @@ public partial class LmsdbNewContext : DbContext
     public virtual DbSet<TblUserSubjectReadHistory> TblUserSubjectReadHistories { get; set; }
 
     public virtual DbSet<TblUserSubscribeMaster> TblUserSubscribeMasters { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<UserRole> UserRoles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Name=DefaultConnection");
@@ -176,6 +182,18 @@ public partial class LmsdbNewContext : DbContext
                 .HasMaxLength(200)
                 .IsUnicode(false)
                 .HasColumnName("official_name");
+        });
+
+        modelBuilder.Entity<TblDegreeDepartmentMapping>(entity =>
+        {
+            entity.HasKey(e => e.Mapid).HasName("PK__Tbl_Degr__0AFFE5E790DF52C8");
+
+            entity.ToTable("Tbl_Degree_DepartmentMapping");
+
+            entity.Property(e => e.Mapid).HasColumnName("mapid");
+            entity.Property(e => e.Degreeid).HasColumnName("degreeid");
+            entity.Property(e => e.Departid).HasColumnName("departid");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
         });
 
         modelBuilder.Entity<TblDegreeMaster>(entity =>
@@ -348,6 +366,10 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.SubjectUnitType).HasColumnName("subject_unit_type");
             entity.Property(e => e.ValidityDays).HasColumnName("validity_days");
             entity.Property(e => e.Year).HasColumnName("year");
+
+            entity.HasOne(d => d.Package).WithMany(p => p.TblPackageDetails)
+                .HasForeignKey(d => d.PackageId)
+                .HasConstraintName("FK_PackageDetails_PackageMaster");
         });
 
         modelBuilder.Entity<TblPackageMaster>(entity =>
@@ -592,7 +614,7 @@ public partial class LmsdbNewContext : DbContext
 
         modelBuilder.Entity<TblSubjectMaster>(entity =>
         {
-            entity.HasKey(e => e.SubjectId).HasName("PK__Tbl_subj__5004F6608A1CC90F");
+            entity.HasKey(e => e.SubjectId).HasName("PK__Tbl_subj__5004F6603A1482FE");
 
             entity.ToTable("Tbl_subject_master");
 
@@ -1090,6 +1112,27 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.TransactionType).HasMaxLength(50);
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.UserSubscribeDeliveryModeId).HasColumnName("user_subscribe_delivery_mode_id");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C2A3D3244");
+
+            entity.Property(e => e.CounteryCode).HasMaxLength(10);
+            entity.Property(e => e.CreatedDatetime).HasColumnType("datetime");
+            entity.Property(e => e.PasswordHash).HasMaxLength(150);
+            entity.Property(e => e.PhoneNumber).HasMaxLength(50);
+            entity.Property(e => e.UpdatedDatetime).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__UserRole__3214EC07492CB345");
+
+            entity.ToTable("UserRole");
+
+            entity.Property(e => e.CreatedDatetime).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedDatetime).HasColumnType("datetime");
         });
 
         OnModelCreatingPartial(modelBuilder);

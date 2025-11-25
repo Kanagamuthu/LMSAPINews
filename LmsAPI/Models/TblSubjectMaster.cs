@@ -5,7 +5,7 @@ namespace LMSAPI.Models;
 
 public partial class TblSubjectMaster
 {
-    public long SubjectId { get; set; }
+    public int SubjectId { get; set; }
 
     public string SubjectCode { get; set; } = null!;
 
@@ -17,23 +17,23 @@ public partial class TblSubjectMaster
 
     public string? SubjectDescription { get; set; }
 
-    public int ActiveStatus { get; set; }
+    public int? ActiveStatus { get; set; }
 
     public int? RuleId { get; set; }
 
-    public DateTime CreatedOn { get; set; }
+    public DateTime? CreatedOn { get; set; }
 
     public DateTime? ReleasedOn { get; set; }
 
-    public int UniversityId { get; set; }
+    public int? UniversityId { get; set; }
 
-    public int HavingQuestionpaper { get; set; }
+    public int? HavingQuestionpaper { get; set; }
 
-    public string SubjectVersion { get; set; } = null!;
+    public string? SubjectVersion { get; set; }
 
-    public int ActiveDurationDays { get; set; }
+    public int? ActiveDurationDays { get; set; }
 
-    public DateTime ActiveDurationDate { get; set; }
+    public DateTime? ActiveDurationDate { get; set; }
 
     public string? Syllabus { get; set; }
 

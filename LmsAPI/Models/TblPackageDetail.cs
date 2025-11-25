@@ -26,4 +26,6 @@ public partial class TblPackageDetail
     public int? SubjectUnitType { get; set; }
 
     public int? DepartmentSubjectMappingId { get; set; }
+
+    public virtual TblPackageMaster? Package { get; set; }
 }
