@@ -51,7 +51,7 @@ namespace LMSAPI.Repository
         Task<int> GetTrialPeriodDaysAsync();
         Task<List<DepartmentMasterDto>> GetRegisterDropdwonList();
 
-        Task <List<EducationListDto>> GetEducationTypeListAsync();
+        Task<List<EducationListDto>> GetEducationTypeListAsync();
 
         //get department by education type id
         Task<List<DepartmentMasterDto>> GetDepartmentByEduTypeIdAsync(int eduTypeId);
@@ -60,5 +60,7 @@ namespace LMSAPI.Repository
         Task<List<StudentPackageDetailsDTO>> GetPackageDetailsByUserEmailAsync(int DegreeId);
 
         Task<List<StudentpurchaseitemsDto>> GetUserPurchaseExpiryAsync(long userId);
+
+        Task<int> CreatePackageAsync(CreatePackageDto packageDto, int _userid);
     }
 }

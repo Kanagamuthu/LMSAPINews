@@ -20,12 +20,16 @@ namespace LMSAPI.Controllers
         private readonly ILoggerManager _logger;
         private readonly IStudentsRepository _studentsRepository;
         private readonly IMeUserRepository _meUserRepository;
+        private readonly IDashboardRepository _dashboardRepository;
 
-        public BasicConfigurationController(ILoggerManager logger, IStudentsRepository studentsRepository, IMeUserRepository meUserRepository)
+
+        public BasicConfigurationController(ILoggerManager logger, IStudentsRepository studentsRepository, IMeUserRepository meUserRepository, IDashboardRepository dashboardRepository)
         {
             _logger = logger;
             _studentsRepository = studentsRepository;
             _meUserRepository = meUserRepository;
+            _dashboardRepository = dashboardRepository;
+
         }
 
         [HttpGet("GetFlags")]
@@ -94,7 +98,7 @@ namespace LMSAPI.Controllers
                 data = model.Data // optional custom payload
             };
             //save notification to db
-           var notificationRecord = new LMSAPI.Models.TblUserNotificationDetail
+            var notificationRecord = new LMSAPI.Models.TblUserNotificationDetail
             {
                 UserId = _userid,
                 Isread = 0,
@@ -149,6 +153,29 @@ namespace LMSAPI.Controllers
                 return StatusCode(500, new ApiResponse(false, "Failed to get current date", null, ex.Message));
             }
         }
+
+
+        #region post package
+        [HttpPost("PostPackage")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> PostPackage(CreatePackageDto packageDto)
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var email = User.Claims.FirstOrDefault(c => c.Type == "Email")?.Value;
+            //get user department id and edu type
+            int _userid = Convert.ToInt32(userId);
+
+            var id = await _dashboardRepository.CreatePackageAsync(packageDto, _userid);
+
+            return Ok(new
+            {
+                PackageId = id,
+                Message = "Package saved successfully"
+            });
+        }
+        #endregion
 
     }
 }

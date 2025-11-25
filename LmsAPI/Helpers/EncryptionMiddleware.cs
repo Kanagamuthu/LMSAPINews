@@ -1,5 +1,4 @@
 ﻿using Azure;
-using LmsAPI.Models;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Security.Claims;

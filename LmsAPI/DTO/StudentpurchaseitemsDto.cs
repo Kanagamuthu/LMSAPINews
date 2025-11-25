@@ -8,7 +8,6 @@
         public string? SubjectName { get; set; }
         public int? SellingPrice { get; set; }
         public string? CoverPath { get; set; }
-        public string? SubjectName { get; set; }
         public DateTime? SubjectExpiryDate { get; set; }
         public DateTime? PaymentOn { get; set; }
         

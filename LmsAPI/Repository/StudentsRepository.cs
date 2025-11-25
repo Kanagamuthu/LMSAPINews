@@ -1,5 +1,4 @@
-﻿using LmsAPI.Models;
-using LMSAPI.Models;
+﻿using LMSAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 

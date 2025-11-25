@@ -1,5 +1,4 @@
-﻿using LmsAPI.Models;
-using LMSAPI.DTO;
+﻿using LMSAPI.DTO;
 using LMSAPI.Helpers;
 using LMSAPI.Models;
 using LMSAPI.Repository;
@@ -496,7 +495,7 @@ namespace LMSAPI.Controllers
         #endregion
 
         #region get Particular Package list 
-        [HttpPost("GetPackageDetails")]
+        [HttpPost("GetPackageDetailsPackageId")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -511,9 +510,9 @@ namespace LMSAPI.Controllers
                 if (getAllPackage == null || getAllPackage?.Count == 0)
                     return Ok(new ApiResponse(false, "No package found with the given PackageId.", "", errorCode: "404"));
                 else
-            
+
                     return Ok(new ApiResponse(true, "Packages details fetched successfully.", getAllPackage, errorCode: "200"));
-              
+
             }
         }
         #endregion
@@ -698,13 +697,14 @@ namespace LMSAPI.Controllers
         {
             var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
             var result = await _dashboardRepository.GetUserPurchaseExpiryAsync(userId);
-            if (result==null || result.Count==0)
+            if (result == null || result.Count == 0)
                 return Ok(new ApiResponse(false, "No purchase items found for the user.", "", "404"));
             else
                 return Ok(new ApiResponse(true, "User purchase items fetched successfully.", result, "200"));
         }
-
-
         #endregion
+
+
+
     }
 }

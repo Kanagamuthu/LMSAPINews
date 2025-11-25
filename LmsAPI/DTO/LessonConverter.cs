@@ -1,5 +1,4 @@
-﻿using LmsAPI.Models;
-using LMSAPI.Models;
+﻿using LMSAPI.Models;
 using Newtonsoft.Json;
 using System.Xml.Linq;
 using static LMSAPI.DTO.LessonConverter;
