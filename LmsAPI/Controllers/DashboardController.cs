@@ -393,7 +393,7 @@ namespace LMSAPI.Controllers
                 foreach (var item in getpaymentPackage?.FirstOrDefault()?.subjectmaster)
                 {
                     TblUserSubjectActivationHistory obj1 = new TblUserSubjectActivationHistory();
-                    var DepartmentId = getpaymentPackage?.FirstOrDefault()?.departmentsubjectmapping.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
+                    var DepartmentId = getpaymentPackage?.FirstOrDefault()?.packagedetails.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
                     obj1.TusmId = getData.UserSubscribeMasterId;
                     obj1.SubjectId = Convert.ToInt32(item.SubjectId);
                     obj1.SubjectCode = item.SubjectCode;

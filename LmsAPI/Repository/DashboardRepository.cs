@@ -628,15 +628,15 @@ namespace LMSAPI.Repository
         {
             var result = await (from pd in _context.TblPackageDetails
                                 join tpm in _context.TblPackageMasters on pd.PackageId equals tpm.PackageId
-                                join dsm in _context.TblDepartmentSubjectMappings on pd.DepartmentSubjectMappingId equals dsm.DepartmentSubjectMappingId
-                                join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId
+                                //join dsm in _context.TblDepartmentSubjectMappings on pd.DepartmentSubjectMappingId equals dsm.DepartmentSubjectMappingId
+                                join sm in _context.TblSubjectMasters on pd.SubjectId equals sm.SubjectId
                                 where tpm.PackageId == packageId
-                                group new { pd, dsm, sm } by tpm into g
+                                group new { pd, sm } by tpm into g
                                 select new PaymentPackageDTO
                                 {
                                     packagemaster = g.Key,
                                     packagedetails = g.Select(x => x.pd).ToList(),
-                                    departmentsubjectmapping = g.Select(x => x.dsm).ToList(),
+                                    //departmentsubjectmapping = g.Select(x => x.dsm).ToList(),
                                     subjectmaster = g.Select(x => x.sm).ToList()
                                 }).ToListAsync();
 
