@@ -561,7 +561,8 @@ namespace LMSAPI.Repository
 
 
         //1-12-2025
-        public async Task<List<PackageDetailsDTO>> GetPackageDetails(int packageId, int userId)
+        //public async Task<List<PackageDetailsDTO>> GetPackageDetails(int packageId, int userId)
+        public async Task<List<PackageDetailsDTO>> GetPackageDetails(string packageId, int userId)
         {
             var data = await (from pm in _context.TblPackageMasters
                               join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
@@ -575,7 +576,7 @@ namespace LMSAPI.Repository
                               join sah in _context.TblUserSubjectActivationHistories
                                   on usm.UserSubscribeMasterId equals sah.TusmId into sahGroup
                               from sah in sahGroup.DefaultIfEmpty()
-                              where pm.PackageId == packageId && pm.Activestatus == true
+                              where pm.PackageId ==Convert.ToInt64(packageId) && pm.Activestatus == true
                               select new
                               {
                                   pd.DepartmentId,
@@ -661,9 +662,10 @@ namespace LMSAPI.Repository
                     PackageId = item.PackageId,
                     PackageName = item.PackageName,
                     Coverpath = item.CoverPath,
-                    Validity = validityDays + " Days",
+                    Validity = validityDays,
+                    Validitydate = item.SubjectExpiryDate,
                     Price = item.SellingPrice,
-                    IsPurchased = item.PaymentOn != null,
+                    IsPurchased = item.PaymentOn != null || item.SubjectExpiryDate != null,
                     PaymentOn = item.PaymentOn,
                     SubjectExpiryDate = item.SubjectExpiryDate,
                     SubjectMaster = new List<SubjectMasterDto>() { subjectDto }

@@ -11,8 +11,8 @@ namespace LMSAPI.DTO
         public string? PackageName { get; set; }
         public string? Coverpath { get; set; }
         public int? Price { get; set; }
-        public string? Validity { get; set; }  
-        public string? Validitydate { get; set; }  
+        public int Validity { get; set; }  
+        public DateTime? Validitydate { get; set; }  
         public bool IsPurchased { get; set; }
         public DateTime? SubjectExpiryDate { get; set; }
         public DateTime? PaymentOn { get; set; }

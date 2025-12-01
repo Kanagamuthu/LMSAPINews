@@ -502,7 +502,7 @@ namespace LMSAPI.Controllers
         public async Task<IActionResult> GetPackageDetails(GetPackageByIdDto PackageId)
         {
             int userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
-            if (PackageId == null || PackageId.PackageID <= 0)
+            if (PackageId == null || string.IsNullOrEmpty(PackageId.PackageID))
                 return Ok(new ApiResponse { Success = false, Message = "PackageId Reuired", Data = "", ErrorCode = "400" });
             else
             {
