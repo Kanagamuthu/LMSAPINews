@@ -57,5 +57,9 @@ public partial class TblPackageMaster
 
     public int? OsType { get; set; }
 
+    public int? UpdatedBy { get; set; }
+
+    public DateTime? Updateddate { get; set; }
+
     public virtual ICollection<TblPackageDetail> TblPackageDetails { get; set; } = new List<TblPackageDetail>();
 }
