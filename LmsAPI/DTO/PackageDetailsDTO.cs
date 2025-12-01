@@ -4,14 +4,14 @@ namespace LMSAPI.DTO
 {
     public class PackageDetailsDTO
     {
-        public int? DepartmentSubjectMappingId { get; set; }
-        public int? DepartmentId { get; set; }
+        public string? DepartmentSubjectMappingId { get; set; }
+        public string? DepartmentId { get; set; }
         public string? DepartmentName { get; set; }
-        public int? PackageId { get; set; }
+        public string? PackageId { get; set; }
         public string? PackageName { get; set; }
         public string? Coverpath { get; set; }
-        public int? Price { get; set; }
-        public int Validity { get; set; }  
+        public string? Price { get; set; }
+        public string Validity { get; set; }  
         public DateTime? Validitydate { get; set; }  
         public bool IsPurchased { get; set; }
         public DateTime? SubjectExpiryDate { get; set; }

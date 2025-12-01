@@ -370,32 +370,32 @@ namespace LMSAPI.Repository
                                  DepartmentName = dm.DepartmentName,
                                  subjectMaster = new SubjectMasterDto(_httpContextAccessor, this, _context)
                                  {
-                                     SubjectId = sm.SubjectId,
+                                     SubjectId = sm.SubjectId.ToString(),
                                      SubjectCode = sm.SubjectCode,
                                      UnivSubjectCode = sm.UnivSubjectCode,
                                      SubjectName = sm.SubjectName,
                                      SubjectCoverPath = sm.SubjectCoverPath,
                                      SubjectDescription = sm.SubjectDescription,
-                                     ActiveStatus =Convert.ToInt16(sm.ActiveStatus),
-                                     RuleId = sm.RuleId,
+                                     ActiveStatus =sm.ActiveStatus.ToString(),
+                                     RuleId = sm.RuleId.ToString(),
                                      CreatedOn = sm.CreatedOn?? DateTime.Now,
                                      ReleasedOn = sm.ReleasedOn,
-                                     UniversityId = Convert.ToInt16(sm.UniversityId),
-                                     HavingQuestionpaper = Convert.ToInt16(sm.HavingQuestionpaper),
+                                     UniversityId = sm.UniversityId.ToString(),
+                                     HavingQuestionpaper = sm.HavingQuestionpaper.ToString(),
                                      SubjectVersion = sm.SubjectVersion,
-                                     ActiveDurationDays = Convert.ToInt16(sm.ActiveDurationDays),
+                                     ActiveDurationDays = sm.ActiveDurationDays.ToString(),
                                      ActiveDurationDate = sm.ActiveDurationDate ?? DateTime.Now,
                                      Syllabus = sm.Syllabus,
                                      DeptImgPath = sm.DeptImgPath,
-                                     Coursehours = sm.Coursehours,
-                                     Visuals = sm.Visuals,
-                                     Pagecontent = sm.Pagecontent ?? 0,
-                                     Solvedproblem = sm.Solvedproblem,
-                                     Multichoice = sm.Multichoice,
+                                     Coursehours = sm.Coursehours.ToString(),
+                                     Visuals = sm.Visuals.ToString(),
+                                     Pagecontent = sm.Pagecontent.ToString() ?? "",
+                                     Solvedproblem = sm.Solvedproblem.ToString(),
+                                     Multichoice = sm.Multichoice.ToString(),
                                      DeptVideo = sm.DeptVideo,
-                                     IsInTrail = sm.IsInTrail,
-                                     IsInDemo = sm.IsInDemo,
-                                     TradeId = sm.TradeId,
+                                    // IsInTrail = sm.IsInTrail,
+                                     IsInDemo = sm.IsInDemo.ToString(),
+                                     TradeId = sm.TradeId.ToString(),
                                      SubjectSyllabusPath = sm.SubjectSyllabusPath
                                  }
 
@@ -611,7 +611,7 @@ namespace LMSAPI.Repository
                     .Where(u => u.SubjectId == item.Subject.SubjectId && u.ActiveStatus == 1)
                     .Select(u => new UnitDto
                     {
-                        UnitId = u.UnitId,
+                        UnitId = u.UnitId.ToString(),
                         UnitTitle = u.UnitName,
 
                         // ---------------------- FETCH CHAPTERS FOR THIS UNIT ----------------------
@@ -620,7 +620,7 @@ namespace LMSAPI.Repository
                             .OrderBy(c => c.ChapterOrder)
                             .Select(c => new ChapterDto
                             {
-                                ChapterId = c.ChapterId,
+                                ChapterId = c.ChapterId.ToString(),
                                 Title = c.ChapterName,
                                 //Url = c.ChapterId.ToString()   // <---- IMPORTANT: only ID
                             })
@@ -632,22 +632,22 @@ namespace LMSAPI.Repository
                 // ---------------------- BUILD SUBJECT DTO ----------------------
                 var subjectDto = new SubjectMasterDto(_httpContextAccessor, this, _context)
                 {
-                    SubjectId = item.Subject.SubjectId,
+                    SubjectId = item.Subject.SubjectId.ToString(),
                     SubjectCode = item.Subject.SubjectCode,
                     SubjectName = item.Subject.SubjectName,
                     SubjectCoverPath = item.Subject.SubjectCoverPath,
                     SubjectDescription = item.Subject.SubjectDescription,
                     Syllabus = item.Subject.Syllabus,
                     DeptImgPath = item.Subject.DeptImgPath,
-                    Coursehours = item.Subject.Coursehours,
-                    Visuals = item.Subject.Visuals,
-                    Pagecontent = item.Subject.Pagecontent ?? 0,
-                    Solvedproblem = item.Subject.Solvedproblem,
-                    Multichoice = item.Subject.Multichoice,
+                    Coursehours = item.Subject.Coursehours.ToString(),
+                    Visuals = item.Subject.Visuals.ToString(),
+                    Pagecontent = item.Subject.Pagecontent.ToString() ?? "",
+                    Solvedproblem = item.Subject.Solvedproblem.ToString(),
+                    Multichoice = item.Subject.Multichoice.ToString(),
                     DeptVideo = item.Subject.DeptVideo,
-                    IsInTrail = item.Subject.IsInTrail,
-                    IsInDemo = item.Subject.IsInDemo,
-                    TradeId = item.Subject.TradeId,
+                    //IsInTrail = item.Subject.IsInTrail,
+                    IsInDemo = item.Subject.IsInDemo.ToString(),
+                    TradeId = item.Subject.TradeId.ToString(),
                     SubjectSyllabusPath = item.Subject.SubjectSyllabusPath,
 
                     Units = unitList  // <------ attach units & chapters
@@ -657,14 +657,14 @@ namespace LMSAPI.Repository
                 // ---------------------- MAP PACKAGE DTO ----------------------
                 result.Add(new PackageDetailsDTO
                 {
-                    DepartmentId = item.DepartmentId,
+                    DepartmentId = item.DepartmentId.ToString(),
                     DepartmentName = item.DepartmentName,
-                    PackageId = item.PackageId,
+                    PackageId = item.PackageId.ToString(),
                     PackageName = item.PackageName,
                     Coverpath = item.CoverPath,
-                    Validity = validityDays,
+                    Validity = validityDays.ToString(),
                     Validitydate = item.SubjectExpiryDate,
-                    Price = item.SellingPrice,
+                    Price = item.SellingPrice.ToString(),
                     IsPurchased = item.PaymentOn != null || item.SubjectExpiryDate != null,
                     PaymentOn = item.PaymentOn,
                     SubjectExpiryDate = item.SubjectExpiryDate,

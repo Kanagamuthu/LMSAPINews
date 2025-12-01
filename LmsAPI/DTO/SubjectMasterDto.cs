@@ -18,7 +18,7 @@ namespace LMSAPI.DTO
             _dashboardRepository = dashboardRepository;
             _context = context;
         }
-        public long SubjectId { get; set; }
+        public string SubjectId { get; set; }
 
         public string SubjectCode { get; set; } = null!;
 
@@ -30,21 +30,21 @@ namespace LMSAPI.DTO
 
         public string? SubjectDescription { get; set; }
 
-        public int ActiveStatus { get; set; }
+        public string ActiveStatus { get; set; }
 
-        public int? RuleId { get; set; }
+        public string? RuleId { get; set; }
 
         public DateTime CreatedOn { get; set; }
 
         public DateTime? ReleasedOn { get; set; }
 
-        public int UniversityId { get; set; }
+        public string UniversityId { get; set; }
 
-        public int HavingQuestionpaper { get; set; }
+        public string HavingQuestionpaper { get; set; }
 
         public string SubjectVersion { get; set; } = null!;
 
-        public int ActiveDurationDays { get; set; }
+        public string ActiveDurationDays { get; set; }
 
         public DateTime ActiveDurationDate { get; set; }
 
@@ -52,23 +52,23 @@ namespace LMSAPI.DTO
 
         public string? DeptImgPath { get; set; }
 
-        public int? Coursehours { get; set; }
+        public string? Coursehours { get; set; }
 
-        public int? Visuals { get; set; }
+        public string? Visuals { get; set; }
 
-        public int Pagecontent { get; set; }
+        public string Pagecontent { get; set; }
 
-        public int? Solvedproblem { get; set; }
+        public string? Solvedproblem { get; set; }
 
-        public int? Multichoice { get; set; }
+        public string? Multichoice { get; set; }
 
         public string? DeptVideo { get; set; }
 
-        public int? IsInTrail { get; set; }
+        public string? Isstringrail { get; set; }
 
-        public int? IsInDemo { get; set; }
+        public string? IsInDemo { get; set; }
 
-        public int? TradeId { get; set; }
+        public string? TradeId { get; set; }
 
         public string? SubjectSyllabusPath { get; set; }
 
