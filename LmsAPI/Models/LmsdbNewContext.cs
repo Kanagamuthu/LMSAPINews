@@ -15,6 +15,12 @@ public partial class LmsdbNewContext : DbContext
     {
     }
 
+    public virtual DbSet<SubjectChapter> SubjectChapters { get; set; }
+
+    public virtual DbSet<SubjectChapterPath> SubjectChapterPaths { get; set; }
+
+    public virtual DbSet<SubjectUnit> SubjectUnits { get; set; }
+
     public virtual DbSet<TblAppConfig> TblAppConfigs { get; set; }
 
     public virtual DbSet<TblCollegeGroupMap> TblCollegeGroupMaps { get; set; }
@@ -55,8 +61,6 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<TblSubjectMasterHistory> TblSubjectMasterHistories { get; set; }
 
-    public virtual DbSet<TblSubjectUnitMaster> TblSubjectUnitMasters { get; set; }
-
     public virtual DbSet<TblSubjectUnitMasterHistory> TblSubjectUnitMasterHistories { get; set; }
 
     public virtual DbSet<TblSupportTicket> TblSupportTickets { get; set; }
@@ -88,6 +92,73 @@ public partial class LmsdbNewContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<SubjectChapter>(entity =>
+        {
+            entity.HasKey(e => e.ChapterId).HasName("PK__SubjectC__0893A36A9A7C5201");
+
+            entity.ToTable("SubjectChapter");
+
+            entity.Property(e => e.ActiveStatus).HasDefaultValue(1);
+            entity.Property(e => e.ChapterCode).HasMaxLength(50);
+            entity.Property(e => e.ChapterName).HasMaxLength(255);
+            entity.Property(e => e.ChapterPath).HasMaxLength(500);
+            entity.Property(e => e.ChapterVersion).HasMaxLength(20);
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.FileSizeInMb).HasColumnName("FileSizeInMB");
+            entity.Property(e => e.UpdatedOn).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Subject).WithMany(p => p.SubjectChapters)
+                .HasForeignKey(d => d.SubjectId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Chapter_Subject");
+
+            entity.HasOne(d => d.Unit).WithMany(p => p.SubjectChapters)
+                .HasForeignKey(d => d.UnitId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Chapter_Unit");
+        });
+
+        modelBuilder.Entity<SubjectChapterPath>(entity =>
+        {
+            entity.HasKey(e => e.SubjectChapterPathId).HasName("PK__SubjectC__B1831165F04893CB");
+
+            entity.ToTable("SubjectChapterPath");
+
+            entity.Property(e => e.ChapterLink).HasMaxLength(500);
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.SubjectCode).HasMaxLength(10);
+        });
+
+        modelBuilder.Entity<SubjectUnit>(entity =>
+        {
+            entity.HasKey(e => e.UnitId).HasName("PK__SubjectU__44F5ECB5174FB6C4");
+
+            entity.ToTable("SubjectUnit");
+
+            entity.Property(e => e.ActiveStatus).HasDefaultValue(1);
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.FileSizeInMb).HasColumnName("FileSizeInMB");
+            entity.Property(e => e.ReleasedOn).HasColumnType("datetime");
+            entity.Property(e => e.SubjectUnitPath)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+            entity.Property(e => e.SubjectUnitVersion).HasMaxLength(20);
+            entity.Property(e => e.UnitCode).HasMaxLength(50);
+            entity.Property(e => e.UnitName)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+        });
+
         modelBuilder.Entity<TblAppConfig>(entity =>
         {
             entity.HasKey(e => e.CId).HasName("PK__Tbl_AppC__A9FDEC12D03C3C74");
@@ -427,6 +498,7 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.SubjectId).HasColumnName("subject_id");
             entity.Property(e => e.SubjectUnitType).HasColumnName("subject_unit_type");
             entity.Property(e => e.UnivId).HasColumnName("univ_id");
+            entity.Property(e => e.Updateddate).HasColumnType("datetime");
             entity.Property(e => e.Year).HasColumnName("year");
         });
 
@@ -700,43 +772,6 @@ public partial class LmsdbNewContext : DbContext
                 .HasMaxLength(15)
                 .HasColumnName("subject_version");
             entity.Property(e => e.UniversityId).HasColumnName("UniversityID");
-        });
-
-        modelBuilder.Entity<TblSubjectUnitMaster>(entity =>
-        {
-            entity.HasKey(e => e.UnitId).HasName("PK__Tbl_subj__D3AF5BD7392AFDDE");
-
-            entity.ToTable("Tbl_subject_unit_master");
-
-            entity.Property(e => e.UnitId).HasColumnName("unit_id");
-            entity.Property(e => e.ActiveStatus).HasColumnName("active_status");
-            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
-            entity.Property(e => e.CreatedOn)
-                .HasColumnType("datetime")
-                .HasColumnName("created_on");
-            entity.Property(e => e.FilesizeInMb).HasColumnName("filesize_in_mb");
-            entity.Property(e => e.IsDemo).HasColumnName("is_demo");
-            entity.Property(e => e.IsUnitOrIndex).HasColumnName("is_unit_or_index");
-            entity.Property(e => e.OsType).HasColumnName("os_type");
-            entity.Property(e => e.ReleasedOn)
-                .HasColumnType("datetime")
-                .HasColumnName("released_on");
-            entity.Property(e => e.SubjectId).HasColumnName("subject_id");
-            entity.Property(e => e.SubjectUnitPath)
-                .HasMaxLength(250)
-                .IsUnicode(false)
-                .HasColumnName("subject_unit_path");
-            entity.Property(e => e.SubjectUnitType).HasColumnName("subject_unit_type");
-            entity.Property(e => e.SubjectUnitVersion)
-                .HasMaxLength(20)
-                .HasColumnName("subject_unit_version");
-            entity.Property(e => e.UnitCode)
-                .HasMaxLength(50)
-                .HasColumnName("unit_code");
-            entity.Property(e => e.UnitName)
-                .HasMaxLength(255)
-                .IsUnicode(false)
-                .HasColumnName("unit_name");
         });
 
         modelBuilder.Entity<TblSubjectUnitMasterHistory>(entity =>

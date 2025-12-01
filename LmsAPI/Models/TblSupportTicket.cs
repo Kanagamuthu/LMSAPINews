@@ -17,7 +17,7 @@ public partial class TblSupportTicket
 
     public DateTime? Createdon { get; set; }
 
-    public bool? Isread { get; set; }
+    public int? Isread { get; set; }
 
     public DateTime? Readon { get; set; }
 

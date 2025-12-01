@@ -72,20 +72,23 @@ namespace LMSAPI.DTO
 
         public string? SubjectSyllabusPath { get; set; }
 
-        private Subject? _subjectSyllabus;
-        public Subject? SubjectSyllabus
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(SubjectSyllabusPath))
-                    return null;
-                LessonConverter obj = new LessonConverter();
-                var getdata = _dashboardRepository.GetAllReadHistory() ?? null;
-                var userId = _httpContextAccessor.HttpContext?.User?.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-                _subjectSyllabus = obj.GetLessonConverterAsync(SubjectSyllabusPath, userId, getdata).Result;
-                //Pagecontent = _subjectSyllabus?.TotalChapters ?? 0;
-                return _subjectSyllabus;
-            }
-        }
+        
+        public List<UnitDto>? Units { get; set; }
+
+        //private Subject? _subjectSyllabus;
+        //public Subject? SubjectSyllabus
+        //{
+        //    get
+        //    {
+        //        if (string.IsNullOrEmpty(SubjectSyllabusPath))
+        //            return null;
+        //        LessonConverter obj = new LessonConverter();
+        //        var getdata = _dashboardRepository.GetAllReadHistory() ?? null;
+        //        var userId = _httpContextAccessor.HttpContext?.User?.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+        //        _subjectSyllabus = obj.GetLessonConverterAsync(SubjectSyllabusPath, userId, getdata).Result;
+        //        //Pagecontent = _subjectSyllabus?.TotalChapters ?? 0;
+        //        return _subjectSyllabus;
+        //    }
+        //}
     }
 }

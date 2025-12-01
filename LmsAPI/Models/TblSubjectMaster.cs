@@ -58,4 +58,6 @@ public partial class TblSubjectMaster
     public int? TradeId { get; set; }
 
     public string? SubjectSyllabusPath { get; set; }
+
+    public virtual ICollection<SubjectChapter> SubjectChapters { get; set; } = new List<SubjectChapter>();
 }
