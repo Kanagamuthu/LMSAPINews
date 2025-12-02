@@ -507,7 +507,7 @@ namespace LMSAPI.Controllers
             else
             {
                 var getAllPackage = await _dashboardRepository.GetPackageDetails(PackageId.PackageID, userId);
-                if (getAllPackage == null || getAllPackage?.Count == 0)
+                if (getAllPackage == null )
                     return Ok(new ApiResponse(false, "No package found with the given PackageId.", "", errorCode: "404"));
                 else
 

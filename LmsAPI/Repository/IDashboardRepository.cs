@@ -39,7 +39,8 @@ namespace LMSAPI.Repository
         Task<ReadHistoryDto> ReadHistory(int Id);
 
         Task<List<TblPackageMaster>> GetAllPackage();
-        Task<List<PackageDetailsDTO>> GetPackageDetails(string PackageId, int userId);
+        //Task<List<PackageDetailsDTO>> GetPackageDetails(string PackageId, int userId);
+        Task<PackageDetailsDTO> GetPackageDetails(string packageId, int userId);
 
         Task<List<TblDegreeMaster>> GetAllDegrees();
 

@@ -15,7 +15,7 @@ namespace LMSAPI.DTO
         public bool IsPurchased { get; set; }
         public DateTime? SubjectExpiryDate { get; set; }
         public DateTime? PaymentOn { get; set; }
-        //public DateTime? todaydate { get; set; }
+        public DateTime? serverdate { get; set; } = DateTime.Now;
         public List<SubjectMasterDto> SubjectMaster { get; set; }
     }
 }
