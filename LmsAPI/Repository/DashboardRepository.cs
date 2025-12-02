@@ -562,8 +562,125 @@ namespace LMSAPI.Repository
 
         //1-12-2025
         //public async Task<List<PackageDetailsDTO>> GetPackageDetails(int packageId, int userId)
+        //public async Task<List<PackageDetailsDTO>> GetPackageDetails(string packageId, int userId)
+        //{
+        //    var data = await (from pm in _context.TblPackageMasters
+        //                      join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
+        //                      join sm in _context.TblSubjectMasters on pd.SubjectId equals sm.SubjectId
+        //                      join d in _context.TblDepartmentMasters on pd.DepartmentId equals d.DepartmentId
+        //                      join usm in _context.TblUserSubscribeMasters
+        //                          on pm.PackageId equals usm.PackageId into usmGroup
+        //                      from usm in usmGroup
+        //                          .Where(x => x.UserId == userId && x.PaymentStatus == "Success")
+        //                          .DefaultIfEmpty()
+        //                      join sah in _context.TblUserSubjectActivationHistories
+        //                          on usm.UserSubscribeMasterId equals sah.TusmId into sahGroup
+        //                      from sah in sahGroup.DefaultIfEmpty()
+        //                      where pm.PackageId ==Convert.ToInt64(packageId) && pm.Activestatus == true
+        //                      select new
+        //                      {
+        //                          pd.DepartmentId,
+        //                          d.DepartmentName,
+        //                          pd.PackageDetailId,
+        //                          pd.PackageId,
+        //                          pm.PackageName,
+        //                          pm.SellingPrice,
+        //                          pm.CoverPath,
+        //                          pm.PackageDurationDays,
+        //                          Subject = sm,
+        //                          PaymentOn = usm != null ? usm.PaymentOn : null,
+        //                          SubjectExpiryDate = sah != null ? sah.SubjectExpiryDate : null
+        //                      })
+        //                      .ToListAsync();
+
+        //    if (data == null || data.Count == 0)
+        //        return new List<PackageDetailsDTO>();
+
+
+        //    // ---------------------- VALIDITY ----------------------
+        //    int validityDays = data.Max(x => x.PackageDurationDays ?? 0);
+
+
+        //    // ---------------------- FINAL RESULT ----------------------
+        //    var result = new List<PackageDetailsDTO>();
+
+        //    foreach (var item in data)
+        //    {
+        //        // ---------------------- FETCH SUBJECT UNITS ----------------------
+        //        var unitList = _context.SubjectUnits
+        //            .Where(u => u.SubjectId == item.Subject.SubjectId && u.ActiveStatus == 1)
+        //            .Select(u => new UnitDto
+        //            {
+        //                UnitId = u.UnitId.ToString(),
+        //                UnitTitle = u.UnitName,
+
+        //                // ---------------------- FETCH CHAPTERS FOR THIS UNIT ----------------------
+        //                Chapters = _context.SubjectChapters
+        //                    .Where(c => c.UnitId == u.UnitId && c.ActiveStatus == 1)
+        //                    .OrderBy(c => c.ChapterOrder)
+        //                    .Select(c => new ChapterDto
+        //                    {
+        //                        ChapterId = c.ChapterId.ToString(),
+        //                        Title = c.ChapterName,
+        //                        //Url = c.ChapterId.ToString()   // <---- IMPORTANT: only ID
+        //                    })
+        //                    .ToList()
+        //            })
+        //            .ToList();
+
+
+        //        // ---------------------- BUILD SUBJECT DTO ----------------------
+        //        var subjectDto = new SubjectMasterDto(_httpContextAccessor, this, _context)
+        //        {
+        //            SubjectId = item.Subject.SubjectId.ToString(),
+        //            SubjectCode = item.Subject.SubjectCode,
+        //            SubjectName = item.Subject.SubjectName,
+        //            SubjectCoverPath = item.Subject.SubjectCoverPath,
+        //            SubjectDescription = item.Subject.SubjectDescription,
+        //            Syllabus = item.Subject.Syllabus,
+        //            DeptImgPath = item.Subject.DeptImgPath,
+        //            Coursehours = item.Subject.Coursehours.ToString(),
+        //            Visuals = item.Subject.Visuals.ToString(),
+        //            Pagecontent = item.Subject.Pagecontent.ToString() ?? "",
+        //            Solvedproblem = item.Subject.Solvedproblem.ToString(),
+        //            Multichoice = item.Subject.Multichoice.ToString(),
+        //            DeptVideo = item.Subject.DeptVideo,
+        //            //IsInTrail = item.Subject.IsInTrail,
+        //            IsInDemo = item.Subject.IsInDemo.ToString(),
+        //            TradeId = item.Subject.TradeId.ToString(),
+        //            SubjectSyllabusPath = item.Subject.SubjectSyllabusPath,
+
+        //            Units = unitList  // <------ attach units & chapters
+        //        };
+
+
+        //        // ---------------------- MAP PACKAGE DTO ----------------------
+        //        result.Add(new PackageDetailsDTO
+        //        {
+        //            DepartmentId = item.DepartmentId.ToString(),
+        //            DepartmentName = item.DepartmentName,
+        //            PackageId = item.PackageId.ToString(),
+        //            PackageName = item.PackageName,
+        //            Coverpath = item.CoverPath,
+        //            Validity = validityDays.ToString(),
+        //            Validitydate = item.SubjectExpiryDate,
+        //            Price = item.SellingPrice.ToString(),
+        //            IsPurchased = item.PaymentOn != null || item.SubjectExpiryDate != null,
+        //            PaymentOn = item.PaymentOn,
+        //            SubjectExpiryDate = item.SubjectExpiryDate,
+        //            SubjectMaster = new List<SubjectMasterDto>() { subjectDto }
+        //        });
+        //    }
+
+        //    return result;
+        //}
+
+
+        //02-12-2025
         public async Task<List<PackageDetailsDTO>> GetPackageDetails(string packageId, int userId)
         {
+            long pkgId = Convert.ToInt64(packageId);
+
             var data = await (from pm in _context.TblPackageMasters
                               join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
                               join sm in _context.TblSubjectMasters on pd.SubjectId equals sm.SubjectId
@@ -576,7 +693,7 @@ namespace LMSAPI.Repository
                               join sah in _context.TblUserSubjectActivationHistories
                                   on usm.UserSubscribeMasterId equals sah.TusmId into sahGroup
                               from sah in sahGroup.DefaultIfEmpty()
-                              where pm.PackageId ==Convert.ToInt64(packageId) && pm.Activestatus == true
+                              where pm.PackageId == pkgId && pm.Activestatus == true
                               select new
                               {
                                   pd.DepartmentId,
@@ -597,39 +714,55 @@ namespace LMSAPI.Repository
                 return new List<PackageDetailsDTO>();
 
 
-            // ---------------------- VALIDITY ----------------------
+            // -------------- VALIDITY --------------
             int validityDays = data.Max(x => x.PackageDurationDays ?? 0);
 
 
-            // ---------------------- FINAL RESULT ----------------------
-            var result = new List<PackageDetailsDTO>();
+            // -------------- CREATE SINGLE PACKAGE DTO --------------
+            var first = data.First();
 
-            foreach (var item in data)
+            var package = new PackageDetailsDTO
             {
-                // ---------------------- FETCH SUBJECT UNITS ----------------------
+                DepartmentId = first.DepartmentId.ToString(),
+                DepartmentName = first.DepartmentName,
+                PackageId = first.PackageId.ToString(),
+                PackageName = first.PackageName,
+                Coverpath = first.CoverPath,
+                Validity = validityDays.ToString(),
+                Validitydate = first.SubjectExpiryDate,
+                Price = first.SellingPrice.ToString(),
+                IsPurchased = first.PaymentOn != null || first.SubjectExpiryDate != null,
+                PaymentOn = first.PaymentOn,
+                SubjectExpiryDate = first.SubjectExpiryDate,
+                SubjectMaster = new List<SubjectMasterDto>()
+            };
+
+
+            // -------------- GROUP SUBJECTS AND BUILD DTOs --------------
+            var groupedSubjects = data.GroupBy(x => x.Subject.SubjectId);
+
+            foreach (var grp in groupedSubjects)
+            {
+                var item = grp.First();
+
+                // UNITS + CHAPTERS
                 var unitList = _context.SubjectUnits
                     .Where(u => u.SubjectId == item.Subject.SubjectId && u.ActiveStatus == 1)
                     .Select(u => new UnitDto
                     {
                         UnitId = u.UnitId.ToString(),
                         UnitTitle = u.UnitName,
-
-                        // ---------------------- FETCH CHAPTERS FOR THIS UNIT ----------------------
                         Chapters = _context.SubjectChapters
                             .Where(c => c.UnitId == u.UnitId && c.ActiveStatus == 1)
                             .OrderBy(c => c.ChapterOrder)
                             .Select(c => new ChapterDto
                             {
                                 ChapterId = c.ChapterId.ToString(),
-                                Title = c.ChapterName,
-                                //Url = c.ChapterId.ToString()   // <---- IMPORTANT: only ID
-                            })
-                            .ToList()
-                    })
-                    .ToList();
+                                Title = c.ChapterName
+                            }).ToList()
+                    }).ToList();
 
-
-                // ---------------------- BUILD SUBJECT DTO ----------------------
+                // SUBJECT DTO
                 var subjectDto = new SubjectMasterDto(_httpContextAccessor, this, _context)
                 {
                     SubjectId = item.Subject.SubjectId.ToString(),
@@ -639,40 +772,23 @@ namespace LMSAPI.Repository
                     SubjectDescription = item.Subject.SubjectDescription,
                     Syllabus = item.Subject.Syllabus,
                     DeptImgPath = item.Subject.DeptImgPath,
-                    Coursehours = item.Subject.Coursehours.ToString(),
-                    Visuals = item.Subject.Visuals.ToString(),
-                    Pagecontent = item.Subject.Pagecontent.ToString() ?? "",
-                    Solvedproblem = item.Subject.Solvedproblem.ToString(),
-                    Multichoice = item.Subject.Multichoice.ToString(),
+                    Coursehours = item.Subject.Coursehours?.ToString(),
+                    Visuals = item.Subject.Visuals?.ToString(),
+                    Pagecontent = item.Subject.Pagecontent?.ToString(),
+                    Solvedproblem = item.Subject.Solvedproblem?.ToString(),
+                    Multichoice = item.Subject.Multichoice?.ToString(),
                     DeptVideo = item.Subject.DeptVideo,
-                    //IsInTrail = item.Subject.IsInTrail,
-                    IsInDemo = item.Subject.IsInDemo.ToString(),
-                    TradeId = item.Subject.TradeId.ToString(),
+                    IsInDemo = item.Subject.IsInDemo?.ToString(),
+                    TradeId = item.Subject.TradeId?.ToString(),
                     SubjectSyllabusPath = item.Subject.SubjectSyllabusPath,
-
-                    Units = unitList  // <------ attach units & chapters
+                    Units = unitList
                 };
 
-
-                // ---------------------- MAP PACKAGE DTO ----------------------
-                result.Add(new PackageDetailsDTO
-                {
-                    DepartmentId = item.DepartmentId.ToString(),
-                    DepartmentName = item.DepartmentName,
-                    PackageId = item.PackageId.ToString(),
-                    PackageName = item.PackageName,
-                    Coverpath = item.CoverPath,
-                    Validity = validityDays.ToString(),
-                    Validitydate = item.SubjectExpiryDate,
-                    Price = item.SellingPrice.ToString(),
-                    IsPurchased = item.PaymentOn != null || item.SubjectExpiryDate != null,
-                    PaymentOn = item.PaymentOn,
-                    SubjectExpiryDate = item.SubjectExpiryDate,
-                    SubjectMaster = new List<SubjectMasterDto>() { subjectDto }
-                });
+                package.SubjectMaster.Add(subjectDto);
             }
 
-            return result;
+            // RETURN ONLY 1 PACKAGE CONTAINING ALL SUBJECTS
+            return new List<PackageDetailsDTO> { package };
         }
 
 

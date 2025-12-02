@@ -4,7 +4,6 @@ namespace LMSAPI.DTO
 {
     public class PackageDetailsDTO
     {
-        public string? DepartmentSubjectMappingId { get; set; }
         public string? DepartmentId { get; set; }
         public string? DepartmentName { get; set; }
         public string? PackageId { get; set; }
