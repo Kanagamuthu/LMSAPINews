@@ -376,9 +376,9 @@ namespace LMSAPI.Repository
                                      SubjectName = sm.SubjectName,
                                      SubjectCoverPath = sm.SubjectCoverPath,
                                      SubjectDescription = sm.SubjectDescription,
-                                     ActiveStatus =sm.ActiveStatus.ToString(),
+                                     ActiveStatus = sm.ActiveStatus.ToString(),
                                      RuleId = sm.RuleId.ToString(),
-                                     CreatedOn = sm.CreatedOn?? DateTime.Now,
+                                     CreatedOn = sm.CreatedOn ?? DateTime.Now,
                                      ReleasedOn = sm.ReleasedOn,
                                      UniversityId = sm.UniversityId.ToString(),
                                      HavingQuestionpaper = sm.HavingQuestionpaper.ToString(),
@@ -393,7 +393,7 @@ namespace LMSAPI.Repository
                                      Solvedproblem = sm.Solvedproblem.ToString(),
                                      Multichoice = sm.Multichoice.ToString(),
                                      DeptVideo = sm.DeptVideo,
-                                    // IsInTrail = sm.IsInTrail,
+                                     // IsInTrail = sm.IsInTrail,
                                      IsInDemo = sm.IsInDemo.ToString(),
                                      TradeId = sm.TradeId.ToString(),
                                      SubjectSyllabusPath = sm.SubjectSyllabusPath
@@ -436,7 +436,7 @@ namespace LMSAPI.Repository
             return data;
         }
 
-        public async Task<ReadHistoryDto> ReadHistory(int Id)
+        public async Task<ReadHistoryDto> ReadHistory1(int Id)
         {
             try
             {
@@ -461,6 +461,50 @@ namespace LMSAPI.Repository
                     Downloads = download,
                     Purchase = getbook
                 };
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                throw;
+            }
+        }
+
+        public async Task<List<readhistorydto>> ReadHistory(int Id)
+        {
+            try
+            {
+                var result = (from pm in _context.TblPackageMasters
+                              join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
+                              join dm in _context.TblDepartmentMasters on pd.DepartmentId equals dm.DepartmentId
+                              join usm in _context.TblUserSubscribeMasters on pm.PackageId equals usm.PackageId 
+                              join sah in _context.TblUserSubjectActivationHistories on usm.UserSubscribeMasterId equals sah.TusmId 
+                              where pm.Activestatus == true && usm.UserId == Id && usm.PaymentStatus.ToLower() == "success"
+                              select new
+                              {
+                                  dm.DepartmentName,
+                                  pm,
+                                  sah
+                              }).AsEnumerable().GroupBy(x => x.DepartmentName).
+                              Select(g => new readhistorydto
+                              {
+                                  departmentName = g.Key,
+                                  packageMasterDto =g.OrderByDescending(x=>x.sah.SubjectExpiryDate).GroupBy(x => x.pm.PackageId)
+                                 .Select(p => new Packagemasterdto
+                                 {
+                                     packageId = p.First().pm.PackageId,
+                                     packageCode = p.First().pm.PackageCode,
+                                     packageName = p.First().pm.PackageDisplayName,
+                                     sellingPrice = p.First().pm.SellingPrice??0,
+                                     coverPath = p.First().pm.CoverPath,
+                                     isPurchased = true,
+                                     subjectExpiryDate =  p.First().sah.SubjectExpiryDate,
+                                     paymentOn = p.First().sah.ActivatedOn
+
+                                 }).ToList()
+                              }).ToList();
+
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -606,7 +650,7 @@ namespace LMSAPI.Repository
                     .DefaultIfEmpty()
                 join sah in _context.TblUserSubjectActivationHistories
                     on usm.UserSubscribeMasterId equals sah.TusmId into sahGroup
-                from sah in sahGroup.OrderByDescending(x=>x.SubjectExpiryDate).DefaultIfEmpty()
+                from sah in sahGroup.OrderByDescending(x => x.SubjectExpiryDate).DefaultIfEmpty()
                 where pm.PackageId == pkgId && pm.Activestatus == true
                 select new
                 {
@@ -980,7 +1024,7 @@ namespace LMSAPI.Repository
             return result;
         }
 
-        public async Task<int> CreatePackageAsync(CreatePackageDto request,int _userid)
+        public async Task<int> CreatePackageAsync(CreatePackageDto request, int _userid)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -1003,7 +1047,7 @@ namespace LMSAPI.Repository
                     //EduType = request.EduType
 
                     //PackageCode=request.PackageName.Replace(" ","").ToUpper()+DateTime.Now.Ticks.ToString(),
-                    PackageCode= "PKG " + request.PackageCode,
+                    PackageCode = "PKG " + request.PackageCode,
                     //PackageDisplayName = request.PackageDisplayName,
                     DepartmentId = user.DepartmentId,
                     PackageName = request.PackageName,
