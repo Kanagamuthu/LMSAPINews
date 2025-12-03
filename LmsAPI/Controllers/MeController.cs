@@ -2,10 +2,12 @@
 using LMSAPI.Helpers;
 using LMSAPI.Models;
 using LMSAPI.Repository;
+using log4net.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LMSAPI.Controllers
 {
@@ -43,14 +45,14 @@ namespace LMSAPI.Controllers
                 errors.Add("Url is required.");
 
             if (errors.Any())
-                return Ok(new ApiResponse { Success=false,Message= "Validation failed.", Data=null,ErrorCode =string.Join(",",errors) });
+                return Ok(new ApiResponse { Success = false, Message = "Validation failed.", Data = null, ErrorCode = string.Join(",", errors) });
 
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
             obj.CreatedDate = DateTime.Now;
             obj.Status = true;
             obj.Readby = Convert.ToInt32(userId);
-            bool flag =await _dashboardRepository.GetReadHistory(obj);
-            if (flag)          
+            bool flag = await _dashboardRepository.GetReadHistory(obj);
+            if (flag)
                 return Ok(new ApiResponse(true, "History already exists.", obj, ""));
             else
             {
@@ -79,15 +81,17 @@ namespace LMSAPI.Controllers
                 }
 
                 var GetList = await _dashboardRepository.ReadHistory(Convert.ToInt32(userId));
-                if (GetList == null) {
+                if (GetList == null)
+                {
                     return Ok(new ApiResponse { Success = false, Message = "No read history found.", Data = "", ErrorCode = "404" });
                 }
                 else
                 {
-                    _logger.LogInfo($"ReadHistory fetched successfully for user: {email}");
-                    return Ok(new ApiResponse(true, "ReadHistory fetched successfully.", GetList, "200"));
+                    var ServerTime = DateTime.Now.ToString("yyyy-MM-dd");
+                     _logger.LogInfo($"ReadHistory fetched successfully for user: {email}");
+                    return Ok(new { Success = true, Message = "ReadHistory fetched successfully.", ServerTime = ServerTime, Data = GetList, ErrorCode = "200" });
 
-                } 
+                }
             }
             catch (Exception ex)
             {
