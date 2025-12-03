@@ -174,6 +174,10 @@ namespace LmsAPI.Controllers
                     }
                     else
                     {
+                        _logger.LogInfo($"Sending OTP to email (from user controller): {student.EmailId}");
+
+
+
                         await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
                         return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp });
                     }
