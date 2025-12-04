@@ -9,16 +9,18 @@ namespace LMSAPI.Helpers
         private readonly ILog _logger;
 
         public LoggerManager()
-        {// Configure log4net
-            var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-            XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
+        {
+            var logRepository = LogManager.GetRepository(Assembly.GetExecutingAssembly());
+
+            string configPath = Path.Combine(AppContext.BaseDirectory, "log4net.config");
+
+            XmlConfigurator.Configure(logRepository, new FileInfo(configPath));
 
             _logger = LogManager.GetLogger(typeof(LoggerManager));
 
-            // Log startup message
             _logger.Info("LoggerManager initialized successfully");
-            _logger = LogManager.GetLogger(typeof(LoggerManager));
         }
+
 
         public void LogInfo(string message)
         {

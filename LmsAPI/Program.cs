@@ -68,6 +68,8 @@ builder.Services.AddCors(options =>
 
         });
 });
+builder.Logging.AddLog4Net();
+
 #endregion
 
 #region Add session services
