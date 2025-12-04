@@ -711,7 +711,7 @@ namespace LMSAPI.Controllers
 
 
         [HttpPost("CreateOrder")]
-        public IActionResult CreateOrder(PaymentRequest req)
+        public async Task<IActionResult> CreateOrder(PaymentRequest req)
         {
             var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
             var client = new Razorpay.Api.RazorpayClient("RAZORPAY_KEY", "RAZORPAY_SECRET");
@@ -723,10 +723,9 @@ namespace LMSAPI.Controllers
                   { "receipt", "order_rcptid_" + req.ProductId },
                   { "payment_capture", 1 }
             };
-
             Razorpay.Api.Order order = client.Order.Create(options);
             //cerate a record in databse with order details and status as created
-            var res=_dashboardRepository.CreateRazorpayOrderRecord(req.ProductId, order?["id"]?.ToString(), userId, "created");
+            var res=await _dashboardRepository.CreateRazorpayOrderRecord(req.ProductId, order?["id"]?.ToString(), userId, "created");
             return Ok(new
             {
                 success = true,
@@ -759,9 +758,11 @@ namespace LMSAPI.Controllers
                 obj.packageId =res.PackageId;   
                 obj.PaymentRefNo = req.PaymentId;
                 obj.PaymentStatus = "success";
-                //obj.Type = "insert";
-                var Result = CreateSubscription(obj);
-                return Ok(new ApiResponse(true, "Payment verified successfully.", Result, "200"));
+                obj.Type = "insert";
+                var subscriptionResult = await CreateSubscription(obj);
+                dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
+                var data = result?.Value?.Data;
+                return Ok(new ApiResponse(true, "Payment verified successfully.", data, "200"));
             }
 
             return BadRequest(new ApiResponse(false, "Signature mismatch", null, "400"));

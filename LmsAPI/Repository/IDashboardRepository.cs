@@ -64,7 +64,7 @@ namespace LMSAPI.Repository
 
         Task<int> CreatePackageAsync(CreatePackageDto packageDto, int _userid);
 
-        Task<CreateOrder> CreateRazorpayOrderRecord(int packageId, int orderid,int createdBy, string status);
-     Task<CreateOrder> UpdateRazorpayOrderStatus(int orderId, string paymentId, string signature, int userId, string status);
+        Task<CreateOrder> CreateRazorpayOrderRecord(int packageId, string orderid,int createdBy, string status);
+        Task<CreateOrder> UpdateRazorpayOrderStatus(int orderId, string paymentId, string signature, int userId, string status);
     }
 }

@@ -1090,7 +1090,7 @@ namespace LMSAPI.Repository
         }
 
         //cretae order
-        public async Task<CreateOrder> CreateRazorpayOrderRecord(int packageId, int orderid, int createdBy, string status)
+        public async Task<CreateOrder> CreateRazorpayOrderRecord(int packageId, string orderid, int createdBy, string status)
         {
             var order = new CreateOrder
             {
