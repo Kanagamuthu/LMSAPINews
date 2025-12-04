@@ -33,13 +33,15 @@ namespace LMSAPI.Controllers
         private readonly IDashboardRepository _dashboardRepository;
         private readonly IStudentsRepository _studentsRepository;
         private readonly IDistributedCache _cache;
+        private readonly IConfiguration _configuration; 
 
-        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository, IDistributedCache cache)
+        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository, IDistributedCache cache, IConfiguration configuration)
         {
             _logger = logger;
             _dashboardRepository = dashboardRepository;
             _studentsRepository = studentsRepository;
             _cache = cache;
+            _configuration = configuration;
         }
 
         #region validate student is validate or not from session
@@ -714,7 +716,9 @@ namespace LMSAPI.Controllers
         public async Task<IActionResult> CreateOrder(PaymentRequest req)
         {
             var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
-            var client = new Razorpay.Api.RazorpayClient("RAZORPAY_KEY", "RAZORPAY_SECRET");
+            var razorpayKey = _configuration["razorpay:key"];
+            var razorpaySecret = _configuration["razorpay:secret"];
+            var client = new Razorpay.Api.RazorpayClient(razorpayKey, razorpaySecret);
 
             var options = new Dictionary<string, object>
             {
@@ -730,7 +734,7 @@ namespace LMSAPI.Controllers
             {
                 success = true,
                 orderId = order["id"].ToString(),
-                key = "RAZORPAY_KEY",
+                key = razorpayKey,
             });
         }
 
@@ -738,7 +742,11 @@ namespace LMSAPI.Controllers
         public async Task<IActionResult> VerifyPayment([FromBody] VerifyRequest req)
         {
             var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
-            var client = new Razorpay.Api.RazorpayClient("RAZORPAY_KEY", "RAZORPAY_SECRET");
+
+            var razorpayKey = _configuration["razorpay:key"];
+            var razorpaySecret = _configuration["razorpay:secret"];
+
+            var client = new Razorpay.Api.RazorpayClient(razorpayKey, razorpaySecret);
 
             var attributes = new Dictionary<string, string>
              {
@@ -754,6 +762,7 @@ namespace LMSAPI.Controllers
                 //update payment status in database as successful
                 var res =await _dashboardRepository.UpdateRazorpayOrderStatus(Convert.ToInt32(req.OrderId), req.PaymentId,req.Signature, userId, "successful");
 
+
                 PaymentPayload obj = new PaymentPayload();
                 obj.packageId =res.PackageId;   
                 obj.PaymentRefNo = req.PaymentId;
@@ -764,7 +773,6 @@ namespace LMSAPI.Controllers
                 var data = result?.Value?.Data;
                 return Ok(new ApiResponse(true, "Payment verified successfully.", data, "200"));
             }
-
             return BadRequest(new ApiResponse(false, "Signature mismatch", null, "400"));
         }
 
