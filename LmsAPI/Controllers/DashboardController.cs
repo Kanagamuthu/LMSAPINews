@@ -634,6 +634,7 @@ namespace LMSAPI.Controllers
             obj.Amount = getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
             obj.PaymentStatus = "success";
             obj.CreatedOn = DateTime.Now;
+            obj.PaymentOn = DateTime.Now;
             obj.TransactionType = "Trail";
 
             await _dashboardRepository.AddUserSubscribeMasterAsync(obj);
