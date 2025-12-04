@@ -15,6 +15,8 @@ public partial class LmsdbNewContext : DbContext
     {
     }
 
+    public virtual DbSet<CreateOrder> CreateOrders { get; set; }
+
     public virtual DbSet<SubjectChapter> SubjectChapters { get; set; }
 
     public virtual DbSet<SubjectChapterPath> SubjectChapterPaths { get; set; }
@@ -92,6 +94,16 @@ public partial class LmsdbNewContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CreateOrder>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__CreateOr__3214EC079AA40591");
+
+            entity.ToTable("CreateOrder");
+
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+        });
+
         modelBuilder.Entity<SubjectChapter>(entity =>
         {
             entity.HasKey(e => e.ChapterId).HasName("PK__SubjectC__0893A36A9A7C5201");
@@ -597,14 +609,11 @@ public partial class LmsdbNewContext : DbContext
 
         modelBuilder.Entity<TblReadHistory>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tbl_Read__3214EC07191B876E");
+            entity.HasKey(e => e.Id).HasName("PK__Tbl_Read__3214EC07AD524EDE");
 
             entity.ToTable("Tbl_ReadHistory");
 
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
-            entity.Property(e => e.Type)
-                .HasMaxLength(30)
-                .IsUnicode(false);
         });
 
         modelBuilder.Entity<TblStudentTrialSubject>(entity =>

@@ -9,4 +9,17 @@ namespace LMSAPI.DTO
         public string? PaymentStatus { get; set; }
         public string?  Type { get; set; }
     }
+    public class PaymentRequest
+    {
+        public int ProductId { get; set; }
+        public int Amount { get; set; }
+    }
+
+    public class VerifyRequest
+    {
+        public string OrderId { get; set; }
+        public string PaymentId { get; set; }
+        public string Signature { get; set; }
+
+    }
 }

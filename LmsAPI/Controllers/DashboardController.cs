@@ -16,6 +16,7 @@ using System;
 using System.Net.WebSockets;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using static LMSAPI.DTO.LessonConverter;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -365,56 +366,58 @@ namespace LMSAPI.Controllers
 
             var getpaymentPackage = await _dashboardRepository.GetpaymentPackage(model.packageId ?? 0);
             var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
-            if (model.Type.ToLower() == "insert")
+            //if (model.Type.ToLower() == "insert")
+            //{
+            TblUserSubscribeMaster obj = new TblUserSubscribeMaster();
+            obj.UserId = userId;
+            obj.PackageId = model.packageId;
+            obj.Amount = getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
+            obj.CreatedOn = DateTime.Now;
+            obj.TransactionType = "Pay";
+            obj.PaymentOn = DateTime.Now;
+            obj.PaymentRefNo = model.PaymentRefNo;
+            obj.PaymentStatus = model.PaymentStatus;
+
+            await _dashboardRepository.AddUserSubscribeMasterAsync(obj);
+            //Message = "Subscription created successfully.";
+            //return Ok(new ApiResponse(true, Message, obj, ""));
+            //}
+            //else
+            //{
+            //var UserSubscribeMaster = await _dashboardRepository.GetUserSubscribeMasterAsync();
+            //var getData = UserSubscribeMaster.Where(x => x.UserSubscribeMaster.Amount == getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice && x.UserSubscribeMaster.UserId == userId && x.UserSubscribeMaster.PaymentStatus == "Pending").FirstOrDefault()?.UserSubscribeMaster ?? new TblUserSubscribeMaster();
+            //getData.PaymentOn = DateTime.Now;
+            //getData.PaymentRefNo = model.PaymentRefNo;
+            //getData.PaymentStatus = model.PaymentStatus;
+            //await _dashboardRepository.UpdateUserSubscribeMasterAsync(getData);
+
+            List<TblUserSubjectActivationHistory> obj2 = new List<TblUserSubjectActivationHistory>();
+
+            foreach (var item in getpaymentPackage?.FirstOrDefault()?.subjectmaster)
             {
-                TblUserSubscribeMaster obj = new TblUserSubscribeMaster();
-                obj.UserId = userId;
-                obj.PackageId = model.packageId;
-                obj.Amount = getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
-                obj.PaymentStatus = "Pending";
-                obj.CreatedOn = DateTime.Now;
-                obj.TransactionType = "Pay";
-
-                await _dashboardRepository.AddUserSubscribeMasterAsync(obj);
-                Message = "Subscription created successfully.";
-                return Ok(new ApiResponse(true, Message, obj, ""));
-            }
-            else
-            {
-                var UserSubscribeMaster = await _dashboardRepository.GetUserSubscribeMasterAsync();
-                var getData = UserSubscribeMaster.Where(x => x.UserSubscribeMaster.Amount == getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice && x.UserSubscribeMaster.UserId == userId && x.UserSubscribeMaster.PaymentStatus == "Pending").FirstOrDefault()?.UserSubscribeMaster ?? new TblUserSubscribeMaster();
-                getData.PaymentOn = DateTime.Now;
-                getData.PaymentRefNo = model.PaymentRefNo;
-                getData.PaymentStatus = model.PaymentStatus;
-                await _dashboardRepository.UpdateUserSubscribeMasterAsync(getData);
-
-                List<TblUserSubjectActivationHistory> obj2 = new List<TblUserSubjectActivationHistory>();
-
-                foreach (var item in getpaymentPackage?.FirstOrDefault()?.subjectmaster)
+                TblUserSubjectActivationHistory obj1 = new TblUserSubjectActivationHistory();
+                var DepartmentId = getpaymentPackage?.FirstOrDefault()?.packagedetails.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
+                obj1.TusmId = obj.UserSubscribeMasterId;
+                obj1.SubjectId = Convert.ToInt32(item.SubjectId);
+                obj1.SubjectCode = item.SubjectCode;
+                obj1.SubjectName = item.SubjectName;
+                obj1.SubjectVersion = item.SubjectVersion;
+                obj1.UserId = Convert.ToInt32(userId);
+                obj1.DepartmentId = DepartmentId;
+                if (model.PaymentStatus.ToLower() == "success")
                 {
-                    TblUserSubjectActivationHistory obj1 = new TblUserSubjectActivationHistory();
-                    var DepartmentId = getpaymentPackage?.FirstOrDefault()?.packagedetails.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
-                    obj1.TusmId = getData.UserSubscribeMasterId;
-                    obj1.SubjectId = Convert.ToInt32(item.SubjectId);
-                    obj1.SubjectCode = item.SubjectCode;
-                    obj1.SubjectName = item.SubjectName;
-                    obj1.SubjectVersion = item.SubjectVersion;
-                    obj1.UserId = Convert.ToInt32(userId);
-                    obj1.DepartmentId = DepartmentId;
-                    if (model.PaymentStatus.ToLower() == "success")
-                    {
-                        obj1.SubjectExpiryDate = DateTime.Now.AddDays(getpaymentPackage?.FirstOrDefault()?.packagemaster.PackageDurationDays ?? 0);
-                        obj1.ActivatedOn = DateTime.Now;
-                        obj1.ActivatedBy = Convert.ToInt32(userId);
-                    }
-                    obj2.Add(obj1);
+                    obj1.SubjectExpiryDate = DateTime.Now.AddDays(getpaymentPackage?.FirstOrDefault()?.packagemaster.PackageDurationDays ?? 0);
+                    obj1.ActivatedOn = DateTime.Now;
+                    obj1.ActivatedBy = Convert.ToInt32(userId);
                 }
-
-                await _dashboardRepository.AddUserSubjectActivationHistoryAsync(obj2);
-                Message = "Subscription Added successfully";
-                return Ok(new ApiResponse(true, Message, getData, ""));
-
+                obj2.Add(obj1);
             }
+
+            await _dashboardRepository.AddUserSubjectActivationHistoryAsync(obj2);
+            Message = "Subscription Added successfully";
+            return Ok(new ApiResponse(true, Message, obj, ""));
+
+            //}
         }
         #endregion
 
@@ -706,6 +709,63 @@ namespace LMSAPI.Controllers
         #endregion
 
 
+
+        [HttpPost("CreateOrder")]
+        public IActionResult CreateOrder(PaymentRequest req)
+        {
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            var client = new Razorpay.Api.RazorpayClient("RAZORPAY_KEY", "RAZORPAY_SECRET");
+
+            var options = new Dictionary<string, object>
+            {
+                  { "amount", req.Amount * 100 }, // amount in paise
+                  { "currency", "INR" },
+                  { "receipt", "order_rcptid_" + req.ProductId },
+                  { "payment_capture", 1 }
+            };
+
+            Razorpay.Api.Order order = client.Order.Create(options);
+            //cerate a record in databse with order details and status as created
+            var res=_dashboardRepository.CreateRazorpayOrderRecord(req.ProductId, order?["id"]?.ToString(), userId, "created");
+            return Ok(new
+            {
+                success = true,
+                orderId = order["id"].ToString(),
+                key = "RAZORPAY_KEY",
+            });
+        }
+
+        [HttpPost("Verify")]
+        public async Task<IActionResult> VerifyPayment([FromBody] VerifyRequest req)
+        {
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            var client = new Razorpay.Api.RazorpayClient("RAZORPAY_KEY", "RAZORPAY_SECRET");
+
+            var attributes = new Dictionary<string, string>
+             {
+         { "razorpay_order_id", req.OrderId },
+         { "razorpay_payment_id", req.PaymentId },
+         { "razorpay_signature", req.Signature }
+            };
+
+            bool isValid = Razorpay.Api.Utils.ValidatePaymentSignature(attributes);
+
+            if (isValid)
+            {
+                //update payment status in database as successful
+                var res =await _dashboardRepository.UpdateRazorpayOrderStatus(Convert.ToInt32(req.OrderId), req.PaymentId,req.Signature, userId, "successful");
+
+                PaymentPayload obj = new PaymentPayload();
+                obj.packageId =res.PackageId;   
+                obj.PaymentRefNo = req.PaymentId;
+                obj.PaymentStatus = "success";
+                //obj.Type = "insert";
+                var Result = CreateSubscription(obj);
+                return Ok(new ApiResponse(true, "Payment verified successfully.", Result, "200"));
+            }
+
+            return BadRequest(new ApiResponse(false, "Signature mismatch", null, "400"));
+        }
 
     }
 }

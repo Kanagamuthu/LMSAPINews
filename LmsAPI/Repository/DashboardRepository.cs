@@ -1089,5 +1089,41 @@ namespace LMSAPI.Repository
             }
         }
 
+        //cretae order
+        public async Task<CreateOrder> CreateRazorpayOrderRecord(int packageId, int orderid, int createdBy, string status)
+        {
+            var order = new CreateOrder
+            {
+                PackageId = packageId,
+                CreatedBy = createdBy,
+                CreatedDate = DateTime.Now,
+                OrderId = orderid.ToString(),
+                Status = status
+
+            };
+            _context.CreateOrders.Add(order);
+            await _context.SaveChangesAsync();
+            return order; // return new order id
+        }
+
+
+        //update order status
+        public async Task<CreateOrder> UpdateRazorpayOrderStatus(int orderId, string paymentId, string signature, int userId, string status)
+        {
+            var order = await _context.CreateOrders.FindAsync(orderId);
+            if (order == null)
+            {
+                return null;
+            }
+            order.PaymentId = paymentId;
+            order.Signature = signature;
+            order.Status = status;
+            order.UpdatedBy = userId;
+            order.UpdatedDate = DateTime.Now;    
+            _context.CreateOrders.Update(order);
+            await _context.SaveChangesAsync();
+            return order;
+        }
+
     }
 }
