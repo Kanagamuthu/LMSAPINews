@@ -513,7 +513,7 @@ namespace LmsAPI.Controllers
                 Message = request.message,
                 Createdon = DateTime.Now,
                 ActiveStatus = true,
-                //ReadBy = Convert.ToInt32(userId)
+                ReadBy = Convert.ToInt32(userId)
             };
 
             await _studentsRepository.TicketCreateAsync(newticket);
@@ -530,9 +530,9 @@ namespace LmsAPI.Controllers
         {
             var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var activeTickets = await _studentsRepository.GetTicketByEmailAsync(email);
-            if (activeTickets.Count == 0)
-                return Ok(new ApiResponse(false, "No active tickets found.", "", "404"));
-            else
+            //if (activeTickets.Count == 0)
+            //    return Ok(new ApiResponse(false, "No active tickets found.", "", "404"));
+            //else
                 return Ok(new ApiResponse(true, "Ticket fetched successfully", activeTickets, "200"));
         }
 

@@ -709,6 +709,7 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.CreatedOn)
                 .HasColumnType("datetime")
                 .HasColumnName("created_on");
+            entity.Property(e => e.DepartmentId).HasColumnName("departmentID");
             entity.Property(e => e.DeptImgPath)
                 .HasMaxLength(10)
                 .IsFixedLength()
@@ -717,6 +718,7 @@ public partial class LmsdbNewContext : DbContext
                 .HasMaxLength(250)
                 .IsUnicode(false)
                 .HasColumnName("dept_video");
+            entity.Property(e => e.EduType).HasColumnName("edu_type");
             entity.Property(e => e.HavingQuestionpaper).HasColumnName("having_questionpaper");
             entity.Property(e => e.IsInDemo).HasColumnName("is_inDemo");
             entity.Property(e => e.IsInTrail).HasColumnName("is_inTrail");

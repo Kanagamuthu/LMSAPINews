@@ -7,9 +7,11 @@ public partial class TblReadHistory
 {
     public int Id { get; set; }
 
-    public string? SubjctCode { get; set; }
+    public int? SubjectId { get; set; }
 
-    public string? Url { get; set; }
+    public int? UnitId { get; set; }
+
+    public int? ChapterId { get; set; }
 
     public string? Type { get; set; }
 

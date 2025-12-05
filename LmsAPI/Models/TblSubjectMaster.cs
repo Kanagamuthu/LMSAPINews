@@ -59,5 +59,9 @@ public partial class TblSubjectMaster
 
     public string? SubjectSyllabusPath { get; set; }
 
+    public int? DepartmentId { get; set; }
+
+    public int? EduType { get; set; }
+
     public virtual ICollection<SubjectChapter> SubjectChapters { get; set; } = new List<SubjectChapter>();
 }
