@@ -426,8 +426,9 @@ namespace LMSAPI.Repository
         }
         public async Task<bool> GetReadHistory(TblReadHistory obj)
         {
-            var exists = await _context.TblReadHistories.AnyAsync(rh => rh.SubjctCode == obj.SubjctCode && rh.Url == obj.Url && rh.Type == obj.Type && rh.Readby == obj.Readby);
-            return exists;
+            //var exists = await _context.TblReadHistories.AnyAsync(rh => rh.SubjctCode == obj.SubjctCode && rh.Url == obj.Url && rh.Type == obj.Type && rh.Readby == obj.Readby);
+            //return exists;
+            return false;
         }
 
         public List<TblReadHistory> GetAllReadHistory()

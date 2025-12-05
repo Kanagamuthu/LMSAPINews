@@ -27,49 +27,49 @@ namespace LMSAPI.DTO
             public bool? Watch { get; set; }
         }
 
-        public async Task<Subject?> GetLessonConverterAsync(string SubjectSyllabusPath,string userId,List<TblReadHistory> readhistory)
-        {
-            if (string.IsNullOrEmpty(SubjectSyllabusPath))
-                return null;
+        //public async Task<Subject?> GetLessonConverterAsync(string SubjectSyllabusPath,string userId,List<TblReadHistory> readhistory)
+        //{
+        //    if (string.IsNullOrEmpty(SubjectSyllabusPath))
+        //        return null;
 
-            try
-            {
-                using var client = new HttpClient();
+        //    try
+        //    {
+        //        using var client = new HttpClient();
 
-                string xml = await client.GetStringAsync(SubjectSyllabusPath);
-                var xDoc = XDocument.Parse(xml);
-                var subjectElement = xDoc.Root;
+        //        string xml = await client.GetStringAsync(SubjectSyllabusPath);
+        //        var xDoc = XDocument.Parse(xml);
+        //        var subjectElement = xDoc.Root;
 
-                if (subjectElement == null)
-                    return null;
+        //        if (subjectElement == null)
+        //            return null;
 
-                var userReadUrls = readhistory.Where(rh => rh.Readby.ToString() == userId).Select(rh => rh.Url).ToList();
+        //        var userReadUrls = readhistory.Where(rh => rh.Readby.ToString() == userId).Select(rh => rh.Url).ToList();
 
-                var subject = new Subject
-                {
-                    label = subjectElement.Attribute("label")?.Value,
-                    Lessons = subjectElement.Elements("Lessons").Select(l => new Lesson
-                    {
-                        label = l.Attribute("label")?.Value,
-                        Chapters = l.Elements("Chapters")
-                    .Select(c => new Chapter
-                    {
-                        label = c.Attribute("label")?.Value,
-                        url = c.Attribute("url")?.Value,
-                        Watch = userReadUrls.Contains(c.Attribute("url")?.Value)
-                    })
-                    .ToArray()
-                    })
-            .ToArray()
-                };
-                subject.TotalChapters = subject.Lessons.Sum(l => l.Chapters.Count());
-                return subject;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error converting XML: {ex.Message}");
-                return null;
-            }
-        }
+        //        var subject = new Subject
+        //        {
+        //            label = subjectElement.Attribute("label")?.Value,
+        //            Lessons = subjectElement.Elements("Lessons").Select(l => new Lesson
+        //            {
+        //                label = l.Attribute("label")?.Value,
+        //                Chapters = l.Elements("Chapters")
+        //            .Select(c => new Chapter
+        //            {
+        //                label = c.Attribute("label")?.Value,
+        //                url = c.Attribute("url")?.Value,
+        //                Watch = userReadUrls.Contains(c.Attribute("url")?.Value)
+        //            })
+        //            .ToArray()
+        //            })
+        //    .ToArray()
+        //        };
+        //        subject.TotalChapters = subject.Lessons.Sum(l => l.Chapters.Count());
+        //        return subject;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"❌ Error converting XML: {ex.Message}");
+        //        return null;
+        //    }
+        //}
     }
 }

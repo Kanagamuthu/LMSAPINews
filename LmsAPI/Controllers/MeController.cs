@@ -37,11 +37,11 @@ namespace LMSAPI.Controllers
         {
             var errors = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(obj.SubjctCode))
+            if (obj.SubjectId > 0)
                 errors.Add("SubjectCode is required.");
             else if (string.IsNullOrWhiteSpace(obj.Type))
                 errors.Add("Type is required.");
-            else if (string.IsNullOrWhiteSpace(obj.Url))
+            else if (obj.SubjectId > 0)
                 errors.Add("Url is required.");
 
             if (errors.Any())
@@ -88,7 +88,7 @@ namespace LMSAPI.Controllers
                 else
                 {
                     var ServerTime = DateTime.Now.ToString("yyyy-MM-dd");
-                     _logger.LogInfo($"ReadHistory fetched successfully for user: {email}");
+                    _logger.LogInfo($"ReadHistory fetched successfully for user: {email}");
                     return Ok(new { Success = true, Message = "ReadHistory fetched successfully.", ServerTime = ServerTime, Data = GetList, ErrorCode = "200" });
 
                 }
