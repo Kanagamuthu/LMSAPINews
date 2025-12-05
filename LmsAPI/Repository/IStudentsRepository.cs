@@ -1,4 +1,5 @@
-﻿using LMSAPI.Models;
+﻿using LMSAPI.DTO;
+using LMSAPI.Models;
 
 namespace LMSAPI.Repository
 {
@@ -18,7 +19,7 @@ namespace LMSAPI.Repository
         Task<bool> GetStudentTokenAsync(string token);
 
         Task TicketCreateAsync(TblSupportTicket request);
-        Task<List<TblSupportTicket>> GetTicketByEmailAsync(string emailid);
+        Task<List<SupportTicketDto>> GetTicketByEmailAsync(string emailid);
 
         //re-generate otp
         Task RegenerateOtpAsync(TblUserRandomPass otpRecord);

@@ -1,4 +1,5 @@
-﻿using LMSAPI.Models;
+﻿using LMSAPI.DTO;
+using LMSAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 
@@ -154,11 +155,23 @@ namespace LMSAPI.Repository
             }
         }
 
-        public async Task<List<TblSupportTicket>> GetTicketByEmailAsync(string email)
+        public async Task<List<SupportTicketDto>> GetTicketByEmailAsync(string email)
         {
+            var tickets = await _context.TblSupportTickets
+                                        .Where(x => x.EmailId == email)
+                                        .ToListAsync();
 
-            return await _context.TblSupportTickets.Where(x => x.EmailId == email).ToListAsync() ?? new List<TblSupportTicket>();
+            var ticketDtos = tickets.Select(ticket => new SupportTicketDto
+            {
+                ticketId = ticket.StId,
+                subject = ticket.Subject,
+                message= ticket.Message,
+                resolution = ticket.Resolution,
+                CreatedAt = ticket.Createdon ?? DateTime.MinValue,  // safer for nullable DateTime
+                Status = ticket.ActiveStatus ?? false  // safer for nullable bool
+            }).ToList();
 
+            return ticketDtos;
         }
 
         public async Task RegenerateOtpAsync(TblUserRandomPass otpRecord)
