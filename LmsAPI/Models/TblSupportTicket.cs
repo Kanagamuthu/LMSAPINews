@@ -24,4 +24,6 @@ public partial class TblSupportTicket
     public bool? ActiveStatus { get; set; }
 
     public int? ReadBy { get; set; }
+
+    public string? Resolution { get; set; }
 }

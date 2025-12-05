@@ -846,6 +846,7 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.Readon)
                 .HasColumnType("datetime")
                 .HasColumnName("readon");
+            entity.Property(e => e.Resolution).HasColumnName("resolution");
             entity.Property(e => e.Subject)
                 .HasMaxLength(100)
                 .IsUnicode(false)
