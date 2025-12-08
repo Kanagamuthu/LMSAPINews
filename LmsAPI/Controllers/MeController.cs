@@ -81,17 +81,17 @@ namespace LMSAPI.Controllers
                 }
 
                 var GetList = await _dashboardRepository.ReadHistory(Convert.ToInt32(userId));
-                if (GetList == null)
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "No read history found.", Data = "", ErrorCode = "404" });
-                }
-                else
-                {
-                    var ServerTime = DateTime.Now.ToString("yyyy-MM-dd");
-                    _logger.LogInfo($"ReadHistory fetched successfully for user: {email}");
-                    return Ok(new { Success = true, Message = "ReadHistory fetched successfully.", ServerTime = ServerTime, Data = GetList, ErrorCode = "200" });
+                //if (GetList == null)
+                //{
+                //    return Ok(new ApiResponse { Success = false, Message = "No read history found.", Data = "", ErrorCode = "404" });
+                //}
+                //else
+                //{
+                var ServerTime = DateTime.Now.ToString("yyyy-MM-dd");
+                _logger.LogInfo($"ReadHistory fetched successfully for user: {email}");
+                return Ok(new { Success = true, Message = "ReadHistory fetched successfully.", ServerTime = ServerTime, Data = GetList, ErrorCode = "200" });
 
-                }
+                // }
             }
             catch (Exception ex)
             {

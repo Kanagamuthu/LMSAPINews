@@ -17,12 +17,13 @@ namespace LMSAPI.Helpers
 
         public async Task InvokeAsync(HttpContext context, IStudentsRepository studentsRepository, IDashboardRepository dashboardRepository)
         {
+            var ServerTime = DateTime.Now.ToString("yyyy-MM-dd");
             try
             {
                 var endpoint = context.GetEndpoint();
                 if (endpoint != null)
                 {
-                    var allowedEndpoints = new[] { "GetPackageDetails", "TrailSubscription", "CreateSubscription" };
+                    var allowedEndpoints = new[] { "GetAllPackage", "GetPackageDetails", "TrailSubscription", "CreateSubscription" };
 
                     if (endpoint?.DisplayName != null && allowedEndpoints.Any(name => endpoint.DisplayName.Contains(name, StringComparison.OrdinalIgnoreCase)))
                     {
@@ -41,22 +42,21 @@ namespace LMSAPI.Helpers
                                     var activationDate = student.AccActiveOn.Value;
                                     var daysSinceActivation = (DateTime.Now - activationDate).Days;
                                     int daysLeft = trialDays - daysSinceActivation;
-
                                     if (daysLeft <= 0)
                                     {
                                         // trial expired
                                         await dashboardRepository.SetInactive(userId);
 
-                                        context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0 };
+                                        context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0 , ServerTime = ServerTime };
                                     }
                                     else
                                     {
-                                        context.Items["TrialInfo"] = new { InTrialPeriod = true, DaysLeft = daysLeft };
+                                        context.Items["TrialInfo"] = new { InTrialPeriod = true, DaysLeft = daysLeft, ServerTime = ServerTime };
                                     }
                                 }
                                 else
                                 {
-                                    context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0 };
+                                    context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0 , ServerTime = ServerTime };
                                 }
                             }
                         }
@@ -65,7 +65,7 @@ namespace LMSAPI.Helpers
             }
             catch
             {
-                context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0 };
+                context.Items["TrialInfo"] = new { InTrialPeriod = false, DaysLeft = 0, ServerTime= ServerTime };
             }
 
             await _next(context);

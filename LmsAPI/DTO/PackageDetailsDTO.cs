@@ -17,5 +17,6 @@ namespace LMSAPI.DTO
         public DateTime? PaymentOn { get; set; }
         public DateTime? serverdate { get; set; } = DateTime.Now;
         public List<SubjectMasterDto> SubjectMaster { get; set; }
+        public string TransactionType { get; set; }
     }
 }

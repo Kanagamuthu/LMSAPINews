@@ -29,6 +29,7 @@ namespace LMSAPI.DTO
         public bool isPurchased { get; set; }
         public object subjectExpiryDate { get; set; }
         public object paymentOn { get; set; }
+        public string TransactionType { get; set; }
     }
 
 }

@@ -477,29 +477,31 @@ namespace LMSAPI.Repository
                 var result = (from pm in _context.TblPackageMasters
                               join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
                               join dm in _context.TblDepartmentMasters on pd.DepartmentId equals dm.DepartmentId
-                              join usm in _context.TblUserSubscribeMasters on pm.PackageId equals usm.PackageId 
-                              join sah in _context.TblUserSubjectActivationHistories on usm.UserSubscribeMasterId equals sah.TusmId 
+                              join usm in _context.TblUserSubscribeMasters on pm.PackageId equals usm.PackageId
+                              join sah in _context.TblUserSubjectActivationHistories on usm.UserSubscribeMasterId equals sah.TusmId
                               where pm.Activestatus == true && usm.UserId == Id && usm.PaymentStatus.ToLower() == "success"
                               select new
                               {
                                   dm.DepartmentName,
                                   pm,
-                                  sah
+                                  sah,
+                                  usm
                               }).AsEnumerable().GroupBy(x => x.DepartmentName).
                               Select(g => new readhistorydto
                               {
                                   departmentName = g.Key,
-                                  packageMasterDto =g.OrderByDescending(x=>x.sah.SubjectExpiryDate).GroupBy(x => x.pm.PackageId)
+                                  packageMasterDto = g.OrderByDescending(x => x.sah.SubjectExpiryDate).GroupBy(x => x.pm.PackageId)
                                  .Select(p => new Packagemasterdto
                                  {
                                      packageId = p.First().pm.PackageId,
                                      packageCode = p.First().pm.PackageCode,
                                      packageName = p.First().pm.PackageDisplayName,
-                                     sellingPrice = p.First().pm.SellingPrice??0,
+                                     sellingPrice = p.First().pm.SellingPrice ?? 0,
                                      coverPath = p.First().pm.CoverPath,
                                      isPurchased = true,
-                                     subjectExpiryDate =  p.First().sah.SubjectExpiryDate,
-                                     paymentOn = p.First().sah.ActivatedOn
+                                     subjectExpiryDate = p.First().sah.SubjectExpiryDate,
+                                     paymentOn = p.First().sah.ActivatedOn,
+                                     TransactionType = p.First().usm.TransactionType.ToLower() == "trail" ? p.First().usm.TransactionType : "Purchase"
 
                                  }).ToList()
                               }).ToList();
@@ -647,7 +649,7 @@ namespace LMSAPI.Repository
                 join usm in _context.TblUserSubscribeMasters
                     on pm.PackageId equals usm.PackageId into usmGroup
                 from usm in usmGroup
-                    .Where(x => x.UserId == userId && x.PaymentStatus == "Success")
+                    .Where(x => x.UserId == userId && x.PaymentStatus.ToLower() == "success")
                     .DefaultIfEmpty()
                 join sah in _context.TblUserSubjectActivationHistories
                     on usm.UserSubscribeMasterId equals sah.TusmId into sahGroup
@@ -664,7 +666,8 @@ namespace LMSAPI.Repository
                     pm.PackageDurationDays,
                     Subject = sm,
                     PaymentOn = usm != null ? usm.PaymentOn : null,
-                    SubjectExpiryDate = sah != null ? sah.SubjectExpiryDate : null
+                    SubjectExpiryDate = sah != null ? sah.SubjectExpiryDate : null,
+                    TransactionType = usm != null ? usm.TransactionType.ToLower() == "trail" ? usm.TransactionType : "Purchase" : null,
                 }
             ).ToListAsync();
 
@@ -688,6 +691,7 @@ namespace LMSAPI.Repository
                 Validity = validityDays.ToString(),
                 Validitydate = first.SubjectExpiryDate,
                 PaymentOn = first.PaymentOn,
+                TransactionType = first.TransactionType,
                 SubjectExpiryDate = first.SubjectExpiryDate,
                 IsPurchased = first.PaymentOn != null || first.SubjectExpiryDate != null,
                 SubjectMaster = new List<SubjectMasterDto>()
@@ -1120,7 +1124,7 @@ namespace LMSAPI.Repository
             order.Signature = signature;
             order.Status = status;
             order.UpdatedBy = userId;
-            order.UpdatedDate = DateTime.Now;    
+            order.UpdatedDate = DateTime.Now;
             _context.CreateOrders.Update(order);
             await _context.SaveChangesAsync();
             return order;
