@@ -501,7 +501,7 @@ namespace LMSAPI.Repository
                                      isPurchased = true,
                                      subjectExpiryDate = p.First().sah.SubjectExpiryDate,
                                      paymentOn = p.First().sah.ActivatedOn,
-                                     TransactionType = p.First().usm.TransactionType.ToLower() == "trail" ? p.First().usm.TransactionType : "Purchase"
+                                     TransactionType = p.First().usm.TransactionType.ToLower() == "trail" ? "Trial" : "Purchase"
 
                                  }).ToList()
                               }).ToList();
