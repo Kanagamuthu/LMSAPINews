@@ -723,10 +723,11 @@ namespace LMSAPI.Controllers
             var email = _configuration["razorpay:email"];
             var phone = _configuration["razorpay:phone"];
             var client = new Razorpay.Api.RazorpayClient(razorpayKey, razorpaySecret);
-
+            var GetPackage = _context.TblPackageMasters.FirstOrDefault(x=>x.PackageId==req.ProductId);
+            var price = GetPackage.SellingPrice * 100;
             var options = new Dictionary<string, object>
             {
-                  { "amount", req.Amount * 100 }, // amount in paise
+                  { "amount", price }, // amount in paise
                   { "currency", "INR" },
                   { "receipt", "order_rcptid_" + req.ProductId },
                   { "payment_capture", 1 }
@@ -741,6 +742,7 @@ namespace LMSAPI.Controllers
                 key = razorpayKey,
                 email = email,
                 phone = phone,
+                amount= price,
             });
         }
 
