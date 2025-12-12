@@ -17,6 +17,8 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<CreateOrder> CreateOrders { get; set; }
 
+    public virtual DbSet<EmailTemplate> EmailTemplates { get; set; }
+
     public virtual DbSet<SubjectChapter> SubjectChapters { get; set; }
 
     public virtual DbSet<SubjectChapterPath> SubjectChapterPaths { get; set; }
@@ -101,6 +103,18 @@ public partial class LmsdbNewContext : DbContext
             entity.ToTable("CreateOrder");
 
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<EmailTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__EmailTem__3214EC07BEA3FBC6");
+
+            entity.ToTable("EmailTemplate");
+
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Subject).HasMaxLength(100);
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
         });
 

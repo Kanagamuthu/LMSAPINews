@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
@@ -30,8 +31,9 @@ namespace LmsAPI.Controllers
         private readonly JwtTokenService _jwtTokenService;
         private readonly IDistributedCache _cache;
         private readonly LmsdbNewContext _context;
+        private readonly SmtpSettings _smtpSettings;
         public UsersController(IStudentsRepository studentsRepository, ILoggerManager logger, IValidator<string> emailValidator,
-            IValidator<StudentRegisterDto> validator, EmailService emailService, JwtTokenService jwtTokenService, IDistributedCache cache, LmsdbNewContext context)
+            IValidator<StudentRegisterDto> validator, EmailService emailService, JwtTokenService jwtTokenService, IDistributedCache cache, LmsdbNewContext context, IOptions<SmtpSettings> smtpSettings)
         {
             _studentsRepository = studentsRepository;
             _logger = logger;
@@ -41,6 +43,7 @@ namespace LmsAPI.Controllers
             _jwtTokenService = jwtTokenService;
             _cache = cache;
             _context = context;
+            _smtpSettings = smtpSettings.Value;
         }
 
         #region student register
@@ -508,15 +511,36 @@ namespace LmsAPI.Controllers
 
             var newticket = new TblSupportTicket
             {
-                EmailId=email,
+                EmailId = email,
                 Subject = request.subject,
                 Message = request.message,
                 Createdon = DateTime.Now,
                 ActiveStatus = true,
                 ReadBy = Convert.ToInt32(userId)
             };
+            async Task<string> SendTicketRaiseEmail(string toEmail, int ticketId, string subject, string description)
+            {
+                var template = await _context.EmailTemplates.Where(x => x.Name == "Ticket Raised Template" && x.Isdelete == true).FirstOrDefaultAsync();
 
+                if (template == null)
+                    return "Email template not found";
+
+                string body = template.Content;
+
+
+                body = body.Replace("{TicketId}", ticketId.ToString());
+                body = body.Replace("{subject}", subject);
+                body = body.Replace("{description}", description);
+
+                string emailSubject = template.Subject
+                    .Replace("{TicketId}", ticketId.ToString());
+
+                await _emailService.SendEmailAsync(toEmail, emailSubject, body);
+
+                return "Ticket Raise Email Sent Successfully";
+            }
             await _studentsRepository.TicketCreateAsync(newticket);
+            await SendTicketRaiseEmail(_smtpSettings.UserName, newticket.StId, newticket.Subject, newticket.Message);
             return Ok(new { success = true, message = "Ticket created", data = newticket, ErrorCode = "200" });
 
         }
