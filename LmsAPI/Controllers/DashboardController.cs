@@ -33,15 +33,17 @@ namespace LMSAPI.Controllers
         private readonly IDashboardRepository _dashboardRepository;
         private readonly IStudentsRepository _studentsRepository;
         private readonly IDistributedCache _cache;
-        private readonly IConfiguration _configuration; 
+        private readonly IConfiguration _configuration;
+        private readonly LmsdbNewContext _context;
 
-        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository, IDistributedCache cache, IConfiguration configuration)
+        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository, IDistributedCache cache, IConfiguration configuration, LmsdbNewContext context)
         {
             _logger = logger;
             _dashboardRepository = dashboardRepository;
             _studentsRepository = studentsRepository;
             _cache = cache;
             _configuration = configuration;
+            _context = context;
         }
 
         #region validate student is validate or not from session
@@ -512,7 +514,7 @@ namespace LMSAPI.Controllers
             else
             {
                 var getAllPackage = await _dashboardRepository.GetPackageDetails(PackageId.PackageID, userId);
-                if (getAllPackage == null )
+                if (getAllPackage == null)
                     return Ok(new ApiResponse(false, "No package found with the given PackageId.", "", errorCode: "404"));
                 else
 
@@ -718,23 +720,32 @@ namespace LMSAPI.Controllers
             var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
             var razorpayKey = _configuration["razorpay:key"];
             var razorpaySecret = _configuration["razorpay:secret"];
+            //var email = _configuration["razorpay:email"];
+            //var phone = _configuration["razorpay:phone"];
             var client = new Razorpay.Api.RazorpayClient(razorpayKey, razorpaySecret);
+
+            var GetPackage = _context.TblPackageMasters.FirstOrDefault(x => x.PackageId == req.ProductId);
+            var Getstudent = _context.TblStudentUserMasters.FirstOrDefault(x => x.StudentUserId == userId);
+            var price = GetPackage.SellingPrice * 100;
 
             var options = new Dictionary<string, object>
             {
-                  { "amount", req.Amount * 100 }, // amount in paise
+                  { "amount", price }, // amount in paise
                   { "currency", "INR" },
                   { "receipt", "order_rcptid_" + req.ProductId },
                   { "payment_capture", 1 }
             };
             Razorpay.Api.Order order = client.Order.Create(options);
             //cerate a record in databse with order details and status as created
-            var res=await _dashboardRepository.CreateRazorpayOrderRecord(req.ProductId, order?["id"]?.ToString(), userId, "created");
+            var res = await _dashboardRepository.CreateRazorpayOrderRecord(req.ProductId, order?["id"]?.ToString(), userId, "created");
             return Ok(new
             {
                 success = true,
                 orderId = order["id"].ToString(),
                 key = razorpayKey,
+                email = Getstudent.EmailId,
+                phone = Getstudent.CountryCode + "-" + Getstudent.Mobile,
+                amount = price,
             });
         }
 
@@ -760,11 +771,11 @@ namespace LMSAPI.Controllers
             if (isValid)
             {
                 //update payment status in database as successful
-                var res =await _dashboardRepository.UpdateRazorpayOrderStatus(Convert.ToInt32(req.OrderId), req.PaymentId,req.Signature, userId, "successful");
+                var res = await _dashboardRepository.UpdateRazorpayOrderStatus(req.OrderId, req.PaymentId, req.Signature, userId, "successful");
 
 
                 PaymentPayload obj = new PaymentPayload();
-                obj.packageId =res.PackageId;   
+                obj.packageId = res.PackageId;
                 obj.PaymentRefNo = req.PaymentId;
                 obj.PaymentStatus = "success";
                 obj.Type = "insert";
