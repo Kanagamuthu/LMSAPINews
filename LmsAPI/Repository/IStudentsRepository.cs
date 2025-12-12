@@ -13,7 +13,7 @@ namespace LMSAPI.Repository
         //update student status
         Task<bool> UpdateStudentAsync(TblStudentUserMaster student);
         //delete otp
-        Task<bool> DeleteOtpAsync(int userId);
+        Task<bool> UpdateOtpAsync(int userId);
         //get trail period days
         Task<int> GetTrialPeriodDaysAsync();
         Task<bool> GetStudentTokenAsync(string token);
@@ -22,7 +22,8 @@ namespace LMSAPI.Repository
         Task<List<SupportTicketDto>> GetTicketByEmailAsync(string emailid);
 
         //re-generate otp
-        Task RegenerateOtpAsync(TblUserRandomPass otpRecord);
+        //Task<bool> RegenerateOtpAsync(TblUserRandomPass otpRecord, int userId);
+        Task<bool> RegenerateOtpAsync(TblUserRandomPass otpRecord, int userId);
 
         Task<List<TblCountriesCode>> GetCountriesCodesAsync();
 

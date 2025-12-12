@@ -67,7 +67,7 @@ namespace LmsAPI.Controllers
                 existing.CountryCode = studentDto.CountryCode;
                 await _studentsRepository.UpdateStudentAsync(existing);
                 // 1) Optionally delete OTP
-                await _studentsRepository.DeleteOtpAsync((int)existing.StudentUserId);
+                await _studentsRepository.UpdateOtpAsync((int)existing.StudentUserId);
             }
             else
             {
@@ -153,8 +153,8 @@ namespace LmsAPI.Controllers
                 }
                 else
                 {
-                    // 1) Optionally delete OTP
-                    await _studentsRepository.DeleteOtpAsync((int)student.StudentUserId);
+                    // 1) Optionally update OTP
+                    await _studentsRepository.UpdateOtpAsync((int)student.StudentUserId);
                     //create otp
                     var _againotp = GenOPT(6);
                     var otpRecord = new TblUserRandomPass
@@ -260,8 +260,8 @@ namespace LmsAPI.Controllers
             var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
             student.Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
             await _studentsRepository.UpdateStudentAsync(student);
-            // 5️) Optionally delete OTP
-            await _studentsRepository.DeleteOtpAsync(otpRecord.UserId);
+            // 5️) Optionally update OTP
+            await _studentsRepository.UpdateOtpAsync(otpRecord.UserId);
 
             //validate student 
             if (student!=null)
@@ -560,18 +560,29 @@ namespace LmsAPI.Controllers
             var otp = GenOPT(6);
             var otpRecord = new TblUserRandomPass
             {
-                UserRandomId = 0,
+                //UserRandomId = 0,
                 UserId = (int)student.StudentUserId,
                 VerificationCode = otp,
-                GeneratedTime = DateTime.Now
+                GeneratedTime = DateTime.Now,
+                ActionType = 1,
+                UserType = 2,
             };
 
-            await _studentsRepository.DeleteOtpAsync((int)student.StudentUserId);
-            await _studentsRepository.RegenerateOtpAsync(otpRecord);
-            // Send email
-            await _emailService.SendEmailAsync(student.EmailId, "Your New OTP Code", $"Your new OTP code is: {otp}");
+            //update password with new otp
+            bool is_saved = await _studentsRepository.RegenerateOtpAsync(otpRecord, (int)student.StudentUserId);
+            if (!is_saved)
+            {
+                return Ok(new ApiResponse(false, "Failed to update OTP.", "", "500"));
+            }else
+            {
+                _logger.LogInfo($"OTP regenerated for email: {student.EmailId}");
+                await _emailService.SendEmailAsync(student.EmailId, "Your New OTP Code", $"Your new OTP code is: {otp}");
+                return Ok(new ApiResponse(true, "New OTP sent to your email", otpRecord.VerificationCode));
+               
+            }
 
-            return Ok(new ApiResponse(true, "New OTP sent to your email", otpRecord.VerificationCode));
+            //await _studentsRepository.UpdateOtpAsync((int)student.StudentUserId);
+            //await _studentsRepository.RegenerateOtpAsync(otpRecord, (int)student.StudentUserId);
         }
 
         #endregion
@@ -651,7 +662,7 @@ namespace LmsAPI.Controllers
                 return Ok(new ApiResponse(false, "Invalid student or inactive account.", data: "", "401"));
             }
             // 1) Optionally delete OTP
-            await _studentsRepository.DeleteOtpAsync((int)student.StudentUserId);
+            await _studentsRepository.UpdateOtpAsync((int)student.StudentUserId);
             //create otp
             var _againotp = GenOPT(6);
             var otpRecord = new TblUserRandomPass
@@ -663,7 +674,8 @@ namespace LmsAPI.Controllers
                 ActionType = 1,
                 UserType = 2,
             };
-            bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+            //bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+            bool is_saved = await _studentsRepository.RegenerateOtpAsync(otpRecord, (int)student.StudentUserId);
             //validate db otp save or not
             if (is_saved == false)
             {

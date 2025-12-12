@@ -111,16 +111,17 @@ namespace LMSAPI.Repository
                 return false;
             }
         }
-        public async Task<bool> DeleteOtpAsync(int userId)
+        public async Task<bool> UpdateOtpAsync(int userId)
         {
             try
             {
-                var otpRecords = await _context.TblUserRandomPasses.Where(o => o.UserId == userId).ToListAsync();
-                if (otpRecords.Any())
+                var otpRecords = await _context.TblUserRandomPasses.OrderByDescending(x=>x.GeneratedTime).Where(o => o.UserId == userId).FirstOrDefaultAsync();
+                if (otpRecords!=null)
                 {
-                    _context.TblUserRandomPasses.RemoveRange(otpRecords);
+                    _context.TblUserRandomPasses.Update(otpRecords);
                     await _context.SaveChangesAsync();
                 }
+                
                 return true;
             }
             catch (Exception ex)
@@ -174,19 +175,37 @@ namespace LMSAPI.Repository
             return ticketDtos;
         }
 
-        public async Task RegenerateOtpAsync(TblUserRandomPass otpRecord)
+        //public async Task RegenerateOtpAsync(TblUserRandomPass otpRecord,int userId)
+        public async Task<bool> RegenerateOtpAsync(TblUserRandomPass otpRecord, int userId)
         {
             try
             {
-                _context.TblUserRandomPasses.Update(otpRecord);
+                var existingOtp = await _context.TblUserRandomPasses
+                    .Where(o => o.UserId == userId)
+                    .OrderByDescending(o => o.GeneratedTime)
+                    .FirstOrDefaultAsync();
+
+                if (existingOtp != null)
+                {
+                    // UPDATE existing record
+                    existingOtp.VerificationCode = otpRecord.VerificationCode;
+                    existingOtp.GeneratedTime = otpRecord.GeneratedTime;
+                    existingOtp.ActionType = otpRecord.ActionType;
+                    existingOtp.UserType = otpRecord.UserType;
+
+                    _context.TblUserRandomPasses.Update(existingOtp);
+                }
+              
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception ex)
             {
-                string message = ex.Message;
+                // Log exception if needed
                 throw;
             }
         }
+
 
         #region get country
         public async Task<List<TblCountriesCode>> GetCountriesCodesAsync()
