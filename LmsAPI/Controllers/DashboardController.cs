@@ -720,11 +720,14 @@ namespace LMSAPI.Controllers
             var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
             var razorpayKey = _configuration["razorpay:key"];
             var razorpaySecret = _configuration["razorpay:secret"];
-            var email = _configuration["razorpay:email"];
-            var phone = _configuration["razorpay:phone"];
+            //var email = _configuration["razorpay:email"];
+            //var phone = _configuration["razorpay:phone"];
             var client = new Razorpay.Api.RazorpayClient(razorpayKey, razorpaySecret);
-            var GetPackage = _context.TblPackageMasters.FirstOrDefault(x=>x.PackageId==req.ProductId);
+
+            var GetPackage = _context.TblPackageMasters.FirstOrDefault(x => x.PackageId == req.ProductId);
+            var Getstudent = _context.TblStudentUserMasters.FirstOrDefault(x => x.StudentUserId == userId);
             var price = GetPackage.SellingPrice * 100;
+
             var options = new Dictionary<string, object>
             {
                   { "amount", price }, // amount in paise
@@ -740,9 +743,9 @@ namespace LMSAPI.Controllers
                 success = true,
                 orderId = order["id"].ToString(),
                 key = razorpayKey,
-                email = email,
-                phone = phone,
-                amount= price,
+                email = Getstudent.EmailId,
+                phone = Getstudent.CountryCode + "-" + Getstudent.Mobile,
+                amount = price,
             });
         }
 
@@ -768,7 +771,7 @@ namespace LMSAPI.Controllers
             if (isValid)
             {
                 //update payment status in database as successful
-                var res = await _dashboardRepository.UpdateRazorpayOrderStatus(Convert.ToInt32(req.OrderId), req.PaymentId, req.Signature, userId, "successful");
+                var res = await _dashboardRepository.UpdateRazorpayOrderStatus(req.OrderId, req.PaymentId, req.Signature, userId, "successful");
 
 
                 PaymentPayload obj = new PaymentPayload();

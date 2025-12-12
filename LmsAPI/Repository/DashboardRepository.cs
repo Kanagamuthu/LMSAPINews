@@ -1113,9 +1113,9 @@ namespace LMSAPI.Repository
 
 
         //update order status
-        public async Task<CreateOrder> UpdateRazorpayOrderStatus(int orderId, string paymentId, string signature, int userId, string status)
+        public async Task<CreateOrder> UpdateRazorpayOrderStatus(string orderId, string paymentId, string signature, int userId, string status)
         {
-            var order = await _context.CreateOrders.FindAsync(orderId);
+            var order = await _context.CreateOrders.FirstOrDefaultAsync(x=>x.OrderId==orderId);
             if (order == null)
             {
                 return null;
