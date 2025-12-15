@@ -179,7 +179,8 @@ namespace LmsAPI.Controllers
                     else
                     {
                         _logger.LogInfo($"Sending OTP to email (from user controller): {student.EmailId}");
-                        await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                        await SendOtpEmailAsync(student.EmailId, student.StudentUserId.ToString(), otpRecord.VerificationCode);
+                        //   await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
                         return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp });
                     }
                     //bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
@@ -606,7 +607,8 @@ namespace LmsAPI.Controllers
             else
             {
                 _logger.LogInfo($"OTP regenerated for email: {student.EmailId}");
-                await _emailService.SendEmailAsync(student.EmailId, "Your New OTP Code", $"Your new OTP code is: {otp}");
+                await ResendOtpEmailAsync(student.EmailId, student.Username, otpRecord.VerificationCode);
+                //  await _emailService.SendEmailAsync(student.EmailId, "Your New OTP Code", $"Your new OTP code is: {otp}");
                 return Ok(new ApiResponse(true, "New OTP sent to your email", otpRecord.VerificationCode));
 
             }
@@ -713,7 +715,8 @@ namespace LmsAPI.Controllers
             }
             else
             {
-                await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                await ResendOtpEmailAsync(student.EmailId, student.Username, otpRecord.VerificationCode);
+                // await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
                 return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp, ErrorCode = "200" });
             }
         }
@@ -792,14 +795,51 @@ namespace LmsAPI.Controllers
             if (template == null)
                 return "Email Not Found";
 
+            var timeConfig = await _context.TblAppConfigs.Where(x => x.ConfigKey == "otpexpiryinmin").FirstOrDefaultAsync();
+
+            if (timeConfig == null || string.IsNullOrWhiteSpace(timeConfig.ConfigValue))
+                return "OTP expiry time not configured";
+
+            string expiryTime = timeConfig.ConfigValue;
+
             string body = template.Content;
 
             body = body.Replace("{existingTickets.userName}", userName);
             body = body.Replace("{VerificationCode}", VerificationCode);
+            body = body.Replace("{expiryTime}", expiryTime);
 
-            await _emailService.SendEmailAsync(toEmail, template.Subject, body);
+            await _emailService.SendEmailAsync(toEmail.Trim(), template.Subject, body);
             return "OTP Sent Successfully";
         }
+
+
+        [HttpPost("ResendOTPTemplate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<string> ResendOtpEmailAsync(string toEmail, string userName, string VerificationCode)
+        {
+            var template = await _context.EmailTemplates.Where(x => x.Name == "Resend OTP Template" && x.Isdelete == true).FirstOrDefaultAsync();
+
+            if (template == null)
+                return "Resend OTP Email Template not found";
+
+            var timeConfig = await _context.TblAppConfigs.Where(x => x.ConfigKey == "otpexpiryinmin").FirstOrDefaultAsync();
+
+            if (timeConfig == null || string.IsNullOrWhiteSpace(timeConfig.ConfigValue))
+                return "OTP expiry time not configured";
+
+            string expiryTime = timeConfig.ConfigValue;
+
+            string body = template.Content;
+            body = body.Replace("{VerificationCode}", VerificationCode);
+            body = body.Replace("{userName}", userName);
+            body = body.Replace("{expiryTime}", expiryTime);
+
+            await _emailService.SendEmailAsync(toEmail.Trim(), template.Subject, body);
+            return "Resend OTP Successfully";
+        }
+
 
     }
 }
