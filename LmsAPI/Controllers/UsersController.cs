@@ -157,7 +157,7 @@ namespace LmsAPI.Controllers
                 else
                 {
                     // 1) Optionally update OTP
-                    await _studentsRepository.UpdateOtpAsync((int)student.StudentUserId);
+                    //await _studentsRepository.UpdateOtpAsync((int)student.StudentUserId);
                     //create otp
                     var _againotp = GenOPT(6);
                     var otpRecord = new TblUserRandomPass
