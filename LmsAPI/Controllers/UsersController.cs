@@ -180,8 +180,8 @@ namespace LmsAPI.Controllers
                         _logger.LogInfo($"Sending OTP to email (from user controller): {student.EmailId}");
 
 
-
-                        await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                        await SendOtpEmailAsync(student.EmailId, student.StudentUserId.ToString(), otpRecord.VerificationCode);
+                        //  await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
                         return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp });
                     }
                 }
@@ -763,6 +763,26 @@ namespace LmsAPI.Controllers
         }
         #endregion
 
+        [HttpPost("OtpEmailTemplate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<string> SendOtpEmailAsync(string toEmail, string userName, string VerificationCode)
+        {
+
+            var template = await _context.EmailTemplates.Where(x => x.Name == "OTP Template" && x.Isdelete == true).FirstOrDefaultAsync();
+
+            if (template == null)
+                return "Email Not Found";
+
+            string body = template.Content;
+
+            body = body.Replace("{existingTickets.userName}", userName);
+            body = body.Replace("{VerificationCode}", VerificationCode);
+
+            await _emailService.SendEmailAsync(toEmail, template.Subject, body);
+            return "OTP Sent Successfully";
+        }
 
     }
 }
