@@ -25,189 +25,143 @@ namespace LMSAPI.Repository
 
         public bool IsValidStudent(string userEmail)
         {
-            try
+
+            _logger.LogInfo("Checking if student is valid for email: " + userEmail);
+
+            var student = _context.TblStudentUserMasters.Where(s => s.EmailId == userEmail && s.ActiveStatus == 1);
+            if (student.Any())
             {
-                _logger.LogInfo("Checking if student is valid for email: " + userEmail);
-
-                var student = _context.TblStudentUserMasters.Where(s => s.EmailId == userEmail && s.ActiveStatus == 1);
-                if (student.Any())
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-
+                return true;
             }
-            catch (Exception)
+            else
             {
-
-                throw;
+                return false;
             }
+
         }
 
         public async Task<bool> AddBooksToStudent(string userEmail, List<int> bookIds)
         {
-            try
-            {
-                var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail && s.ActiveStatus == 1);
-                if (student == null)
-                {
-                    _logger.LogWarn("Student not found for email: " + userEmail);
-                    return false;
-                }
-                foreach (var bookId in bookIds)
-                {
-                    //trail period calculated from table TblStudentUserMaster - acc acvivet on
-                    var trialDays = await _studentsRepository.GetTrialPeriodDaysAsync();
-                    //get activate date from table
-                    var stdmaster = await _studentsRepository.GetStudentByEmailAsync(userEmail);
-                    var activationDate = stdmaster.AccActiveOn.Value;
-                    var currentDate = DateTime.UtcNow;
-                    var difference = currentDate - activationDate;
-                    int daysSinceActivation = (int)difference.TotalDays;
-                    int daysLeft = trialDays - daysSinceActivation; //days left date calculation 
-                    DateTime trail_expairy_on = activationDate.AddDays(trialDays);
 
-                    var existingEntry = await _context.TblStudentTrialSubjects.FirstOrDefaultAsync(m => m.SubjectId == student.StudentUserId && m.SubjectId == bookId);
-                    if (existingEntry == null)
-                    {
-                        var mapping = new TblStudentTrialSubject
-                        {
-                            UserId = student.StudentUserId,
-                            SubjectId = bookId,
-                            TrailExpiryOn = trail_expairy_on,
-                            CreatedOn = DateTime.Now
-                        };
-                        await _context.TblStudentTrialSubjects.AddAsync(mapping);
-                    }
-                }
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
+            var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail && s.ActiveStatus == 1);
+            if (student == null)
             {
-                string message = ex.Message;
-                _logger.LogError(ex, "Error occurred while adding books to student: " + userEmail);
+                _logger.LogWarn("Student not found for email: " + userEmail);
                 return false;
             }
+            foreach (var bookId in bookIds)
+            {
+                //trail period calculated from table TblStudentUserMaster - acc acvivet on
+                var trialDays = await _studentsRepository.GetTrialPeriodDaysAsync();
+                //get activate date from table
+                var stdmaster = await _studentsRepository.GetStudentByEmailAsync(userEmail);
+                var activationDate = stdmaster.AccActiveOn.Value;
+                var currentDate = DateTime.UtcNow;
+                var difference = currentDate - activationDate;
+                int daysSinceActivation = (int)difference.TotalDays;
+                int daysLeft = trialDays - daysSinceActivation; //days left date calculation 
+                DateTime trail_expairy_on = activationDate.AddDays(trialDays);
+
+                var existingEntry = await _context.TblStudentTrialSubjects.FirstOrDefaultAsync(m => m.SubjectId == student.StudentUserId && m.SubjectId == bookId);
+                if (existingEntry == null)
+                {
+                    var mapping = new TblStudentTrialSubject
+                    {
+                        UserId = student.StudentUserId,
+                        SubjectId = bookId,
+                        TrailExpiryOn = trail_expairy_on,
+                        CreatedOn = DateTime.Now
+                    };
+                    await _context.TblStudentTrialSubjects.AddAsync(mapping);
+                }
+            }
+            await _context.SaveChangesAsync();
+            return true;
+
         }
         Task<List<TblSubjectMaster>> IDashboardRepository.GetAllSubjects()
         {
-            try
-            {
-                return _context.TblSubjectMasters.Where(s => s.ActiveStatus == 1).ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
 
-            }
+            return _context.TblSubjectMasters.Where(s => s.ActiveStatus == 1).ToListAsync();
+
         }
         public async Task<bool> Ad_contextooksToStudent(string userEmail, List<int> bookIds)
         {
-            try
-            {
-                var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail && s.ActiveStatus == 1);
-                if (student == null)
-                {
-                    _logger.LogWarn("Student not found for email: " + userEmail);
-                    return false;
-                }
-                foreach (var bookId in bookIds)
-                {
-                    //trail period calculated from table TblStudentUserMaster - acc acvivet on
-                    var trialDays = await _studentsRepository.GetTrialPeriodDaysAsync();
-                    //get activate date from table
-                    var stdmaster = await _studentsRepository.GetStudentByEmailAsync(userEmail);
-                    var activationDate = stdmaster.AccActiveOn.Value;
-                    var currentDate = DateTime.UtcNow;
-                    var difference = currentDate - activationDate;
-                    int daysSinceActivation = (int)difference.TotalDays;
-                    int daysLeft = trialDays - daysSinceActivation; //days left date calculation 
-                    DateTime trail_expairy_on = activationDate.AddDays(trialDays);
 
-                    var existingEntry = await _context.TblStudentTrialSubjects.FirstOrDefaultAsync(m => m.SubjectId == student.StudentUserId && m.SubjectId == bookId);
-                    if (existingEntry == null)
-                    {
-                        var mapping = new TblStudentTrialSubject
-                        {
-                            UserId = student.StudentUserId,
-                            SubjectId = bookId,
-                            TrailExpiryOn = trail_expairy_on,
-                            CreatedOn = DateTime.Now
-                        };
-                        await _context.TblStudentTrialSubjects.AddAsync(mapping);
-                    }
-                }
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
+            var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail && s.ActiveStatus == 1);
+            if (student == null)
             {
-                string message = ex.Message;
-                _logger.LogError(ex, "Error occurred while adding books to student: " + userEmail);
+                _logger.LogWarn("Student not found for email: " + userEmail);
                 return false;
             }
+            foreach (var bookId in bookIds)
+            {
+                //trail period calculated from table TblStudentUserMaster - acc acvivet on
+                var trialDays = await _studentsRepository.GetTrialPeriodDaysAsync();
+                //get activate date from table
+                var stdmaster = await _studentsRepository.GetStudentByEmailAsync(userEmail);
+                var activationDate = stdmaster.AccActiveOn.Value;
+                var currentDate = DateTime.UtcNow;
+                var difference = currentDate - activationDate;
+                int daysSinceActivation = (int)difference.TotalDays;
+                int daysLeft = trialDays - daysSinceActivation; //days left date calculation 
+                DateTime trail_expairy_on = activationDate.AddDays(trialDays);
+
+                var existingEntry = await _context.TblStudentTrialSubjects.FirstOrDefaultAsync(m => m.SubjectId == student.StudentUserId && m.SubjectId == bookId);
+                if (existingEntry == null)
+                {
+                    var mapping = new TblStudentTrialSubject
+                    {
+                        UserId = student.StudentUserId,
+                        SubjectId = bookId,
+                        TrailExpiryOn = trail_expairy_on,
+                        CreatedOn = DateTime.Now
+                    };
+                    await _context.TblStudentTrialSubjects.AddAsync(mapping);
+                }
+            }
+            await _context.SaveChangesAsync();
+            return true;
+
         }
         public async Task<int> GetBookLimitPerStudentAsync()
         {
-            try
-            {
-                var booklimitSetting = await _context.TblAppConfigs.ToListAsync();
-                if (booklimitSetting != null && booklimitSetting.Count > 0)
-                {
-                    var bookLimitConfig = booklimitSetting.FirstOrDefault(c => c.ConfigKey == "max_books_per_trial");
-                    if (bookLimitConfig != null && int.TryParse(bookLimitConfig.ConfigValue, out int bookLimit))
-                    {
-                        return bookLimit;
-                    }
-                    else
-                    {
-                        _logger.LogWarn("Book limit setting not found or invalid in application configuration.");
-                        return 5;
-                    }
 
+            var booklimitSetting = await _context.TblAppConfigs.ToListAsync();
+            if (booklimitSetting != null && booklimitSetting.Count > 0)
+            {
+                var bookLimitConfig = booklimitSetting.FirstOrDefault(c => c.ConfigKey == "max_books_per_trial");
+                if (bookLimitConfig != null && int.TryParse(bookLimitConfig.ConfigValue, out int bookLimit))
+                {
+                    return bookLimit;
                 }
                 else
                 {
-                    _logger.LogWarn("Book limit setting not found in application configuration.");
-                    return 0;
+                    _logger.LogWarn("Book limit setting not found or invalid in application configuration.");
+                    return 5;
                 }
+
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error occurred while retrieving book limit per student.");
-                throw;
+                _logger.LogWarn("Book limit setting not found in application configuration.");
+                return 0;
             }
+
         }
         public async Task<int> GetCurrentBookCountForStudentAsync(int studentUserId)
         {
-            try
-            {
-                var currentBookCount = await _context.TblStudentTrialSubjects.CountAsync(s => s.UserId == studentUserId);
-                return currentBookCount;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while retrieving current book count for student ID: " + studentUserId);
-                throw;
-            }
+
+            var currentBookCount = await _context.TblStudentTrialSubjects.CountAsync(s => s.UserId == studentUserId);
+            return currentBookCount;
+
         }
 
         public async Task SetInactive(long sud)
         {
-            try
-            {
-                await _context.TblStudentTrialSubjects.Where(s => s.UserId == sud).ExecuteUpdateAsync(setters => setters.SetProperty(p => p.TradeActiveStatus, 0));
-            }
-            catch (Exception er)
-            {
-                _logger.LogError(er.InnerException);
-                throw;
-            }
+
+            await _context.TblStudentTrialSubjects.Where(s => s.UserId == sud).ExecuteUpdateAsync(setters => setters.SetProperty(p => p.TradeActiveStatus, 0));
+
         }
 
         public async Task<List<TblStudentTrialSubject>> GetActiveTradesByUserIDAsync(long userId)
@@ -218,108 +172,76 @@ namespace LMSAPI.Repository
         }
         public async Task<TblStudentUserMaster> PostRegisterStudentTradeDepartment(string userEmail, StudentTradeDepartmentDTO studentTradeDepartmentDTO)
         {
-            try
-            {
-                var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
 
-                // update the department
-                student.DepartmentName = studentTradeDepartmentDTO.department_name;
-                student.Collegename = studentTradeDepartmentDTO.collegename;
-                student.EduType = studentTradeDepartmentDTO.edutype;
-                student.Batchyear = studentTradeDepartmentDTO.batchyear;
-                //student.TradeId = studentTradeDepartmentDTO.TradeId;
+            var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
 
-                // mark entity as modified and save
+            // update the department
+            student.DepartmentName = studentTradeDepartmentDTO.department_name;
+            student.Collegename = studentTradeDepartmentDTO.collegename;
+            student.EduType = studentTradeDepartmentDTO.edutype;
+            student.Batchyear = studentTradeDepartmentDTO.batchyear;
+            //student.TradeId = studentTradeDepartmentDTO.TradeId;
 
-                _context.TblStudentUserMasters.Update(student);
-                await _context.SaveChangesAsync();
-                return student;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while registering student trade and department");
-                return new TblStudentUserMaster();
-            }
+            // mark entity as modified and save
+
+            _context.TblStudentUserMasters.Update(student);
+            await _context.SaveChangesAsync();
+            return student;
+
         }
         public async Task<List<StudentTradeDepartmentDTO>> GetSubjectsByStudentTrade(string userEmail, int tradeID)
         {
-            try
-            {
-                var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
-                if (student == null)
-                {
-                    return new List<StudentTradeDepartmentDTO>();
-                }
-                var subjects = await (from stu in _context.TblStudentUserMasters
-                                      join sub in _context.TblSubjectMasters on stu.TradeId equals sub.TradeId
-                                      where stu.StudentUserId == student.StudentUserId
-                                      select new StudentTradeDepartmentDTO
-                                      {
-                                          edutype = stu.EduType,
-                                          department_name = stu.DepartmentName,
-                                          batchyear = stu.Batchyear,
-                                          collegename = stu.Collegename,
-                                          //SubjectName = sub.SubjectName
-                                      }
-                                      //where stu.StudentUserId == student.StudentUserId && sub.TradeId == tradeID
-                                      //select new StudentTradeDepartmentDTO
-                                      //{
-                                      //    DepartmentId = stu.DepartmentId ?? 0,
-                                      //    TradeId = stu.TradeId ?? 0,
-                                      //    SubjectName = sub.SubjectName
-                                      //}
-                                 ).ToListAsync();
 
-                return subjects;
-            }
-            catch (Exception ex)
+            var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
+            if (student == null)
             {
-                _logger.LogError(ex, "Error occurred while retrieving subjects by student trade");
                 return new List<StudentTradeDepartmentDTO>();
             }
+            var subjects = await (from stu in _context.TblStudentUserMasters
+                                  join sub in _context.TblSubjectMasters on stu.TradeId equals sub.TradeId
+                                  where stu.StudentUserId == student.StudentUserId
+                                  select new StudentTradeDepartmentDTO
+                                  {
+                                      edutype = stu.EduType,
+                                      department_name = stu.DepartmentName,
+                                      batchyear = stu.Batchyear,
+                                      collegename = stu.Collegename,
+                                      //SubjectName = sub.SubjectName
+                                  }
+                             //where stu.StudentUserId == student.StudentUserId && sub.TradeId == tradeID
+                             //select new StudentTradeDepartmentDTO
+                             //{
+                             //    DepartmentId = stu.DepartmentId ?? 0,
+                             //    TradeId = stu.TradeId ?? 0,
+                             //    SubjectName = sub.SubjectName
+                             //}
+                             ).ToListAsync();
 
+            return subjects;
 
         }
 
         public async Task AddUserSubscribeMasterAsync(TblUserSubscribeMaster usersubscribemaster)
         {
-            try
-            {
-                await _context.TblUserSubscribeMasters.AddAsync(usersubscribemaster);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
+            await _context.TblUserSubscribeMasters.AddAsync(usersubscribemaster);
+            await _context.SaveChangesAsync();
+
         }
         public async Task AddUserSubjectActivationHistoryAsync(List<TblUserSubjectActivationHistory> usersubjectactivationhistory)
         {
-            try
-            {
-                await _context.TblUserSubjectActivationHistories.AddRangeAsync(usersubjectactivationhistory);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
+            await _context.TblUserSubjectActivationHistories.AddRangeAsync(usersubjectactivationhistory);
+            await _context.SaveChangesAsync();
+
         }
         public async Task<bool> UpdateUserSubscribeMasterAsync(TblUserSubscribeMaster usersubscribemaster)
         {
-            try
-            {
-                _context.TblUserSubscribeMasters.Update(usersubscribemaster);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                return false;
-            }
+
+            _context.TblUserSubscribeMasters.Update(usersubscribemaster);
+            await _context.SaveChangesAsync();
+            return true;
+
         }
 
         public async Task<List<UserSubscriptionDetailDto>> GetUserSubscribeMasterAsync()
@@ -344,85 +266,66 @@ namespace LMSAPI.Repository
 
         public async Task<TblSubjectMaster> GetPaymentSubject(string subjectCode)
         {
-            try
-            {
-                return await _context.TblSubjectMasters.FirstOrDefaultAsync(s => s.SubjectCode == subjectCode);
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
 
-            }
+            return await _context.TblSubjectMasters.FirstOrDefaultAsync(s => s.SubjectCode == subjectCode);
+
         }
 
         public async Task<List<DepartmentSubjectDTO>> GetAllDepartmentSubjects()
         {
-            try
-            {
-                var query = (from um in _context.TblStudentUserMasters
-                             join dm in _context.TblDepartmentMasters on um.DepartmentId equals dm.DepartmentId
-                             join dsm in _context.TblDepartmentSubjectMappings on um.DepartmentId equals dsm.DepartmentId
-                             join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId
-                             select new DepartmentSubjectDTO
+
+            var query = (from um in _context.TblStudentUserMasters
+                         join dm in _context.TblDepartmentMasters on um.DepartmentId equals dm.DepartmentId
+                         join dsm in _context.TblDepartmentSubjectMappings on um.DepartmentId equals dsm.DepartmentId
+                         join sm in _context.TblSubjectMasters on dsm.SubjectId equals sm.SubjectId
+                         select new DepartmentSubjectDTO
+                         {
+                             DepartmentId = dm.DepartmentId,
+                             DepartmentName = dm.DepartmentName,
+                             subjectMaster = new SubjectMasterDto(_httpContextAccessor, this, _context)
                              {
-                                 DepartmentId = dm.DepartmentId,
-                                 DepartmentName = dm.DepartmentName,
-                                 subjectMaster = new SubjectMasterDto(_httpContextAccessor, this, _context)
-                                 {
-                                     SubjectId = sm.SubjectId.ToString(),
-                                     SubjectCode = sm.SubjectCode,
-                                     UnivSubjectCode = sm.UnivSubjectCode,
-                                     SubjectName = sm.SubjectName,
-                                     SubjectCoverPath = sm.SubjectCoverPath,
-                                     SubjectDescription = sm.SubjectDescription,
-                                     ActiveStatus = sm.ActiveStatus.ToString(),
-                                     RuleId = sm.RuleId.ToString(),
-                                     CreatedOn = sm.CreatedOn ?? DateTime.Now,
-                                     ReleasedOn = sm.ReleasedOn,
-                                     UniversityId = sm.UniversityId.ToString(),
-                                     HavingQuestionpaper = sm.HavingQuestionpaper.ToString(),
-                                     SubjectVersion = sm.SubjectVersion,
-                                     ActiveDurationDays = sm.ActiveDurationDays.ToString(),
-                                     ActiveDurationDate = sm.ActiveDurationDate ?? DateTime.Now,
-                                     Syllabus = sm.Syllabus,
-                                     DeptImgPath = sm.DeptImgPath,
-                                     Coursehours = sm.Coursehours.ToString(),
-                                     Visuals = sm.Visuals.ToString(),
-                                     Pagecontent = sm.Pagecontent.ToString() ?? "",
-                                     Solvedproblem = sm.Solvedproblem.ToString(),
-                                     Multichoice = sm.Multichoice.ToString(),
-                                     DeptVideo = sm.DeptVideo,
-                                     // IsInTrail = sm.IsInTrail,
-                                     IsInDemo = sm.IsInDemo.ToString(),
-                                     TradeId = sm.TradeId.ToString(),
-                                     SubjectSyllabusPath = sm.SubjectSyllabusPath
-                                 }
+                                 SubjectId = sm.SubjectId.ToString(),
+                                 SubjectCode = sm.SubjectCode,
+                                 UnivSubjectCode = sm.UnivSubjectCode,
+                                 SubjectName = sm.SubjectName,
+                                 SubjectCoverPath = sm.SubjectCoverPath,
+                                 SubjectDescription = sm.SubjectDescription,
+                                 ActiveStatus = sm.ActiveStatus.ToString(),
+                                 RuleId = sm.RuleId.ToString(),
+                                 CreatedOn = sm.CreatedOn ?? DateTime.Now,
+                                 ReleasedOn = sm.ReleasedOn,
+                                 UniversityId = sm.UniversityId.ToString(),
+                                 HavingQuestionpaper = sm.HavingQuestionpaper.ToString(),
+                                 SubjectVersion = sm.SubjectVersion,
+                                 ActiveDurationDays = sm.ActiveDurationDays.ToString(),
+                                 ActiveDurationDate = sm.ActiveDurationDate ?? DateTime.Now,
+                                 Syllabus = sm.Syllabus,
+                                 DeptImgPath = sm.DeptImgPath,
+                                 Coursehours = sm.Coursehours.ToString(),
+                                 Visuals = sm.Visuals.ToString(),
+                                 Pagecontent = sm.Pagecontent.ToString() ?? "",
+                                 Solvedproblem = sm.Solvedproblem.ToString(),
+                                 Multichoice = sm.Multichoice.ToString(),
+                                 DeptVideo = sm.DeptVideo,
+                                 // IsInTrail = sm.IsInTrail,
+                                 IsInDemo = sm.IsInDemo.ToString(),
+                                 TradeId = sm.TradeId.ToString(),
+                                 SubjectSyllabusPath = sm.SubjectSyllabusPath
+                             }
 
-                             }).Distinct().ToList();
+                         }).Distinct().ToList();
 
-                return query;
+            return query;
 
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
 
         }
         public async Task AddReadHistoryAsync(TblReadHistory obj)
         {
-            try
-            {
-                await _context.TblReadHistories.AddAsync(obj);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
+            await _context.TblReadHistories.AddAsync(obj);
+            await _context.SaveChangesAsync();
+
         }
         public async Task<bool> GetReadHistory(TblReadHistory obj)
         {
@@ -439,81 +342,69 @@ namespace LMSAPI.Repository
 
         public async Task<ReadHistoryDto> ReadHistory1(int Id)
         {
-            try
+
+            var histories = await _context.TblReadHistories.Where(rh => rh.Readby == Id && rh.Status == true).ToListAsync();
+            var Getpurchase = from sm in _context.TblSubjectMasters
+                              join h in _context.TblUserSubjectActivationHistories on Convert.ToInt32(sm.SubjectId) equals h.SubjectId
+                              where h.UserId == Id && h.SubjectExpiryDate.Value.Date >= DateTime.Now.Date
+                              select sm;
+            var getbook = Getpurchase.Distinct().ToList();
+
+            var videoCount = histories.Count(rh => rh.Type.ToLower() == "video");
+            var pageCount = histories.Count(rh => rh.Type.ToLower() != "video" && rh.Type.ToLower() != "bookmark" && rh.Type.ToLower() != "download");
+
+            var download = histories.Where(rh => rh.Type.ToLower() == "download").ToList();
+            var bookmark = histories.Where(rh => rh.Type.ToLower() == "bookmark").ToList();
+
+            return new ReadHistoryDto
             {
-                var histories = await _context.TblReadHistories.Where(rh => rh.Readby == Id && rh.Status == true).ToListAsync();
-                var Getpurchase = from sm in _context.TblSubjectMasters
-                                  join h in _context.TblUserSubjectActivationHistories on Convert.ToInt32(sm.SubjectId) equals h.SubjectId
-                                  where h.UserId == Id && h.SubjectExpiryDate.Value.Date >= DateTime.Now.Date
-                                  select sm;
-                var getbook = Getpurchase.Distinct().ToList();
+                VideoCount = videoCount,
+                PageCount = pageCount,
+                Bookmarks = bookmark,
+                Downloads = download,
+                Purchase = getbook
+            };
 
-                var videoCount = histories.Count(rh => rh.Type.ToLower() == "video");
-                var pageCount = histories.Count(rh => rh.Type.ToLower() != "video" && rh.Type.ToLower() != "bookmark" && rh.Type.ToLower() != "download");
-
-                var download = histories.Where(rh => rh.Type.ToLower() == "download").ToList();
-                var bookmark = histories.Where(rh => rh.Type.ToLower() == "bookmark").ToList();
-
-                return new ReadHistoryDto
-                {
-                    VideoCount = videoCount,
-                    PageCount = pageCount,
-                    Bookmarks = bookmark,
-                    Downloads = download,
-                    Purchase = getbook
-                };
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
         }
 
         public async Task<List<readhistorydto>> ReadHistory(int Id)
         {
-            try
-            {
-                var result = (from pm in _context.TblPackageMasters
-                              join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
-                              join dm in _context.TblDepartmentMasters on pd.DepartmentId equals dm.DepartmentId
-                              join usm in _context.TblUserSubscribeMasters on pm.PackageId equals usm.PackageId
-                              join sah in _context.TblUserSubjectActivationHistories on usm.UserSubscribeMasterId equals sah.TusmId
-                              where pm.Activestatus == true && usm.UserId == Id && usm.PaymentStatus.ToLower() == "success"
-                              select new
-                              {
-                                  dm.DepartmentName,
-                                  pm,
-                                  sah,
-                                  usm
-                              }).AsEnumerable().GroupBy(x => x.DepartmentName).
-                              Select(g => new readhistorydto
-                              {
-                                  departmentName = g.Key,
-                                  packageMasterDto = g.OrderByDescending(x => x.sah.SubjectExpiryDate).GroupBy(x => x.pm.PackageId)
-                                 .Select(p => new Packagemasterdto
-                                 {
-                                     packageId = p.First().pm.PackageId,
-                                     packageCode = p.First().pm.PackageCode,
-                                     packageName = p.First().pm.PackageDisplayName,
-                                     sellingPrice = p.First().pm.SellingPrice ?? 0,
-                                     coverPath = p.First().pm.CoverPath,
-                                     isPurchased = true,
-                                     subjectExpiryDate = p.First().sah.SubjectExpiryDate,
-                                     paymentOn = p.First().sah.ActivatedOn,
-                                     TransactionType = p.First().usm.TransactionType.ToLower() == "trail" ? "Trial" : "Purchase"
 
-                                 }).ToList()
-                              }).ToList();
+            var result = (from pm in _context.TblPackageMasters
+                          join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
+                          join dm in _context.TblDepartmentMasters on pd.DepartmentId equals dm.DepartmentId
+                          join usm in _context.TblUserSubscribeMasters on pm.PackageId equals usm.PackageId
+                          join sah in _context.TblUserSubjectActivationHistories on usm.UserSubscribeMasterId equals sah.TusmId
+                          where pm.Activestatus == true && usm.UserId == Id && usm.PaymentStatus.ToLower() == "success"
+                          select new
+                          {
+                              dm.DepartmentName,
+                              pm,
+                              sah,
+                              usm
+                          }).AsEnumerable().GroupBy(x => x.DepartmentName).
+                          Select(g => new readhistorydto
+                          {
+                              departmentName = g.Key,
+                              packageMasterDto = g.OrderByDescending(x => x.sah.SubjectExpiryDate).GroupBy(x => x.pm.PackageId)
+                             .Select(p => new Packagemasterdto
+                             {
+                                 packageId = p.First().pm.PackageId,
+                                 packageCode = p.First().pm.PackageCode,
+                                 packageName = p.First().pm.PackageDisplayName,
+                                 sellingPrice = p.First().pm.SellingPrice ?? 0,
+                                 coverPath = p.First().pm.CoverPath,
+                                 isPurchased = true,
+                                 subjectExpiryDate = p.First().sah.SubjectExpiryDate,
+                                 paymentOn = p.First().sah.ActivatedOn,
+                                 TransactionType = p.First().usm.TransactionType.ToLower() == "trail" ? "Trial" : "Purchase"
+
+                             }).ToList()
+                          }).ToList();
 
 
-                return result;
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+            return result;
+
         }
 
         public async Task<List<TblPackageMaster>> GetAllPackage()
@@ -755,65 +646,53 @@ namespace LMSAPI.Repository
         //04/11/2025
         public async Task<List<TblDegreeMaster>> GetAllDegrees()
         {
-            try
-            {
-                return await _context.TblDegreeMasters.Where(d => d.IsActive == 1).ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
+            return await _context.TblDegreeMasters.Where(d => d.IsActive == 1).ToListAsync();
+
         }
 
         public async Task<List<TblUserSubjectActivationHistory>> AddSubjectToStudent(string userEmail, List<int> subjectId)
         {
-            try
+
+            var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
+            if (student == null)
             {
-                var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
-                if (student == null)
+                return new List<TblUserSubjectActivationHistory>();
+            }
+            //get subject details
+            var subjects = await _context.TblSubjectMasters.Where(s => subjectId.Contains((int)s.SubjectId)).ToListAsync();
+            if (subjects == null || subjects.Count == 0)
+            {
+                return new List<TblUserSubjectActivationHistory>();
+            }
+            else
+            {
+                //save
+                var activationHistories = new List<TblUserSubjectActivationHistory>();
+                foreach (var subject in subjects)
                 {
-                    return new List<TblUserSubjectActivationHistory>();
-                }
-                //get subject details
-                var subjects = await _context.TblSubjectMasters.Where(s => subjectId.Contains((int)s.SubjectId)).ToListAsync();
-                if (subjects == null || subjects.Count == 0)
-                {
-                    return new List<TblUserSubjectActivationHistory>();
-                }
-                else
-                {
-                    //save
-                    var activationHistories = new List<TblUserSubjectActivationHistory>();
-                    foreach (var subject in subjects)
+                    var activationHistory = new TblUserSubjectActivationHistory
                     {
-                        var activationHistory = new TblUserSubjectActivationHistory
-                        {
-                            SubjectId = (int)subject.SubjectId,
-                            UserId = (int)student.StudentUserId,
-                            SubjectCode = subject.SubjectCode,
-                            SubjectName = subject.SubjectName,
-                            SubjectVersion = subject.SubjectVersion,
-                            DepartmentId = student.DepartmentId,
-                            TusmId = (int)subject.SubjectId,
-                            ActivatedOn = DateTime.UtcNow,
-                            ActivatedBy = (int)student.StudentUserId,
-                            ActivationType = 1, // assuming 1 indicates manual activation
-                            ActivationProductType = 1 // assuming 1 indicates standard product type
-                        };
-                        activationHistories.Add(activationHistory);
-                    }
-                    await _context.TblUserSubjectActivationHistories.AddRangeAsync(activationHistories);
+                        SubjectId = (int)subject.SubjectId,
+                        UserId = (int)student.StudentUserId,
+                        SubjectCode = subject.SubjectCode,
+                        SubjectName = subject.SubjectName,
+                        SubjectVersion = subject.SubjectVersion,
+                        DepartmentId = student.DepartmentId,
+                        TusmId = (int)subject.SubjectId,
+                        ActivatedOn = DateTime.UtcNow,
+                        ActivatedBy = (int)student.StudentUserId,
+                        ActivationType = 1, // assuming 1 indicates manual activation
+                        ActivationProductType = 1 // assuming 1 indicates standard product type
+                    };
+                    activationHistories.Add(activationHistory);
                 }
-                await _context.SaveChangesAsync();
-                return await _context.TblUserSubjectActivationHistories
-                    .Where(ush => ush.UserId == student.StudentUserId && subjectId.Contains((int)ush.SubjectId)).ToListAsync();
+                await _context.TblUserSubjectActivationHistories.AddRangeAsync(activationHistories);
             }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+            await _context.SaveChangesAsync();
+            return await _context.TblUserSubjectActivationHistories
+                .Where(ush => ush.UserId == student.StudentUserId && subjectId.Contains((int)ush.SubjectId)).ToListAsync();
+
         }
 
 
@@ -873,108 +752,83 @@ namespace LMSAPI.Repository
 
         public async Task<List<EducationListDto>> GetEducationTypeListAsync()
         {
-            try
+
+            var educationTypes = await _context.TblEducationTypes.Where(et => et.IsActive == 1).ToListAsync();
+            var degreesDto = new List<EducationListDto>();
+            foreach (var item in educationTypes)
             {
-                var educationTypes = await _context.TblEducationTypes.Where(et => et.IsActive == 1).ToListAsync();
-                var degreesDto = new List<EducationListDto>();
-                foreach (var item in educationTypes)
+                degreesDto.Add(new EducationListDto
                 {
-                    degreesDto.Add(new EducationListDto
-                    {
-                        id = item.EduId,
-                        degree_name = item.EduDes
-                    });
-                }
-                return degreesDto;
+                    id = item.EduId,
+                    degree_name = item.EduDes
+                });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while retrieving education type list.");
-                throw;
-            }
+            return degreesDto;
+
         }
 
         public async Task<List<TblStudentUserMaster>> GetAllPackageByUserEmailAsync(string email)
         {
-            try
+
+            var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == email);
+            if (student == null)
             {
-                var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == email);
-                if (student == null)
-                {
-                    return new List<TblStudentUserMaster>();
-                }
-                var packages = await _context.TblStudentUserMasters.Where(s => s.StudentUserId == student.StudentUserId).ToListAsync();
-                return packages;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while retrieving packages by user email.");
                 return new List<TblStudentUserMaster>();
             }
+            var packages = await _context.TblStudentUserMasters.Where(s => s.StudentUserId == student.StudentUserId).ToListAsync();
+            return packages;
+
         }
 
         public async Task<List<DepartmentMasterDto>> GetDepartmentByEduTypeIdAsync(int eduTypeId)
         {
-            try
+
+            var departments = await _context.TblDepartmentMasters
+                .Where(d => d.DegreeId == eduTypeId && d.IsActive == 1)
+                .ToListAsync();
+            return departments.Select(item => new DepartmentMasterDto
             {
-                var departments = await _context.TblDepartmentMasters
-                    .Where(d => d.DegreeId == eduTypeId && d.IsActive == 1)
-                    .ToListAsync();
-                return departments.Select(item => new DepartmentMasterDto
-                {
-                    Id = item.DepartmentId,
-                    Department_name = item.DepartmentName,
-                    Department_description = item.DepartmentName,
-                    Edu_type_id = item.DegreeId
-                }).ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while retrieving departments by education type ID.");
-                return new List<DepartmentMasterDto>();
-            }
+                Id = item.DepartmentId,
+                Department_name = item.DepartmentName,
+                Department_description = item.DepartmentName,
+                Edu_type_id = item.DegreeId
+            }).ToList();
+
         }
 
         public async Task<List<StudentPackageDetailsDTO>> GetPackageDetailsByUserEmailAsync(int DegreeId)
         {
-            try
+            var result = (from pm in _context.TblPackageMasters
+                          join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
+                          join dm in _context.TblDepartmentMasters on pd.DepartmentId equals dm.DepartmentId
+                          where dm.DegreeId == DegreeId && pm.Activestatus == true
+                          select new
+                          {
+                              dm.DepartmentName,
+                              pm
+                          })
+            .AsEnumerable()
+            .GroupBy(x => x.DepartmentName)
+            .Select(g => new StudentPackageDetailsDTO
             {
-                var result = (from pm in _context.TblPackageMasters
-                              join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
-                              join dm in _context.TblDepartmentMasters on pd.DepartmentId equals dm.DepartmentId
-                              where dm.DegreeId == DegreeId && pm.Activestatus == true
-                              select new
-                              {
-                                  dm.DepartmentName,
-                                  pm
-                              })
-              .AsEnumerable()
-              .GroupBy(x => x.DepartmentName)
-              .Select(g => new StudentPackageDetailsDTO
-              {
-                  DepartmentName = g.Key,
-                  packageMasterDto = g
-                      .GroupBy(x => x.pm.PackageId)
-                      .Select(p => new PackageMasterDto
-                      {
-                          PackageId = p.First().pm.PackageId,
-                          PackageCode = p.First().pm.PackageCode,
-                          PackageName = p.First().pm.PackageDisplayName,
-                          SellingPrice = p.First().pm.SellingPrice,
-                          CoverPath = p.First().pm.CoverPath
-                      })
-                      .ToList()
-              })
-              .ToList();
+                DepartmentName = g.Key,
+                packageMasterDto = g
+                    .GroupBy(x => x.pm.PackageId)
+                    .Select(p => new PackageMasterDto
+                    {
+                        PackageId = p.First().pm.PackageId,
+                        PackageCode = p.First().pm.PackageCode,
+                        PackageName = p.First().pm.PackageDisplayName,
+                        SellingPrice = p.First().pm.SellingPrice,
+                        CoverPath = p.First().pm.CoverPath
+                    })
+                    .ToList()
+            })
+            .ToList();
 
 
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while retrieving package details by user.");
-                return new List<StudentPackageDetailsDTO>();
-            }
+            return result;
+
 
         }
 
@@ -1115,7 +969,7 @@ namespace LMSAPI.Repository
         //update order status
         public async Task<CreateOrder> UpdateRazorpayOrderStatus(string orderId, string paymentId, string signature, int userId, string status)
         {
-            var order = await _context.CreateOrders.FirstOrDefaultAsync(x=>x.OrderId==orderId);
+            var order = await _context.CreateOrders.FirstOrDefaultAsync(x => x.OrderId == orderId);
             if (order == null)
             {
                 return null;
