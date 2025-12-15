@@ -32,5 +32,8 @@ namespace LMSAPI.Repository
 
         //validate OTP for student
         Task<bool> ValidateOtpAsync(int userId, string otp);
+
+        //update otp with otp record
+        Task<bool> UpdateOtpAsyncnew(TblUserRandomPass otpRecord, int userId);
     }
 }

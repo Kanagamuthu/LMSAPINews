@@ -170,7 +170,7 @@ namespace LmsAPI.Controllers
                         ActionType = 1,
                         UserType = 2,
                     };
-                    bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+                    bool is_saved = await _studentsRepository.UpdateOtpAsyncnew(otpRecord, (int)student.StudentUserId);
                     //validate db otp save or not
                     if (is_saved == false)
                     {
@@ -179,12 +179,24 @@ namespace LmsAPI.Controllers
                     else
                     {
                         _logger.LogInfo($"Sending OTP to email (from user controller): {student.EmailId}");
-
-
-                        await SendOtpEmailAsync(student.EmailId, student.StudentUserId.ToString(), otpRecord.VerificationCode);
-                        //  await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                        await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
                         return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp });
                     }
+                    //bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+                    ////validate db otp save or not
+                    //if (is_saved == false)
+                    //{
+                    //    return Ok(new ApiResponse { Success = false, Message = "Failed to generate OTP. Please try again.", ErrorCode = "500" });
+                    //}
+                    //else
+                    //{
+                    //    _logger.LogInfo($"Sending OTP to email (from user controller): {student.EmailId}");
+
+
+                    //    await SendOtpEmailAsync(student.EmailId, student.StudentUserId.ToString(), otpRecord.VerificationCode);
+                    //    //  await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
+                    //    return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp });
+                    //}
                 }
             }
 

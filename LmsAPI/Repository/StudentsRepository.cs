@@ -169,5 +169,24 @@ namespace LMSAPI.Repository
             return await _context.TblUserRandomPasses.AnyAsync(o => o.UserId == userId && o.VerificationCode == otp);
 
         }
+
+        //upate otp with userid & data
+        public async Task<bool> UpdateOtpAsyncnew(TblUserRandomPass otpRecord, int userId)
+        {
+
+            var otpRecords = await _context.TblUserRandomPasses.OrderByDescending(x => x.GeneratedTime).Where(o => o.UserId == userId).FirstOrDefaultAsync();
+            if (otpRecords != null)
+            {
+                //_context.TblUserRandomPasses.Update(otpRecord);
+                otpRecords.VerificationCode = otpRecord.VerificationCode;
+                otpRecords.GeneratedTime = otpRecord.GeneratedTime;
+                otpRecords.ActionType = otpRecord.ActionType;
+                otpRecords.UserType = otpRecord.UserType;
+                await _context.SaveChangesAsync();
+            }
+
+            return true;
+
+        }
     }
 }
