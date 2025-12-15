@@ -267,7 +267,11 @@ namespace LmsAPI.Controllers
             if (otpRecord == null || otpRecord.VerificationCode != otpDto.Otp)
                 return Ok(new ApiResponse(false, "Enter valid OTP", "", errorCode));
 
-            if (otpRecord.GeneratedTime.AddMinutes(10) < DateTime.Now)
+            //get otp expiry time from config table
+            int otpExpiryMinutes = await _context.TblAppConfigs.Where(x => x.ConfigKey == "otpexpiryinmin").Select(x => Convert.ToInt32(x.ConfigValue)).FirstOrDefaultAsync();
+
+
+            if (otpRecord.GeneratedTime.AddMinutes(otpExpiryMinutes) < DateTime.Now)
                 return Ok(new ApiResponse(false, "OTP has expired", "", errorCode));
             // 4️) Activate student
             student.ActiveStatus = 1;
