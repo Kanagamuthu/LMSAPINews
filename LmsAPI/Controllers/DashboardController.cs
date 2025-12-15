@@ -54,29 +54,23 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult IsValidStudent()
         {
-            try
+
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            if (string.IsNullOrEmpty(userEmail))
             {
-                var userEmail = HttpContext.Session.GetString("UserEmail");
-                if (string.IsNullOrEmpty(userEmail))
-                {
-                    _logger.LogWarn("User email not found in session");
-                    return Unauthorized("User email not found in session");
-                }
-                var isValidStudent = _dashboardRepository.IsValidStudent(userEmail);
-                if (isValidStudent)
-                {
-                    return Ok(new ApiResponse { Success = true, Message = "Account verified", Data = new { isValidStudent = true }, ErrorCode = null });
-                }
-                else
-                {
-                    return Ok(false);
-                }
+                _logger.LogWarn("User email not found in session");
+                return Unauthorized("User email not found in session");
             }
-            catch (Exception ex)
+            var isValidStudent = _dashboardRepository.IsValidStudent(userEmail);
+            if (isValidStudent)
             {
-                _logger.LogError(ex, "Error occurred in IsValidStudent method");
-                return StatusCode(500, "Internal server error");
+                return Ok(new ApiResponse { Success = true, Message = "Account verified", Data = new { isValidStudent = true }, ErrorCode = null });
             }
+            else
+            {
+                return Ok(false);
+            }
+
         }
 
         #endregion
@@ -121,28 +115,22 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetSubjectsByStudentTrade()
         {
-            try
-            {
-                //check user email from session
-                var userEmail = HttpContext.Session.GetString("UserEmail");
-                var tradeID = HttpContext.Session.GetInt32("trade_id");
-                int _tradeID = Convert.ToInt16(tradeID);
 
-                if (string.IsNullOrEmpty(userEmail))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
-                }
-                else
-                {
-                    var subjects = await _dashboardRepository.GetSubjectsByStudentTrade(userEmail, _tradeID);
-                    return Ok(new ApiResponse { Success = true, Message = "Subjects fetched successfully", Data = subjects, ErrorCode = "200" });
-                }
-            }
-            catch (Exception ex)
+            //check user email from session
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            var tradeID = HttpContext.Session.GetInt32("trade_id");
+            int _tradeID = Convert.ToInt16(tradeID);
+
+            if (string.IsNullOrEmpty(userEmail))
             {
-                _logger.LogError(ex, "Error occurred in GetSubjectsByStudentDepartment method");
-                return StatusCode(500, "Internal server error");
+                return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
             }
+            else
+            {
+                var subjects = await _dashboardRepository.GetSubjectsByStudentTrade(userEmail, _tradeID);
+                return Ok(new ApiResponse { Success = true, Message = "Subjects fetched successfully", Data = subjects, ErrorCode = "200" });
+            }
+
         }
         #endregion
 
@@ -154,44 +142,38 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllSubjects()
         {
-            try
+
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //check user email from session
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            if (string.IsNullOrEmpty(email))
             {
-                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                //check user email from session
-                var userEmail = HttpContext.Session.GetString("UserEmail");
-                if (string.IsNullOrEmpty(email))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
-                }
-                else
-                {
-                    string cacheKey = $"AllSubjects";
-                    var cachedSubjects = await _cache.GetStringAsync(cacheKey);
-                    if (!string.IsNullOrEmpty(cachedSubjects))
-                    {
-                        var getsubjects = System.Text.Json.JsonSerializer.Deserialize<List<TblSubjectMaster>>(cachedSubjects);
-                        return Ok(new ApiResponse { Success = true, Message = "Subjects fetched successfully (from cache)", Data = getsubjects });
-                    }
-
-                    var subjects = await _dashboardRepository.GetAllSubjects();
-
-                    var cacheOptions = new DistributedCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
-                    };
-
-                    var jsonData = System.Text.Json.JsonSerializer.Serialize(subjects);
-                    await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
-
-
-                    return Ok(new ApiResponse { Success = true, Message = "Subjects fetched successfully", Data = subjects, ErrorCode = null });
-                }
+                return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error occurred in GetAllSubjects method");
-                return StatusCode(500, "Internal server error");
+                string cacheKey = $"AllSubjects";
+                var cachedSubjects = await _cache.GetStringAsync(cacheKey);
+                if (!string.IsNullOrEmpty(cachedSubjects))
+                {
+                    var getsubjects = System.Text.Json.JsonSerializer.Deserialize<List<TblSubjectMaster>>(cachedSubjects);
+                    return Ok(new ApiResponse { Success = true, Message = "Subjects fetched successfully (from cache)", Data = getsubjects });
+                }
+
+                var subjects = await _dashboardRepository.GetAllSubjects();
+
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+                };
+
+                var jsonData = System.Text.Json.JsonSerializer.Serialize(subjects);
+                await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
+
+
+                return Ok(new ApiResponse { Success = true, Message = "Subjects fetched successfully", Data = subjects, ErrorCode = null });
             }
+
         }
 
         #endregion
@@ -204,48 +186,42 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> AddBooksToStudent([FromBody] List<int> bookIds)
         {
-            try
+
+            //check user email from session
+            var userEmail = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userEmail))
             {
-                //check user email from session
-                var userEmail = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userEmail))
+                return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
+            }
+            else
+            {
+                var student = await _studentsRepository.GetStudentByEmailAsync(userEmail);
+                if (student == null)
                 {
-                    return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
+                    return Ok(new ApiResponse { Success = false, Message = "Student not found", Data = null, ErrorCode = "404" });
+                }
+
+                //validate no of books per student
+                int maxBooksAllowed = await _dashboardRepository.GetBookLimitPerStudentAsync();
+                int currentBookCount = await _dashboardRepository.GetCurrentBookCountForStudentAsync(Convert.ToInt16(student.StudentUserId));
+                if (currentBookCount + bookIds.Count > maxBooksAllowed)
+                {
+                    return Ok(new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"Book limit exceeded. You can only add {maxBooksAllowed - currentBookCount} more books.",
+                        Data = null,
+                        ErrorCode = "400"
+                    });
                 }
                 else
                 {
-                    var student = await _studentsRepository.GetStudentByEmailAsync(userEmail);
-                    if (student == null)
-                    {
-                        return Ok(new ApiResponse { Success = false, Message = "Student not found", Data = null, ErrorCode = "404" });
-                    }
-
-                    //validate no of books per student
-                    int maxBooksAllowed = await _dashboardRepository.GetBookLimitPerStudentAsync();
-                    int currentBookCount = await _dashboardRepository.GetCurrentBookCountForStudentAsync(Convert.ToInt16(student.StudentUserId));
-                    if (currentBookCount + bookIds.Count > maxBooksAllowed)
-                    {
-                        return Ok(new ApiResponse
-                        {
-                            Success = false,
-                            Message = $"Book limit exceeded. You can only add {maxBooksAllowed - currentBookCount} more books.",
-                            Data = null,
-                            ErrorCode = "400"
-                        });
-                    }
-                    else
-                    {
-                        //add books to student
-                        await _dashboardRepository.AddBooksToStudent(userEmail, bookIds);
-                        return Ok(new ApiResponse { Success = true, Message = "Books added to student successfully", Data = null, ErrorCode = null });
-                    }
+                    //add books to student
+                    await _dashboardRepository.AddBooksToStudent(userEmail, bookIds);
+                    return Ok(new ApiResponse { Success = true, Message = "Books added to student successfully", Data = null, ErrorCode = null });
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred in AddBooksToStudent method");
-                return StatusCode(500, "Internal server error");
-            }
+
 
         }
         #endregion
@@ -258,48 +234,42 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetActiveTrades()
         {
-            try
+
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            var userID = HttpContext.Session.GetInt32("UserId");
+            var _userid = Convert.ToInt64(userID);
+            if (string.IsNullOrEmpty(userEmail))
             {
-                var userEmail = HttpContext.Session.GetString("UserEmail");
-                var userID = HttpContext.Session.GetInt32("UserId");
-                var _userid = Convert.ToInt64(userID);
-                if (string.IsNullOrEmpty(userEmail))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
-                }
-                else
-                {
-                    var student = await _studentsRepository.GetStudentByEmailAsync(userEmail);
-                    if (student == null)
-                    {
-                        return Ok(new ApiResponse { Success = false, Message = "Student not found", Data = null, ErrorCode = "404" });
-                    }
-                }
-
-                //var _listOfSubjects = await _dashboardRepository.GetActiveTradesByUserIDAsync(_userid);
-                //var _listOfSubjects = await _dashboardRepository.GetActiveTradesByUserIDAsync(_userid);
-                //if (_listOfSubjects != null && _listOfSubjects.Any())
-                //{
-                //    // There are active trades
-                //    foreach (var trade in _listOfSubjects)
-                //    {
-                //        Console.WriteLine($"Trade ID: {trade.Id}, Book ID: {trade.BookId}");
-                //    }
-                //}
-                //else
-                //{
-                //    // No active trades
-                //    Console.WriteLine("No active trades found for this user.");
-                //}
-
-
-
+                return Ok(new ApiResponse { Success = false, Message = "User email not found in session", Data = null, ErrorCode = "401" });
             }
-            catch (Exception ex)
+            else
             {
-                // log ex here if needed
-                return StatusCode(500, new { Message = "An error occurred.", Details = ex.Message });
+                var student = await _studentsRepository.GetStudentByEmailAsync(userEmail);
+                if (student == null)
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "Student not found", Data = null, ErrorCode = "404" });
+                }
             }
+
+            //var _listOfSubjects = await _dashboardRepository.GetActiveTradesByUserIDAsync(_userid);
+            //var _listOfSubjects = await _dashboardRepository.GetActiveTradesByUserIDAsync(_userid);
+            //if (_listOfSubjects != null && _listOfSubjects.Any())
+            //{
+            //    // There are active trades
+            //    foreach (var trade in _listOfSubjects)
+            //    {
+            //        Console.WriteLine($"Trade ID: {trade.Id}, Book ID: {trade.BookId}");
+            //    }
+            //}
+            //else
+            //{
+            //    // No active trades
+            //    Console.WriteLine("No active trades found for this user.");
+            //}
+
+
+
+
             return Ok();
         }
         #endregion
@@ -432,44 +402,37 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetDashboardSubjects(string? SubjectCode)
         {
-            try
+
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(email))
             {
-                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(email))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
-                }
+                return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
+            }
 
-                string cacheKey = $"DashboardUniqueSubjects";
-                var cachedData = await _cache.GetStringAsync(cacheKey);
-                if (!string.IsNullOrEmpty(cachedData))
-                {
-                    var cachedSubjects = System.Text.Json.JsonSerializer.Deserialize<List<DepartmentSubjectDTO>>(cachedData.ToString());
-                    if (!string.IsNullOrEmpty(SubjectCode))
-                        cachedSubjects = cachedSubjects.Where(x => x?.subjectMaster?.SubjectCode == SubjectCode).ToList();
-                    return Ok(new ApiResponse(true, "Subjects fetched successfully (from cache).", cachedSubjects, ""));
-                }
-
-                var subjects = await _dashboardRepository.GetAllDepartmentSubjects();
-                var jsonData = System.Text.Json.JsonSerializer.Serialize(subjects);
+            string cacheKey = $"DashboardUniqueSubjects";
+            var cachedData = await _cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cachedData))
+            {
+                var cachedSubjects = System.Text.Json.JsonSerializer.Deserialize<List<DepartmentSubjectDTO>>(cachedData.ToString());
                 if (!string.IsNullOrEmpty(SubjectCode))
-                    subjects = subjects.Where(x => x?.subjectMaster?.SubjectCode == SubjectCode).ToList();
-
-                var cacheOptions = new DistributedCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
-                };
-                await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
-
-
-                return Ok(new ApiResponse(true, "Subjects fetched successfully.", subjects, ""));
+                    cachedSubjects = cachedSubjects.Where(x => x?.subjectMaster?.SubjectCode == SubjectCode).ToList();
+                return Ok(new ApiResponse(true, "Subjects fetched successfully (from cache).", cachedSubjects, ""));
             }
-            catch (Exception ex)
+
+            var subjects = await _dashboardRepository.GetAllDepartmentSubjects();
+            var jsonData = System.Text.Json.JsonSerializer.Serialize(subjects);
+            if (!string.IsNullOrEmpty(SubjectCode))
+                subjects = subjects.Where(x => x?.subjectMaster?.SubjectCode == SubjectCode).ToList();
+
+            var cacheOptions = new DistributedCacheEntryOptions
             {
-                _logger.LogError($"Error in GetDashboardSubjects: {ex}");
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ApiResponse(false, "An error occurred while fetching dashboard subjects.", null, StatusCodes.Status500InternalServerError.ToString()));
-            }
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+            };
+            await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
+
+
+            return Ok(new ApiResponse(true, "Subjects fetched successfully.", subjects, ""));
+
         }
         #endregion
 
@@ -531,39 +494,33 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllDegrees()
         {
-            try
-            {
-                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var degrees = new List<TblDegreeMaster>();
-                if (string.IsNullOrEmpty(email))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
-                }
-                else
-                {
-                    string cacheKey = $"AllDegrees";
-                    var cachedDegrees = await _cache.GetStringAsync(cacheKey);
-                    if (!string.IsNullOrEmpty(cachedDegrees))
-                    {
-                        var getdegrees = System.Text.Json.JsonSerializer.Deserialize<List<TblDegreeMaster>>(cachedDegrees);
-                        return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully (from cache)", Data = getdegrees });
-                    }
-                    degrees = await _dashboardRepository.GetAllDegrees();
-                    var cacheOptions = new DistributedCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
-                    };
-                    var jsonData = System.Text.Json.JsonSerializer.Serialize(degrees);
-                    await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
 
-                }
-                return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully", Data = degrees, ErrorCode = null });
-            }
-            catch (Exception ex)
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var degrees = new List<TblDegreeMaster>();
+            if (string.IsNullOrEmpty(email))
             {
-                _logger.LogError(ex, "Error occurred in GetAllDegrees method");
-                return StatusCode(500, "Internal server error");
+                return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
             }
+            else
+            {
+                string cacheKey = $"AllDegrees";
+                var cachedDegrees = await _cache.GetStringAsync(cacheKey);
+                if (!string.IsNullOrEmpty(cachedDegrees))
+                {
+                    var getdegrees = System.Text.Json.JsonSerializer.Deserialize<List<TblDegreeMaster>>(cachedDegrees);
+                    return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully (from cache)", Data = getdegrees });
+                }
+                degrees = await _dashboardRepository.GetAllDegrees();
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+                };
+                var jsonData = System.Text.Json.JsonSerializer.Serialize(degrees);
+                await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
+
+            }
+            return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully", Data = degrees, ErrorCode = null });
+
 
         }
         #endregion

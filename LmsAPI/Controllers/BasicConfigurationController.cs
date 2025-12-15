@@ -29,7 +29,7 @@ namespace LMSAPI.Controllers
             _studentsRepository = studentsRepository;
             _meUserRepository = meUserRepository;
             _dashboardRepository = dashboardRepository;
-            
+
 
         }
 
@@ -39,16 +39,10 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetFlags()
         {
-            try
-            {
-                var flags = await _studentsRepository.GetCountriesCodesAsync();
-                return Ok(new ApiResponse(true, "Flags retrieved successfully.", flags, ""));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error in GetFlags: {ex.Message}");
-                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(false, "An error occurred while retrieving flags.", null, ex.Message));
-            }
+
+            var flags = await _studentsRepository.GetCountriesCodesAsync();
+            return Ok(new ApiResponse(true, "Flags retrieved successfully.", flags, ""));
+
 
         }
 
@@ -142,17 +136,12 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetCurrentDate()
         {
-            try
-            {
-                DateTime now = DateTime.Now;
-                string formattedDate = now.ToString("yyyy-MM-dd");
 
-                return Ok(new ApiResponse(true, "Current date retrieved successfully.", formattedDate, "200"));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ApiResponse(false, "Failed to get current date", null, ex.Message));
-            }
+            DateTime now = DateTime.Now;
+            string formattedDate = now.ToString("yyyy-MM-dd");
+
+            return Ok(new ApiResponse(true, "Current date retrieved successfully.", formattedDate, "200"));
+
         }
 
 

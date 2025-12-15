@@ -71,34 +71,27 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> StudentReadHistory()
         {
-            try
-            {
-                var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-                if (string.IsNullOrEmpty(email))
-                {
-                    return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
-                }
 
-                var GetList = await _dashboardRepository.ReadHistory(Convert.ToInt32(userId));
-                //if (GetList == null)
-                //{
-                //    return Ok(new ApiResponse { Success = false, Message = "No read history found.", Data = "", ErrorCode = "404" });
-                //}
-                //else
-                //{
-                var ServerTime = DateTime.Now.ToString("yyyy-MM-dd");
-                _logger.LogInfo($"ReadHistory fetched successfully for user: {email}");
-                return Ok(new { Success = true, Message = "ReadHistory fetched successfully.", ServerTime = ServerTime, Data = GetList, ErrorCode = "200" });
-
-                // }
-            }
-            catch (Exception ex)
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            if (string.IsNullOrEmpty(email))
             {
-                _logger.LogError($"Error in ReadHistory: {ex}");
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ApiResponse(false, ex.Message, null, StatusCodes.Status500InternalServerError.ToString()));
+                return Ok(new ApiResponse { Success = false, Message = "User not logged in", Data = null, ErrorCode = "401" });
             }
+
+            var GetList = await _dashboardRepository.ReadHistory(Convert.ToInt32(userId));
+            //if (GetList == null)
+            //{
+            //    return Ok(new ApiResponse { Success = false, Message = "No read history found.", Data = "", ErrorCode = "404" });
+            //}
+            //else
+            //{
+            var ServerTime = DateTime.Now.ToString("yyyy-MM-dd");
+            _logger.LogInfo($"ReadHistory fetched successfully for user: {email}");
+            return Ok(new { Success = true, Message = "ReadHistory fetched successfully.", ServerTime = ServerTime, Data = GetList, ErrorCode = "200" });
+
+            // }
+
         }
         #endregion
 
