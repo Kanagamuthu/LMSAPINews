@@ -159,8 +159,8 @@ namespace LMSAPI.Repository
 
         public async Task SetInactive(long sud)
         {
-
             await _context.TblStudentTrialSubjects.Where(s => s.UserId == sud).ExecuteUpdateAsync(setters => setters.SetProperty(p => p.TradeActiveStatus, 0));
+            await _context.TblStudentUserMasters.Where(s => s.StudentUserId == sud).ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Istrail, false));
 
         }
 

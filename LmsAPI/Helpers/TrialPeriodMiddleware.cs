@@ -39,8 +39,8 @@ namespace LMSAPI.Helpers
                                 if (student != null && student.AccActiveOn.HasValue)
                                 {
                                     var trialDays = await studentsRepository.GetTrialPeriodDaysAsync();
-                                    var activationDate = student.AccActiveOn.Value;
-                                    var daysSinceActivation = (DateTime.Now - activationDate).Days;
+                                    var activationDate = student.AccActiveOn.Value.Date;
+                                    var daysSinceActivation = (DateTime.Now.Date - activationDate).Days;
                                     int daysLeft = trialDays - daysSinceActivation;
                                     if (daysLeft <= 0)
                                     {
