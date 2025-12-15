@@ -15,44 +15,25 @@ namespace LMSAPI.Repository
         }
         public async Task<TblStudentUserMaster?> GetStudentByEmailAsync(string email)
         {
-            try
-            {
-                return await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == email);
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
 
-            }
+            return await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == email);
+
         }
         public async Task AddStudentAsync(TblStudentUserMaster student)
         {
-            try
-            {
-                await _context.TblStudentUserMasters.AddAsync(student);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
+            await _context.TblStudentUserMasters.AddAsync(student);
+            await _context.SaveChangesAsync();
+
         }
         #region OTP function
         public async Task<bool> SaveOtpAsync(TblUserRandomPass otpRecord)
         {
-            try
-            {
-                await _context.TblUserRandomPasses.AddAsync(otpRecord);
-                int result = await _context.SaveChangesAsync();
-                return result > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error saving OTP: {ex.Message}");
-                return false;
-            }
+
+            await _context.TblUserRandomPasses.AddAsync(otpRecord);
+            int result = await _context.SaveChangesAsync();
+            return result > 0;
+
             //try
             //{
             //    await _context.TblUserRandomPasses.AddAsync(otpRecord);
@@ -67,93 +48,58 @@ namespace LMSAPI.Repository
         #endregion
         public async Task<int> GetTrialPeriodDaysAsync()
         {
-            try
+
+            var setting = await _context.TblAppConfigs.FirstOrDefaultAsync(s => s.ConfigKey == "trial_period_days");
+            if (setting != null && int.TryParse(setting.ConfigValue, out int days))
             {
-                var setting = await _context.TblAppConfigs.FirstOrDefaultAsync(s => s.ConfigKey == "trial_period_days");
-                if (setting != null && int.TryParse(setting.ConfigValue, out int days))
-                {
-                    return days;
-                }
-                return 0; // Default to 0 if not found or invalid
+                return days;
             }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+            return 0; // Default to 0 if not found or invalid
+
         }
         public async Task<TblUserRandomPass?> GetLatestOtpAsync(int userId, int actionType, int userType)
         {
-            try
-            {
-                return await _context.TblUserRandomPasses
-                    .Where(o => o.UserId == userId && o.ActionType == actionType && o.UserType == userType)
-                    .OrderByDescending(o => o.GeneratedTime)
-                    .FirstOrDefaultAsync();
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
+            return await _context.TblUserRandomPasses
+                .Where(o => o.UserId == userId && o.ActionType == actionType && o.UserType == userType)
+                .OrderByDescending(o => o.GeneratedTime)
+                .FirstOrDefaultAsync();
+
         }
         public async Task<bool> UpdateStudentAsync(TblStudentUserMaster student)
         {
-            try
-            {
-                _context.TblStudentUserMasters.Update(student);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                return false;
-            }
+
+            _context.TblStudentUserMasters.Update(student);
+            await _context.SaveChangesAsync();
+            return true;
+
         }
         public async Task<bool> UpdateOtpAsync(int userId)
         {
-            try
+
+            var otpRecords = await _context.TblUserRandomPasses.OrderByDescending(x => x.GeneratedTime).Where(o => o.UserId == userId).FirstOrDefaultAsync();
+            if (otpRecords != null)
             {
-                var otpRecords = await _context.TblUserRandomPasses.OrderByDescending(x=>x.GeneratedTime).Where(o => o.UserId == userId).FirstOrDefaultAsync();
-                if (otpRecords!=null)
-                {
-                    _context.TblUserRandomPasses.Update(otpRecords);
-                    await _context.SaveChangesAsync();
-                }
-                
-                return true;
+                _context.TblUserRandomPasses.Update(otpRecords);
+                await _context.SaveChangesAsync();
             }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                return false;
-            }
+
+            return true;
+
         }
         public async Task<bool> GetStudentTokenAsync(string token)
         {
-            try
-            {
-                return await _context.TblStudentUserMasters.AnyAsync(x => x.Token == token);
-            }
-            catch
-            {
-                return false;
-            }
+
+            return await _context.TblStudentUserMasters.AnyAsync(x => x.Token == token);
+
         }
 
         public async Task TicketCreateAsync(TblSupportTicket request)
         {
-            try
-            {
-                await _context.TblSupportTickets.AddAsync(request);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
+            await _context.TblSupportTickets.AddAsync(request);
+            await _context.SaveChangesAsync();
+
         }
 
         public async Task<List<SupportTicketDto>> GetTicketByEmailAsync(string email)
@@ -166,7 +112,7 @@ namespace LMSAPI.Repository
             {
                 ticketId = ticket.StId,
                 subject = ticket.Subject,
-                message= ticket.Message,
+                message = ticket.Message,
                 resolution = ticket.Resolution,
                 CreatedAt = ticket.Createdon ?? DateTime.MinValue,  // safer for nullable DateTime
                 Status = ticket.ActiveStatus ?? false  // safer for nullable bool
@@ -178,75 +124,50 @@ namespace LMSAPI.Repository
         //public async Task RegenerateOtpAsync(TblUserRandomPass otpRecord,int userId)
         public async Task<bool> RegenerateOtpAsync(TblUserRandomPass otpRecord, int userId)
         {
-            try
-            {
-                var existingOtp = await _context.TblUserRandomPasses
-                    .Where(o => o.UserId == userId)
-                    .OrderByDescending(o => o.GeneratedTime)
-                    .FirstOrDefaultAsync();
 
-                if (existingOtp != null)
-                {
-                    // UPDATE existing record
-                    existingOtp.VerificationCode = otpRecord.VerificationCode;
-                    existingOtp.GeneratedTime = otpRecord.GeneratedTime;
-                    existingOtp.ActionType = otpRecord.ActionType;
-                    existingOtp.UserType = otpRecord.UserType;
+            var existingOtp = await _context.TblUserRandomPasses
+                .Where(o => o.UserId == userId)
+                .OrderByDescending(o => o.GeneratedTime)
+                .FirstOrDefaultAsync();
 
-                    _context.TblUserRandomPasses.Update(existingOtp);
-                }
-              
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
+            if (existingOtp != null)
             {
-                // Log exception if needed
-                throw;
+                // UPDATE existing record
+                existingOtp.VerificationCode = otpRecord.VerificationCode;
+                existingOtp.GeneratedTime = otpRecord.GeneratedTime;
+                existingOtp.ActionType = otpRecord.ActionType;
+                existingOtp.UserType = otpRecord.UserType;
+
+                _context.TblUserRandomPasses.Update(existingOtp);
             }
+
+            await _context.SaveChangesAsync();
+            return true;
+
         }
 
 
         #region get country
         public async Task<List<TblCountriesCode>> GetCountriesCodesAsync()
         {
-            try
-            {
-                return await _context.TblCountriesCodes.ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
+            return await _context.TblCountriesCodes.ToListAsync();
+
         }
 
         #endregion
         public async Task<bool> ValidDeviceAsync(string email, string deviceMac)
         {
-            try
-            {
-                return await _context.TblStudentUserMasters.AnyAsync(s => s.EmailId == email && s.PrimaryMac == deviceMac);
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
 
-            }
+            return await _context.TblStudentUserMasters.AnyAsync(s => s.EmailId == email && s.PrimaryMac == deviceMac);
+
         }
 
         public async Task<bool> ValidateOtpAsync(int userId, string otp)
         {
-            try
-            {
-                return await _context.TblUserRandomPasses.AnyAsync(o => o.UserId == userId && o.VerificationCode == otp);
-            }
-            catch (Exception ex)
-            {
-                string message = ex.Message;
-                throw;
-            }
+
+            return await _context.TblUserRandomPasses.AnyAsync(o => o.UserId == userId && o.VerificationCode == otp);
+
         }
     }
 }
