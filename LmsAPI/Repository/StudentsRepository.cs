@@ -33,6 +33,7 @@ namespace LMSAPI.Repository
             if (existingOtp == null)
             {
                 await _context.TblUserRandomPasses.AddAsync(otpRecord);
+                await _context.SaveChangesAsync();
             }
             else
             {
@@ -163,6 +164,8 @@ namespace LMSAPI.Repository
 
                 _context.TblUserRandomPasses.Update(existingOtp);
             }
+            else
+                _context.TblUserRandomPasses.Add(otpRecord);
 
             await _context.SaveChangesAsync();
             return true;
@@ -205,6 +208,11 @@ namespace LMSAPI.Repository
                 otpRecords.GeneratedTime = otpRecord.GeneratedTime;
                 otpRecords.ActionType = otpRecord.ActionType;
                 otpRecords.UserType = otpRecord.UserType;
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                _context.TblUserRandomPasses.Add(otpRecord);
                 await _context.SaveChangesAsync();
             }
 
