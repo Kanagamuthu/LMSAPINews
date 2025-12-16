@@ -537,13 +537,9 @@ namespace LMSAPI.Repository
                 join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
                 join sm in _context.TblSubjectMasters on pd.SubjectId equals sm.SubjectId
                 join d in _context.TblDepartmentMasters on pd.DepartmentId equals d.DepartmentId
-                join usm in _context.TblUserSubscribeMasters
-                    on pm.PackageId equals usm.PackageId into usmGroup
-                from usm in usmGroup
-                    .Where(x => x.UserId == userId && x.PaymentStatus.ToLower() == "success")
-                    .DefaultIfEmpty()
-                join sah in _context.TblUserSubjectActivationHistories
-                    on usm.UserSubscribeMasterId equals sah.TusmId into sahGroup
+                join usm in _context.TblUserSubscribeMasters on pm.PackageId equals usm.PackageId into usmGroup
+                from usm in usmGroup.Where(x => x.UserId == userId && x.PaymentStatus.ToLower() == "success").DefaultIfEmpty()
+                join sah in _context.TblUserSubjectActivationHistories on usm.UserSubscribeMasterId equals sah.TusmId into sahGroup
                 from sah in sahGroup.OrderByDescending(x => x.SubjectExpiryDate).DefaultIfEmpty()
                 where pm.PackageId == pkgId && pm.Activestatus == true
                 select new
@@ -596,20 +592,31 @@ namespace LMSAPI.Repository
                 var item = grp.First();
 
                 // UNITS + CHAPTERS for each subject
-                var units = _context.SubjectUnits
-                    .Where(u => u.SubjectId == item.Subject.SubjectId && u.ActiveStatus == 1)
+                var units = _context.SubjectUnits.Where(u => u.SubjectId == item.Subject.SubjectId && u.ActiveStatus == 1)
                     .Select(u => new UnitDto
                     {
                         UnitId = u.UnitId.ToString(),
                         UnitTitle = u.UnitName,
-                        Chapters = _context.SubjectChapters
-                            .Where(c => c.UnitId == u.UnitId && c.ActiveStatus == 1)
-                            .OrderBy(c => c.ChapterOrder)
-                            .Select(c => new ChapterDto
-                            {
-                                ChapterId = c.ChapterId.ToString(),
-                                Title = c.ChapterName
-                            }).ToList()
+                        Chapters = (from c in _context.SubjectChapters
+                                    join rh in _context.TblReadHistories on c.ChapterId equals rh.ChapterId into historyJoin
+                                    from rh in historyJoin.Where(h => h.Readby == userId).DefaultIfEmpty()
+                                    where c.UnitId == u.UnitId && c.ActiveStatus == 1
+                                    orderby c.ChapterOrder
+                                    select new ChapterDto
+                                    {
+                                        ChapterId = c.ChapterId.ToString(),
+                                        Title = c.ChapterName,
+                                        isread = rh != null
+                                    }).ToList()
+
+                        //Chapters = _context.SubjectChapters
+                        //    .Where(c => c.UnitId == u.UnitId && c.ActiveStatus == 1)
+                        //    .OrderBy(c => c.ChapterOrder)
+                        //    .Select(c => new ChapterDto
+                        //    {
+                        //        ChapterId = c.ChapterId.ToString(),
+                        //        Title = c.ChapterName
+                        //    }).ToList()
                     }).ToList();
 
                 // SUBJECT DTO
