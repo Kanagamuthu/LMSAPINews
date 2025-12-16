@@ -565,7 +565,7 @@ namespace LMSAPI.Repository
             int validityDays = data.Max(x => x.PackageDurationDays ?? 0);
 
             // SINGLE PACKAGE OBJECT (your JSON needs this)
-            var first = data.First();
+            var first = data.OrderByDescending(x=>x.SubjectExpiryDate).FirstOrDefault();
 
             var package = new PackageDetailsDTO
             {
