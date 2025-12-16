@@ -7,7 +7,7 @@ namespace LMSAPI.Repository
     {
         Task<TblStudentUserMaster?> GetStudentByEmailAsync(string email);
         Task AddStudentAsync(TblStudentUserMaster student);
-        Task<bool> SaveOtpAsync(TblUserRandomPass otpRecord);
+        Task<bool> SaveOtpAsync(TblUserRandomPass otpRecord,int userId);
         //GEt GetLatestOtpAsync
         Task<TblUserRandomPass?> GetLatestOtpAsync(int userId, int actionType, int userType);
         //update student status

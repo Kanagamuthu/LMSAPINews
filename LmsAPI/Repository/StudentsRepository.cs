@@ -27,24 +27,47 @@ namespace LMSAPI.Repository
 
         }
         #region OTP function
-        public async Task<bool> SaveOtpAsync(TblUserRandomPass otpRecord)
+        public async Task<bool> SaveOtpAsync(TblUserRandomPass otpRecord, int userId)
         {
+            var existingOtp = await _context.TblUserRandomPasses.Where(o => o.UserId == userId).OrderByDescending(o => o.GeneratedTime).FirstOrDefaultAsync();
+            if (existingOtp == null)
+            {
+                await _context.TblUserRandomPasses.AddAsync(otpRecord);
+            }
+            else
+            {
+                existingOtp.VerificationCode = otpRecord.VerificationCode;
+                existingOtp.GeneratedTime = otpRecord.GeneratedTime;
+                existingOtp.ActionType = otpRecord.ActionType;
+                existingOtp.UserType = otpRecord.UserType;
+                _context.TblUserRandomPasses.Update(existingOtp);
+            }
 
-            await _context.TblUserRandomPasses.AddAsync(otpRecord);
-            int result = await _context.SaveChangesAsync();
-            return result > 0;
-
-            //try
-            //{
-            //    await _context.TblUserRandomPasses.AddAsync(otpRecord);
-            //    await _context.SaveChangesAsync();
-            //}
-            //catch (Exception ex)
-            //{
-            //    string message = ex.Message;
-            //    throw;
-            //}
+            return await _context.SaveChangesAsync() > 0;
         }
+
+        //public async Task<bool> SaveOtpAsync(TblUserRandomPass otpRecord,int userId)
+        //{
+        //    var otpRecords = await _context.TblUserRandomPasses.OrderByDescending(x => x.GeneratedTime).Where(o => o.UserId == userId).FirstOrDefaultAsync();
+        //    if (otpRecords == null)
+        //    {
+        //        await _context.TblUserRandomPasses.AddAsync(otpRecord);
+        //        int result = await _context.SaveChangesAsync();
+        //        return result > 0;
+        //    }
+
+
+        //    //try
+        //    //{
+        //    //    await _context.TblUserRandomPasses.AddAsync(otpRecord);
+        //    //    await _context.SaveChangesAsync();
+        //    //}
+        //    //catch (Exception ex)
+        //    //{
+        //    //    string message = ex.Message;
+        //    //    throw;
+        //    //}
+        //}
         #endregion
         public async Task<int> GetTrialPeriodDaysAsync()
         {
