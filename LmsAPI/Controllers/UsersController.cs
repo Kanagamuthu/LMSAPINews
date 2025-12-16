@@ -131,7 +131,7 @@ namespace LmsAPI.Controllers
             //check mail, decice mac null
             if (string.IsNullOrEmpty(logInDto.EmailId) || string.IsNullOrEmpty(logInDto.DeviceMac))
             {
-                return BadRequest(new ApiResponse(false, "Email and Device MAC ID are required.", null, "400"));
+                return BadRequest(new ApiResponse(false, "Email ID required.", null, "400"));
             }
             //validate email format
             var emailValidation = await _emailValidator.ValidateAsync(logInDto.EmailId);
@@ -270,8 +270,6 @@ namespace LmsAPI.Controllers
 
             //get otp expiry time from config table
             int otpExpiryMinutes = await _context.TblAppConfigs.Where(x => x.ConfigKey == "otpexpiryinmin").Select(x => Convert.ToInt32(x.ConfigValue)).FirstOrDefaultAsync();
-
-
             if (otpRecord.GeneratedTime.AddMinutes(otpExpiryMinutes) < DateTime.Now)
                 return Ok(new ApiResponse(false, "OTP has expired", "", errorCode));
             // 4️) Activate student
@@ -526,7 +524,7 @@ namespace LmsAPI.Controllers
             };
             async Task<string> SendTicketRaiseEmail(string toEmail, int ticketId, string subject, string description)
             {
-                var template = await _context.EmailTemplates.Where(x => x.Name == "Ticket Raised Template" && x.Isdelete == true).FirstOrDefaultAsync();
+                var template = await _context.EmailTemplates.Where(x => x.Name == "Ticket raised template" && x.Isdelete == true).FirstOrDefaultAsync();
 
                 if (template == null)
                     return "Email template not found";
@@ -606,10 +604,10 @@ namespace LmsAPI.Controllers
             }
             else
             {
-                _logger.LogInfo($"OTP regenerated for email: {student.EmailId}");
+                _logger.LogInfo($"OTP regenerated for email ID: {student.EmailId}");
                 await ResendOtpEmailAsync(student.EmailId, student.Username, otpRecord.VerificationCode);
                 //  await _emailService.SendEmailAsync(student.EmailId, "Your New OTP Code", $"Your new OTP code is: {otp}");
-                return Ok(new ApiResponse(true, "New OTP sent to your email", otpRecord.VerificationCode));
+                return Ok(new ApiResponse(true, "New OTP sent to your email ID", otpRecord.VerificationCode));
 
             }
 
@@ -659,7 +657,7 @@ namespace LmsAPI.Controllers
             }
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(request.DeviceMacId))
             {
-                return BadRequest(new ApiResponse(false, "Email and Device MAC are required.", "", "400"));
+                return BadRequest(new ApiResponse(false, "Email ID is required.", "", "400"));
             }
             else
             {
@@ -670,7 +668,7 @@ namespace LmsAPI.Controllers
                 }
                 else
                 {
-                    return Ok(new ApiResponse(true, "Same Device", new { IsSameDevice = true }, "200"));
+                    return Ok(new ApiResponse(true, "Same device", new { IsSameDevice = true }, "200"));
                 }
             }
         }
@@ -686,7 +684,7 @@ namespace LmsAPI.Controllers
         {
             if (string.IsNullOrEmpty(generateOtp.EmailId) || string.IsNullOrEmpty(generateOtp.deviceMacId))
             {
-                return BadRequest(new ApiResponse(false, "Email, Device MAC are required.", data: "", "400"));
+                return BadRequest(new ApiResponse(false, "Email ID is required.", data: "", "400"));
             }
             var student = await _studentsRepository.GetStudentByEmailAsync(generateOtp.EmailId);
             if (student == null || student.ActiveStatus != 1)
@@ -717,7 +715,7 @@ namespace LmsAPI.Controllers
             {
                 await ResendOtpEmailAsync(student.EmailId, student.Username, otpRecord.VerificationCode);
                 // await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
-                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp, ErrorCode = "200" });
+                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email ID", Data = _againotp, ErrorCode = "200" });
             }
         }
         #endregion
@@ -731,7 +729,7 @@ namespace LmsAPI.Controllers
         {
             if (string.IsNullOrEmpty(oTPVerificationDto.EmailId) || string.IsNullOrEmpty(oTPVerificationDto.deviceMacId) || string.IsNullOrEmpty(oTPVerificationDto.Otp))
             {
-                return BadRequest(new ApiResponse(false, "Email, Device MAC, and OTP are required.", null, "400"));
+                return BadRequest(new ApiResponse(false, "Emai and OTP are required.", null, "400"));
             }
             var student = await _studentsRepository.GetStudentByEmailAsync(oTPVerificationDto.EmailId);
             if (student == null || student.ActiveStatus != 1)
@@ -819,7 +817,7 @@ namespace LmsAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<string> ResendOtpEmailAsync(string toEmail, string userName, string VerificationCode)
         {
-            var template = await _context.EmailTemplates.Where(x => x.Name == "Resend OTP Template" && x.Isdelete == true).FirstOrDefaultAsync();
+            var template = await _context.EmailTemplates.Where(x => x.Name == "Resend OTP template" && x.Isdelete == true).FirstOrDefaultAsync();
 
             if (template == null)
                 return "Resend OTP Email Template not found";

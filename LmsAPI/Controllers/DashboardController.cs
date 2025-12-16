@@ -508,7 +508,7 @@ namespace LMSAPI.Controllers
                 if (!string.IsNullOrEmpty(cachedDegrees))
                 {
                     var getdegrees = System.Text.Json.JsonSerializer.Deserialize<List<TblDegreeMaster>>(cachedDegrees);
-                    return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully (from cache)", Data = getdegrees });
+                    return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully.", Data = getdegrees });
                 }
                 degrees = await _dashboardRepository.GetAllDegrees();
                 var cacheOptions = new DistributedCacheEntryOptions
@@ -519,7 +519,7 @@ namespace LMSAPI.Controllers
                 await _cache.SetStringAsync(cacheKey, jsonData, cacheOptions);
 
             }
-            return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully", Data = degrees, ErrorCode = null });
+            return Ok(new ApiResponse { Success = true, Message = "Degrees fetched successfully.", Data = degrees, ErrorCode = null });
 
 
         }
