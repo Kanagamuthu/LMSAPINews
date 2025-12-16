@@ -101,9 +101,8 @@ namespace LmsAPI.Controllers
                 ActionType = 1,
                 UserType = 2,
             };
-            //user info in session
-            //SetStudentSession(existing);
-            bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
+            bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord, (int)existing.StudentUserId);
+            
             //validate db otp save or not
             if (is_saved == false)
             {

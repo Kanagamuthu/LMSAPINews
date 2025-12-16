@@ -8,8 +8,8 @@ namespace LMSAPI.Helpers
         public StudentRegisterValidator()
         {
             RuleFor(x => x.Username)
-                .NotEmpty().WithMessage("Full name is required.")
-                .Length(3, 100).WithMessage("Full name must be between 3 and 100 characters.");
+                .NotEmpty().WithMessage("Name is required.");
+                //.Length(3, 100).WithMessage("Full name must be between 3 and 100 characters.");
                 //.Matches(@"^[a-zA-Z\s]+$").WithMessage("Full name must contain only letters.");
 
             RuleFor(x => x.EmailId)
@@ -27,9 +27,9 @@ namespace LMSAPI.Helpers
                 .Matches(@"^\+\d{1,4}$").WithMessage("Country code must start with '+' followed by digits (e.g. +91).");
 
             // DeviceMacId
-            RuleFor(x => x.DeviceMacId)
-                .NotEmpty().WithMessage("Device MAC ID is required.")
-                .Length(10, 100).WithMessage("Invalid Device ID format.");
+            //RuleFor(x => x.DeviceMacId)
+            //    .NotEmpty().WithMessage("Device MAC ID is required.")
+            //    .Length(10, 100).WithMessage("Invalid Device ID format.");
         }
     }
 }
