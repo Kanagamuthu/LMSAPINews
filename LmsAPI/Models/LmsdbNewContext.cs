@@ -15,6 +15,8 @@ public partial class LmsdbNewContext : DbContext
     {
     }
 
+    public virtual DbSet<ChatKnowledgeBase> ChatKnowledgeBases { get; set; }
+
     public virtual DbSet<CreateOrder> CreateOrders { get; set; }
 
     public virtual DbSet<EmailTemplate> EmailTemplates { get; set; }
@@ -96,9 +98,20 @@ public partial class LmsdbNewContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ChatKnowledgeBase>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ChatKnow__3214EC07F6947647");
+
+            entity.ToTable("ChatKnowledgeBase");
+
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Keywords).HasMaxLength(500);
+            entity.Property(e => e.Question).HasMaxLength(500);
+        });
+
         modelBuilder.Entity<CreateOrder>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__CreateOr__3214EC079AA40591");
+            entity.HasKey(e => e.Id).HasName("PK__CreateOr__3214EC07BCAD2168");
 
             entity.ToTable("CreateOrder");
 
@@ -477,7 +490,9 @@ public partial class LmsdbNewContext : DbContext
 
             entity.Property(e => e.PackageId).HasColumnName("package_id");
             entity.Property(e => e.Activestatus).HasColumnName("activestatus");
-            entity.Property(e => e.ActualPrice).HasColumnName("actual_price");
+            entity.Property(e => e.ActualPrice)
+                .HasMaxLength(50)
+                .HasColumnName("actual_price");
             entity.Property(e => e.CoverPath)
                 .IsUnicode(false)
                 .HasColumnName("cover_path");
@@ -489,7 +504,12 @@ public partial class LmsdbNewContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("created_on");
             entity.Property(e => e.CurrentStatus).HasColumnName("current_status");
+            entity.Property(e => e.Dealname)
+                .HasMaxLength(550)
+                .IsUnicode(false)
+                .HasColumnName("dealname");
             entity.Property(e => e.DepartmentId).HasColumnName("department_id");
+            entity.Property(e => e.Discount).HasColumnName("discount");
             entity.Property(e => e.IsBundle).HasColumnName("is_bundle");
             entity.Property(e => e.IsOfferPackage).HasColumnName("is_offer_package");
             entity.Property(e => e.Keywords)
@@ -516,7 +536,9 @@ public partial class LmsdbNewContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("package_video_url");
             entity.Property(e => e.RuleId).HasColumnName("rule_id");
-            entity.Property(e => e.SellingPrice).HasColumnName("selling_price");
+            entity.Property(e => e.SellingPrice)
+                .HasMaxLength(50)
+                .HasColumnName("selling_price");
             entity.Property(e => e.Semester).HasColumnName("semester");
             entity.Property(e => e.ShortDesc)
                 .IsUnicode(false)
@@ -659,10 +681,7 @@ public partial class LmsdbNewContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("acc_active_on");
             entity.Property(e => e.ActiveStatus).HasColumnName("active_status");
-            entity.Property(e => e.Batchyear)
-                .HasMaxLength(4)
-                .IsUnicode(false)
-                .HasColumnName("batchyear");
+            entity.Property(e => e.Batchyear).HasColumnName("batchyear");
             entity.Property(e => e.Collegename)
                 .HasMaxLength(100)
                 .IsUnicode(false)

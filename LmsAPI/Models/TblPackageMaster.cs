@@ -19,9 +19,9 @@ public partial class TblPackageMaster
 
     public string? ShortDesc { get; set; }
 
-    public int? SellingPrice { get; set; }
+    public string? SellingPrice { get; set; }
 
-    public int? ActualPrice { get; set; }
+    public string? ActualPrice { get; set; }
 
     public int? DepartmentId { get; set; }
 
@@ -60,6 +60,10 @@ public partial class TblPackageMaster
     public int? UpdatedBy { get; set; }
 
     public DateTime? Updateddate { get; set; }
+
+    public int? Discount { get; set; }
+
+    public string? Dealname { get; set; }
 
     public virtual ICollection<TblPackageDetail> TblPackageDetails { get; set; } = new List<TblPackageDetail>();
 }
