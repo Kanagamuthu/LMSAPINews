@@ -24,12 +24,14 @@ namespace LMSAPI.DTO
         public int packageId { get; set; }
         public string packageCode { get; set; }
         public string packageName { get; set; }
-        public int sellingPrice { get; set; }
+        public string sellingPrice { get; set; }
         public string coverPath { get; set; }
         public bool isPurchased { get; set; }
         public object subjectExpiryDate { get; set; }
         public object paymentOn { get; set; }
         public string TransactionType { get; set; }
+        public string? discount { get; set; }
+        public string? dealname { get; set; }
     }
 
 }

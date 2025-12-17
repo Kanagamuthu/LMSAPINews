@@ -9,7 +9,7 @@
         public string? PackageName { get; set; }
         //public string? PackageDisplayName { get; set; }
         public int PackageDurationDays { get; set; }
-        public int amount { get; set; }
+        public string? amount { get; set; }
         public string? CoverPath { get; set; }
         public List<PackageSubjectDto>? Subjects { get; set; }
     }

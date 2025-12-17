@@ -392,7 +392,8 @@ namespace LMSAPI.Repository
                                  packageId = p.First().pm.PackageId,
                                  packageCode = p.First().pm.PackageCode,
                                  packageName = p.First().pm.PackageDisplayName,
-                                 sellingPrice = p.First().pm.SellingPrice ?? 0,
+                                 //sellingPrice = p.First().pm.SellingPrice ?? 0,
+                                 sellingPrice = p.First().pm.SellingPrice,
                                  coverPath = p.First().pm.CoverPath,
                                  isPurchased = true,
                                  subjectExpiryDate = p.First().sah.SubjectExpiryDate,
@@ -555,6 +556,9 @@ namespace LMSAPI.Repository
                     PaymentOn = usm != null ? usm.PaymentOn : null,
                     SubjectExpiryDate = sah != null ? sah.SubjectExpiryDate : null,
                     TransactionType = usm != null ? usm.TransactionType.ToLower() == "trail" ? usm.TransactionType : "Purchase" : null,
+                    pm.ActualPrice,
+                    pm.Discount,
+                    pm.Dealname
                 }
             ).ToListAsync();
 
@@ -565,7 +569,7 @@ namespace LMSAPI.Repository
             int validityDays = data.Max(x => x.PackageDurationDays ?? 0);
 
             // SINGLE PACKAGE OBJECT (your JSON needs this)
-            var first = data.OrderByDescending(x=>x.SubjectExpiryDate).FirstOrDefault();
+            var first = data.OrderByDescending(x => x.SubjectExpiryDate).FirstOrDefault();
 
             var package = new PackageDetailsDTO
             {
@@ -581,7 +585,14 @@ namespace LMSAPI.Repository
                 TransactionType = first.TransactionType,
                 SubjectExpiryDate = first.SubjectExpiryDate,
                 IsPurchased = first.PaymentOn != null || first.SubjectExpiryDate != null,
-                SubjectMaster = new List<SubjectMasterDto>()
+
+                //17-12-2025
+                actualprice= first.ActualPrice,
+                discount= first.Discount??0,
+                dealname= first.Dealname,
+
+
+                SubjectMaster = new List<SubjectMasterDto>(),
             };
 
             // GROUP BY SUBJECT
@@ -827,7 +838,13 @@ namespace LMSAPI.Repository
                         PackageCode = p.First().pm.PackageCode,
                         PackageName = p.First().pm.PackageDisplayName,
                         SellingPrice = p.First().pm.SellingPrice,
-                        CoverPath = p.First().pm.CoverPath
+                        CoverPath = p.First().pm.CoverPath,
+
+                        //17-12-2025
+                        ActualPrice=p.First().pm.ActualPrice??null,
+                        discount = p.First().pm.Discount ?? 0,
+                        dealname = p.First().pm.Dealname
+
                     })
                     .ToList()
             })

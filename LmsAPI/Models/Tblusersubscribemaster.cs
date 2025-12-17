@@ -13,7 +13,7 @@ public partial class TblUserSubscribeMaster
 
     public int? PackageId { get; set; }
 
-    public decimal? Amount { get; set; }
+    public string? Amount { get; set; }
 
     public int? Count { get; set; }
 

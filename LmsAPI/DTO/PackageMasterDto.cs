@@ -16,9 +16,9 @@
 
         //public string? ShortDesc { get; set; }
 
-        public int? SellingPrice { get; set; }
+        public string? SellingPrice { get; set; }
 
-       // public int? ActualPrice { get; set; }
+         public string? ActualPrice { get; set; }
 
        // public int? DepartmentId { get; set; }
 
@@ -47,5 +47,7 @@
         //public string? Keywords { get; set; }
 
         //public string? PackageVideoUrl { get; set; }
+        public int discount { get; set; }
+        public string? dealname { get; set; }
     }
 }

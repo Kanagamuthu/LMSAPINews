@@ -16,7 +16,11 @@ namespace LMSAPI.DTO
         public DateTime? SubjectExpiryDate { get; set; }
         public DateTime? PaymentOn { get; set; }
         public DateTime? serverdate { get; set; } = DateTime.Now;
+        public int discount { get; set; }
+        public string? dealname { get; set; }
+        public string? actualprice { get; set; }
         public List<SubjectMasterDto> SubjectMaster { get; set; }
         public string TransactionType { get; set; }
+        
     }
 }

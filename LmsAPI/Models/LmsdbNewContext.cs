@@ -1164,7 +1164,7 @@ public partial class LmsdbNewContext : DbContext
             entity.ToTable("Tbl_user_subscribe_master");
 
             entity.Property(e => e.UserSubscribeMasterId).HasColumnName("user_subscribe_master_id");
-            entity.Property(e => e.Amount).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Amount).HasMaxLength(50);
             entity.Property(e => e.BillingAddressId).HasColumnName("billing_address_id");
             entity.Property(e => e.Count).HasColumnName("count");
             entity.Property(e => e.CreatedOn)
