@@ -671,78 +671,78 @@ namespace LMSAPI.Controllers
 
 
 
-        //[HttpPost("CreateOrder")]
-        //public async Task<IActionResult> CreateOrder(PaymentRequest req)
-        //{
-        //    var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
-        //    var razorpayKey = _configuration["razorpay:key"];
-        //    var razorpaySecret = _configuration["razorpay:secret"];
-        //    //var email = _configuration["razorpay:email"];
-        //    //var phone = _configuration["razorpay:phone"];
-        //    var client = new Razorpay.Api.RazorpayClient(razorpayKey, razorpaySecret);
+        [HttpPost("CreateOrder")]
+        public async Task<IActionResult> CreateOrder(PaymentRequest req)
+        {
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            var razorpayKey = _configuration["razorpay:key"];
+            var razorpaySecret = _configuration["razorpay:secret"];
+            //var email = _configuration["razorpay:email"];
+            //var phone = _configuration["razorpay:phone"];
+            var client = new Razorpay.Api.RazorpayClient(razorpayKey, razorpaySecret);
 
-        //    var GetPackage = _context.TblPackageMasters.FirstOrDefault(x => x.PackageId == req.ProductId);
-        //    var Getstudent = _context.TblStudentUserMasters.FirstOrDefault(x => x.StudentUserId == userId);
-        //    var price = GetPackage.SellingPrice * 100;
+            var GetPackage = _context.TblPackageMasters.FirstOrDefault(x => x.PackageId == req.ProductId);
+            var Getstudent = _context.TblStudentUserMasters.FirstOrDefault(x => x.StudentUserId == userId);
+            var price = Convert.ToDouble(GetPackage?.SellingPrice??"0") * 100;
 
-        //    var options = new Dictionary<string, object>
-        //    {
-        //          { "amount", price }, // amount in paise
-        //          { "currency", "INR" },
-        //          { "receipt", "order_rcptid_" + req.ProductId },
-        //          { "payment_capture", 1 }
-        //    };
-        //    Razorpay.Api.Order order = client.Order.Create(options);
-        //    //cerate a record in databse with order details and status as created
-        //    var res = await _dashboardRepository.CreateRazorpayOrderRecord(req.ProductId, order?["id"]?.ToString(), userId, "created");
-        //    return Ok(new
-        //    {
-        //        success = true,
-        //        orderId = order["id"].ToString(),
-        //        key = razorpayKey,
-        //        email = Getstudent.EmailId,
-        //        phone = Getstudent.CountryCode + "-" + Getstudent.Mobile,
-        //        amount = price,
-        //    });
-        //}
+            var options = new Dictionary<string, object>
+            {
+                  { "amount", price }, // amount in paise
+                  { "currency", "INR" },
+                  { "receipt", "order_rcptid_" + req.ProductId },
+                  { "payment_capture", 1 }
+            };
+            Razorpay.Api.Order order = client.Order.Create(options);
+            //cerate a record in databse with order details and status as created
+            var res = await _dashboardRepository.CreateRazorpayOrderRecord(req.ProductId, order?["id"]?.ToString(), userId, "created");
+            return Ok(new
+            {
+                success = true,
+                orderId = order["id"].ToString(),
+                key = razorpayKey,
+                email = Getstudent.EmailId,
+                phone = Getstudent.CountryCode + "-" + Getstudent.Mobile,
+                amount = price,
+            });
+        }
 
-        //[HttpPost("Verify")]
-        //public async Task<IActionResult> VerifyPayment([FromBody] VerifyRequest req)
-        //{
-        //    var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+        [HttpPost("Verify")]
+        public async Task<IActionResult> VerifyPayment([FromBody] VerifyRequest req)
+        {
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
 
-        //    var razorpayKey = _configuration["razorpay:key"];
-        //    var razorpaySecret = _configuration["razorpay:secret"];
+            var razorpayKey = _configuration["razorpay:key"];
+            var razorpaySecret = _configuration["razorpay:secret"];
 
-        //    var client = new Razorpay.Api.RazorpayClient(razorpayKey, razorpaySecret);
+            var client = new Razorpay.Api.RazorpayClient(razorpayKey, razorpaySecret);
 
-        //    var attributes = new Dictionary<string, string>
-        //     {
-        // { "razorpay_order_id", req.OrderId },
-        // { "razorpay_payment_id", req.PaymentId },
-        // { "razorpay_signature", req.Signature }
-        //    };
+            var attributes = new Dictionary<string, string>
+             {
+         { "razorpay_order_id", req.OrderId },
+         { "razorpay_payment_id", req.PaymentId },
+         { "razorpay_signature", req.Signature }
+            };
 
-        //    bool isValid = Razorpay.Api.Utils.ValidatePaymentSignature(attributes);
+            bool isValid = Razorpay.Api.Utils.ValidatePaymentSignature(attributes);
 
-        //    if (isValid)
-        //    {
-        //        //update payment status in database as successful
-        //        var res = await _dashboardRepository.UpdateRazorpayOrderStatus(req.OrderId, req.PaymentId, req.Signature, userId, "successful");
+            if (isValid)
+            {
+                //update payment status in database as successful
+                var res = await _dashboardRepository.UpdateRazorpayOrderStatus(req.OrderId, req.PaymentId, req.Signature, userId, "successful");
 
 
-        //        PaymentPayload obj = new PaymentPayload();
-        //        obj.packageId = res.PackageId;
-        //        obj.PaymentRefNo = req.PaymentId;
-        //        obj.PaymentStatus = "success";
-        //        obj.Type = "insert";
-        //        var subscriptionResult = await CreateSubscription(obj);
-        //        dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
-        //        var data = result?.Value?.Data;
-        //        return Ok(new ApiResponse(true, "Payment verified successfully.", data, "200"));
-        //    }
-        //    return BadRequest(new ApiResponse(false, "Signature mismatch", null, "400"));
-        //}
+                PaymentPayload obj = new PaymentPayload();
+                obj.packageId = res.PackageId;
+                obj.PaymentRefNo = req.PaymentId;
+                obj.PaymentStatus = "success";
+                obj.Type = "insert";
+                var subscriptionResult = await CreateSubscription(obj);
+                dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
+                var data = result?.Value?.Data;
+                return Ok(new ApiResponse(true, "Payment verified successfully.", data, "200"));
+            }
+            return BadRequest(new ApiResponse(false, "Signature mismatch", null, "400"));
+        }
 
     }
 }
