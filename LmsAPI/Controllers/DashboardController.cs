@@ -690,7 +690,7 @@ namespace LMSAPI.Controllers
                   { "amount", price }, // amount in paise
                   { "currency", "INR" },
                   { "receipt", "order_rcptid_" + req.ProductId },
-                  { "payment_capture", 1 }
+                  { "payment_capture", 0 }
             };
             Razorpay.Api.Order order = client.Order.Create(options);
             //cerate a record in databse with order details and status as created
