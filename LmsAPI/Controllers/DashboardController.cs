@@ -784,8 +784,8 @@ namespace LMSAPI.Controllers
             {
                 if (req.status == "authorized" || req.status == "captured")
                 {
-                    var getUserId=Convert.ToInt32(order.userId);
-                    var getSubscription =await _context.TblUserSubscribeMasters.Where(x => x.PackageId == order.PackageId && x.UserId == order.userId).OrderByDescending(x => x.CreatedOn).FirstOrDefaultAsync();
+                    var getUserId = Convert.ToInt32(order.userId);
+                    var getSubscription = await _context.TblUserSubscribeMasters.Where(x => x.PackageId == order.PackageId && x.UserId == order.userId).OrderByDescending(x => x.CreatedOn).FirstOrDefaultAsync();
 
                     var message = $"Update on the admin side.\nStatus : {req.status}";
                     if (getSubscription != null)
@@ -804,6 +804,17 @@ namespace LMSAPI.Controllers
                         var subscriptionResult = await CreateSubscription(obj);
                         dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
                         var data = result?.Value?.Data;
+                    }
+                }
+                else
+                {
+                    var orderUpdate = await _context.CreateOrders.Where(x => x.OrderId == order.OrderId).FirstOrDefaultAsync();
+                    if (orderUpdate != null)
+                    {
+                        orderUpdate.Status = req.status;
+                        orderUpdate.UpdatedBy = order.userId;
+                        orderUpdate.UpdatedDate = DateTime.Now;
+                        await _context.SaveChangesAsync();
                     }
                 }
             }
