@@ -18,7 +18,7 @@ namespace LMSAPI.Helpers
 
             context.Result = new ObjectResult(new ApiResponse
             {
-                Message = context.Exception.InnerException?.Message.ToString(),
+                Message = context.Exception.InnerException?.Message !=null? context.Exception.InnerException?.Message: context.Exception.Message,
             })
             {
                 StatusCode = 500

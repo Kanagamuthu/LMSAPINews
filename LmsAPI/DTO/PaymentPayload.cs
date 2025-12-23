@@ -22,4 +22,12 @@ namespace LMSAPI.DTO
         public string Signature { get; set; }
 
     }
+
+    public class OrderStatus
+    {
+        public string OrderId { get; set; }
+        public int userId { get; set; }
+        public int PackageId { get; set; }
+
+    }
 }

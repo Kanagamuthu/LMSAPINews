@@ -13,8 +13,10 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
+using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using static LMSAPI.DTO.LessonConverter;
@@ -22,7 +24,6 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LMSAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [TypeFilter(typeof(ExceptionFilter))]
     [Route("api/v{version:apiVersion}/[controller]")]
@@ -47,6 +48,7 @@ namespace LMSAPI.Controllers
         }
 
         #region validate student is validate or not from session
+        [Authorize]
         [HttpGet("IsValidStudent")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -77,6 +79,7 @@ namespace LMSAPI.Controllers
 
 
         #region post-register student info trade & department
+        [Authorize]
         [HttpPost("Post-RegisterStudent")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -108,6 +111,7 @@ namespace LMSAPI.Controllers
         #endregion
 
         #region list subjects based on students trade(iti)/department(diploma,engineering) from subject master
+        [Authorize]
         [HttpGet("GetSubjectsByStudentTrade")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -135,6 +139,7 @@ namespace LMSAPI.Controllers
         #endregion
 
         #region List all subject which is avilabe
+        [Authorize]
         [HttpGet("GetAllSubjects")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -179,6 +184,7 @@ namespace LMSAPI.Controllers
         #endregion
 
         #region add book info per students
+        [Authorize]
         [HttpPost("AddBooksToStudent")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -227,6 +233,7 @@ namespace LMSAPI.Controllers
         #endregion
 
         #region get list of active trade from Tbl_student_trial_subject
+        [Authorize]
         [HttpGet("GetActiveTradesByUserEmail")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -275,6 +282,7 @@ namespace LMSAPI.Controllers
         #endregion
 
         #region check trial period for remove content or trade from table from account is verified
+        [Authorize]
         [HttpGet("CheckTrialPeriodAndRemoveContent")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -321,6 +329,7 @@ namespace LMSAPI.Controllers
         #endregion
 
         #region Payment
+        [Authorize]
         [HttpPost("CreateSubscription")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -396,6 +405,7 @@ namespace LMSAPI.Controllers
         #endregion
 
         #region get subject list for dashboard
+        [Authorize]
         [HttpGet("GetDashboardSubjects")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -439,6 +449,7 @@ namespace LMSAPI.Controllers
 
 
         #region get All Package list for dashboard
+        [Authorize]
         [HttpGet("GetAllPackage")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -465,6 +476,7 @@ namespace LMSAPI.Controllers
         #endregion
 
         #region get Particular Package list 
+        [Authorize]
         [HttpPost("GetPackageDetailsPackageId")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -488,6 +500,7 @@ namespace LMSAPI.Controllers
         #endregion
         //04/11/2025
         #region list the degrees
+        [Authorize]
         [HttpGet("GetAllDegrees")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -574,6 +587,7 @@ namespace LMSAPI.Controllers
         //#endregion
 
         [HttpPost("TrailSubscription")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -634,7 +648,7 @@ namespace LMSAPI.Controllers
             return Ok(new ApiResponse(true, Message, obj, ""));
         }
 
-
+        [Authorize]
         [HttpGet("GetDepartmentMaster")]
         public async Task<IActionResult> GetDepartmentMaster()
         {
@@ -643,6 +657,7 @@ namespace LMSAPI.Controllers
         }
 
         #region get education list
+        [Authorize]
         [HttpGet("GetEducationTypeList")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -657,6 +672,7 @@ namespace LMSAPI.Controllers
 
 
         #region get student purchase item list
+        [Authorize]
         [HttpGet("GetUserPurchaseItems")]
         public async Task<IActionResult> GetUserPurchaseItems()
         {
@@ -670,7 +686,7 @@ namespace LMSAPI.Controllers
         #endregion
 
 
-
+        [Authorize]
         [HttpPost("CreateOrder")]
         public async Task<IActionResult> CreateOrder(PaymentRequest req)
         {
@@ -683,7 +699,7 @@ namespace LMSAPI.Controllers
 
             var GetPackage = _context.TblPackageMasters.FirstOrDefault(x => x.PackageId == req.ProductId);
             var Getstudent = _context.TblStudentUserMasters.FirstOrDefault(x => x.StudentUserId == userId);
-            var price = Convert.ToDouble(GetPackage?.SellingPrice??"0") * 100;
+            var price = Convert.ToDouble(GetPackage?.SellingPrice ?? "0") * 100;
 
             var options = new Dictionary<string, object>
             {
@@ -706,6 +722,7 @@ namespace LMSAPI.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost("Verify")]
         public async Task<IActionResult> VerifyPayment([FromBody] VerifyRequest req)
         {
@@ -744,5 +761,54 @@ namespace LMSAPI.Controllers
             return BadRequest(new ApiResponse(false, "Signature mismatch", null, "400"));
         }
 
+        [AllowAnonymous]
+        [HttpPost("CheckOrderStatus")]
+        public async Task<IActionResult> CheckOrderStatus(OrderStatus order)
+        {
+            string key = _configuration["razorpay:key"];
+            string secret = _configuration["razorpay:secret"];
+
+            var getUrl = _context.TblAppConfigs.FirstOrDefault(x => x.ConfigKey == "GetRazorPay_Order_URL")?.ConfigValue;
+
+            var client = new HttpClient();
+            var authToken = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{key}:{secret}"));
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
+
+            var response = await client.GetAsync($"{getUrl}{order.OrderId}/payments");
+
+            var content = await response.Content.ReadAsStringAsync();
+            dynamic payments = JsonConvert.DeserializeObject(content);
+
+            foreach (var req in payments.items)
+            {
+                if (req.status == "authorized" || req.status == "captured")
+                {
+                    var getUserId=Convert.ToInt32(order.userId);
+                    var getSubscription =await _context.TblUserSubscribeMasters.Where(x => x.PackageId == order.PackageId && x.UserId == order.userId).OrderByDescending(x => x.CreatedOn).FirstOrDefaultAsync();
+
+                    var message = $"Update on the admin side.\nStatus : {req.status}";
+                    if (getSubscription != null)
+                        message = $"Update on the admin side.\nStatus : {req.status}\nRemarks: {message}";
+
+
+                    var res = await _dashboardRepository.UpdateRazorpayOrderStatus(order.OrderId, Convert.ToString(req.id), message, order.userId, "successful");
+
+                    if (getSubscription == null)
+                    {
+                        PaymentPayload obj = new PaymentPayload();
+                        obj.packageId = res.PackageId;
+                        obj.PaymentRefNo = req.PaymentId;
+                        obj.PaymentStatus = "success";
+                        obj.Type = "insert";
+                        var subscriptionResult = await CreateSubscription(obj);
+                        dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
+                        var data = result?.Value?.Data;
+                    }
+                }
+            }
+
+            return Ok(new ApiResponse(true, "Payment verified successfully.", null, "200"));
+        }
     }
 }

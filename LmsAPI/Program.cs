@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -96,6 +97,12 @@ builder.Services.AddScoped<LessonConverter>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers(options =>
 {
+    var policy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+
+    options.Filters.Add(new AuthorizeFilter(policy));
+
     options.Filters.Add<ExceptionFilter>();
     options.Filters.Add<TrialResponseFilter>();
 });
@@ -274,7 +281,9 @@ app.MapGet("/", async context =>
     context.Response.ContentType = "text/html";
     await context.Response.WriteAsync("<title>LMS API</title><h2 style='font-family: century gothic;font-size: 36px;'>Welcome to LMS API</h2>");
 }).RequireRateLimiting("fixed");
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();
