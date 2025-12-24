@@ -97,12 +97,6 @@ builder.Services.AddScoped<LessonConverter>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers(options =>
 {
-    var policy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
-
-    options.Filters.Add(new AuthorizeFilter(policy));
-
     options.Filters.Add<ExceptionFilter>();
     options.Filters.Add<TrialResponseFilter>();
 });

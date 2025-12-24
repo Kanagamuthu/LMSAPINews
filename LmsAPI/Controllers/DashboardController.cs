@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using Razorpay.Api;
 using System;
 using System.Net.Http.Headers;
 using System.Net.WebSockets;
@@ -691,6 +692,7 @@ namespace LMSAPI.Controllers
         public async Task<IActionResult> CreateOrder(PaymentRequest req)
         {
             var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            var AdminUrl = _context.TblAppConfigs.FirstOrDefault(x => x.ConfigKey == "Admin_URL")?.ConfigValue;
             var razorpayKey = _configuration["razorpay:key"];
             var razorpaySecret = _configuration["razorpay:secret"];
             //var email = _configuration["razorpay:email"];
@@ -719,6 +721,7 @@ namespace LMSAPI.Controllers
                 email = Getstudent.EmailId,
                 phone = Getstudent.CountryCode + "-" + Getstudent.Mobile,
                 amount = price,
+                checkoutUrl = $"{AdminUrl}payment/checkout?orderId={order["id"]}&productId={req.ProductId}&email={Getstudent.EmailId}&phone={Getstudent.CountryCode + "-" + Getstudent.Mobile}"
             });
         }
 
