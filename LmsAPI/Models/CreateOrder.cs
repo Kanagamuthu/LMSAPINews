@@ -26,4 +26,6 @@ public partial class CreateOrder
     public string? Status { get; set; }
 
     public bool? IsDelete { get; set; }
+
+    public string? Amount { get; set; }
 }

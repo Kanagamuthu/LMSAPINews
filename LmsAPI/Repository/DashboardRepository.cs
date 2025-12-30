@@ -981,7 +981,8 @@ namespace LMSAPI.Repository
                 CreatedBy = createdBy,
                 CreatedDate = DateTime.Now,
                 OrderId = orderid.ToString(),
-                Status = status
+                Status = status,
+                Amount= _context.TblPackageMasters.Where(p => p.PackageId == packageId).Select(p => p.SellingPrice).FirstOrDefault()
 
             };
             _context.CreateOrders.Add(order);

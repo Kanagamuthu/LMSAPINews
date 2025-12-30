@@ -115,6 +115,7 @@ public partial class LmsdbNewContext : DbContext
 
             entity.ToTable("CreateOrder");
 
+            entity.Property(e => e.Amount).HasMaxLength(50);
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
         });
