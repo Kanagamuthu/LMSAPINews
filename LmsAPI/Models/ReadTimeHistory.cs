@@ -15,7 +15,7 @@ public partial class ReadTimeHistory
 
     public int? Readby { get; set; }
 
-    public TimeOnly? ReadTime { get; set; }
+    public string? ReadTime { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 

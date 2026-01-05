@@ -837,7 +837,7 @@ namespace LMSAPI.Controllers
             obj.UnitId = getChapters?.UnitId;
             obj.ChapterId = history.ChapterId;
             obj.Readby = userId;
-            obj.ReadTime = TimeOnly.FromDateTime(Convert.ToDateTime(history.Time));
+            obj.ReadTime = history.Time;
             obj.CreatedDate = DateTime.Now;
             obj.Status = true;
 
