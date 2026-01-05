@@ -21,6 +21,8 @@ public partial class LmsdbNewContext : DbContext
 
     public virtual DbSet<EmailTemplate> EmailTemplates { get; set; }
 
+    public virtual DbSet<ReadTimeHistory> ReadTimeHistories { get; set; }
+
     public virtual DbSet<SubjectChapter> SubjectChapters { get; set; }
 
     public virtual DbSet<SubjectChapterPath> SubjectChapterPaths { get; set; }
@@ -130,6 +132,15 @@ public partial class LmsdbNewContext : DbContext
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Subject).HasMaxLength(100);
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<ReadTimeHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ReadTime__3214EC07DAEAB997");
+
+            entity.ToTable("ReadTimeHistory");
+
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<SubjectChapter>(entity =>

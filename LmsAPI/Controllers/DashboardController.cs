@@ -824,5 +824,28 @@ namespace LMSAPI.Controllers
 
             return Ok(new ApiResponse(true, "Payment verified successfully.", null, "200"));
         }
+
+        [Authorize]
+        [HttpPost("ReadTimeHistory")]
+        public IActionResult ReadTimeHistory(TimehistoryDTO history)
+        {
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            var getChapters = _context?.SubjectChapters?.FirstOrDefault(c => c.ChapterId == history.ChapterId);
+
+            ReadTimeHistory obj = new ReadTimeHistory();
+            obj.SubjectId = getChapters?.SubjectId;
+            obj.UnitId = getChapters?.UnitId;
+            obj.ChapterId = history.ChapterId;
+            obj.Readby = userId;
+            obj.ReadTime = TimeOnly.FromDateTime(Convert.ToDateTime(history.Time));
+            obj.CreatedDate = DateTime.Now;
+            obj.Status = true;
+
+
+            _context.ReadTimeHistories.Add(obj);
+            _context.SaveChanges();
+
+            return Ok(new ApiResponse(true, "Read time added successfully.", obj, "200"));
+        }
     }
 }
