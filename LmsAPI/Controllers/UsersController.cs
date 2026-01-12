@@ -742,6 +742,10 @@ namespace LmsAPI.Controllers
             }
             //update mac-id
             student.PrimaryMac = oTPVerificationDto.deviceMacId;
+            //Tokan Generate
+            var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
+            student.Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
+            //
             bool isUpdated = await _studentsRepository.UpdateStudentAsync(student);
             if (!isUpdated)
             {
