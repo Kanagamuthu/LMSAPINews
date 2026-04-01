@@ -30,4 +30,12 @@ namespace LMSAPI.DTO
         public int PackageId { get; set; }
 
     }
+
+    public class AppstorePayload
+    {
+        public int? packageId { get; set; }
+        public string OrderId { get; set; }
+        public string PaymentId { get; set; }
+        public string Signature { get; set; }
+    }
 }

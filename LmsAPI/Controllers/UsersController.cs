@@ -102,7 +102,7 @@ namespace LmsAPI.Controllers
                 UserType = 2,
             };
             bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord, (int)existing.StudentUserId);
-            
+
             //validate db otp save or not
             if (is_saved == false)
             {
@@ -273,8 +273,11 @@ namespace LmsAPI.Controllers
                 return Ok(new ApiResponse(false, "OTP has expired", "", errorCode));
             // 4️) Activate student
             student.ActiveStatus = 1;
-            student.Istrail = true;
-            student.AccActiveOn = DateTime.Now;
+            if (student.AccActiveOn == null)
+            {
+                student.Istrail = true;
+                student.AccActiveOn = DateTime.Now;
+            }
             var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
             student.Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
             await _studentsRepository.UpdateStudentAsync(student);
@@ -842,5 +845,36 @@ namespace LmsAPI.Controllers
         }
 
 
+
+        [Authorize]
+        [HttpGet("DeleteUser")]
+        public async Task<IActionResult> DeleteUser()
+        {
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? "0");
+
+            var Student = _context.TblStudentUserMasters.Where(x => x.StudentUserId == userId).FirstOrDefault();
+            Student.ActiveStatus = 0;
+            _context.TblStudentUserMasters.Update(Student);
+
+
+            var SubscripeMaster = _context.TblUserSubscribeMasters.Where(x => x.UserId == userId).ToList();
+            var SAHistory = _context.TblUserSubjectActivationHistories.Where(x => x.UserId == userId).ToList();
+            var CreateOrder = _context.CreateOrders.Where(x => x.CreatedBy == userId).ToList();
+            var SupportTicket = _context.TblSupportTickets.Where(x => x.ReadBy == userId).ToList();
+            var ReadHistorie = _context.TblReadHistories.Where(x => x.Readby == userId).ToList();
+            if (SubscripeMaster.Count > 0)
+                _context.TblUserSubscribeMasters.RemoveRange(SubscripeMaster);
+            if (SAHistory.Count > 0)
+                _context.TblUserSubjectActivationHistories.RemoveRange(SAHistory);
+            if (CreateOrder.Count > 0)
+                _context.CreateOrders.RemoveRange(CreateOrder);
+            if (SupportTicket.Count > 0)
+                _context.TblSupportTickets.RemoveRange(SupportTicket);
+            if (ReadHistorie.Count > 0)
+                _context.TblReadHistories.RemoveRange(ReadHistorie);
+
+            _context.SaveChanges();
+            return Ok(new ApiResponse { Success = true, Message = "User has been successfully removed", Data = null });
+        }
     }
 }

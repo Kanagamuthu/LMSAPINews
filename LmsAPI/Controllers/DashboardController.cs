@@ -847,5 +847,38 @@ namespace LMSAPI.Controllers
 
             return Ok(new ApiResponse(true, "Read time added successfully.", obj, "200"));
         }
+
+
+        [Authorize]
+        [HttpPost("AddNewSubscription")]
+        public async Task<IActionResult> AddNewSubscription(AppstorePayload obj)
+        {
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            var order = new CreateOrder
+            {
+                PackageId = obj.packageId,
+                OrderId = obj.OrderId,
+                PaymentId = obj.PaymentId,
+                Signature = obj.Signature,
+
+                CreatedBy = userId,
+                CreatedDate = DateTime.Now,
+                Status = "successful",
+                Amount = _context.TblPackageMasters.Where(p => p.PackageId == obj.packageId).Select(p => p.SellingPrice).FirstOrDefault()
+
+            };
+            _context.CreateOrders.Add(order);
+            await _context.SaveChangesAsync();
+
+            PaymentPayload objs = new PaymentPayload();
+            objs.packageId = obj.packageId;
+            objs.PaymentRefNo = obj.PaymentId;
+            objs.PaymentStatus = "success";
+            objs.Type = "insert";
+            var subscriptionResult = await CreateSubscription(objs);
+            dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
+            var data = result?.Value?.Data;
+            return Ok(new ApiResponse(true, "Payment verified successfully.", data, "200"));
+        }
     }
 }
