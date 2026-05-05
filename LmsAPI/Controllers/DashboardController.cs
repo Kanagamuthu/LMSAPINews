@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Razorpay.Api;
 using System;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Security.Claims;
@@ -37,8 +38,10 @@ namespace LMSAPI.Controllers
         private readonly IDistributedCache _cache;
         private readonly IConfiguration _configuration;
         private readonly LmsdbNewContext _context;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository, IDistributedCache cache, IConfiguration configuration, LmsdbNewContext context)
+
+        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository, IDistributedCache cache, IConfiguration configuration, LmsdbNewContext context, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _dashboardRepository = dashboardRepository;
@@ -46,6 +49,7 @@ namespace LMSAPI.Controllers
             _cache = cache;
             _configuration = configuration;
             _context = context;
+            _httpClientFactory = httpClientFactory;
         }
 
         #region validate student is validate or not from session
@@ -355,7 +359,8 @@ namespace LMSAPI.Controllers
             TblUserSubscribeMaster obj = new TblUserSubscribeMaster();
             obj.UserId = userId;
             obj.PackageId = model.packageId;
-            obj.Amount = getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
+            //obj.Amount = getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
+            obj.Amount = !string.IsNullOrEmpty(model.price) ? model.price : getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
             obj.CreatedOn = DateTime.Now;
             obj.TransactionType = "Pay";
             obj.PaymentOn = DateTime.Now;
@@ -849,36 +854,105 @@ namespace LMSAPI.Controllers
         }
 
 
+
+        //Apple Payment Verification
+        #region
         [Authorize]
-        [HttpPost("AddNewSubscription")]
-        public async Task<IActionResult> AddNewSubscription(AppstorePayload obj)
+        [HttpPost("AppleVerify")]
+        public async Task<IActionResult> AppleVerify([FromBody] IapVerifyRequest req)
         {
             var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
+            if (req?.platform?.ToLower() != "ios")
+                return BadRequest("Invalid platform");
+
+            if (string.IsNullOrEmpty(req?.receipt))
+                return BadRequest("Receipt missing");
+
+
+            var appleResult = await VerifyWithApple(req.receipt);
+
+            if (!appleResult.IsValid)
+                return BadRequest(new { success = false, message = "Invalid receipt" });
+
+            var getPackageId = req.productId.ToLower().Replace("apple_", "") ?? "0";
+            var PackageId = Convert.ToInt32(getPackageId);
             var order = new CreateOrder
             {
-                PackageId = obj.packageId,
-                OrderId = obj.OrderId,
-                PaymentId = obj.PaymentId,
-                Signature = obj.Signature,
+                PackageId = PackageId,
+                //OrderId = req.TransactionId,
+                PaymentId = req.transactionId,
+                Signature = req.receipt,
 
                 CreatedBy = userId,
                 CreatedDate = DateTime.Now,
                 Status = "successful",
-                Amount = _context.TblPackageMasters.Where(p => p.PackageId == obj.packageId).Select(p => p.SellingPrice).FirstOrDefault()
+                Amount = req.price,
 
             };
             _context.CreateOrders.Add(order);
             await _context.SaveChangesAsync();
 
             PaymentPayload objs = new PaymentPayload();
-            objs.packageId = obj.packageId;
-            objs.PaymentRefNo = obj.PaymentId;
+            objs.packageId = PackageId;
+            objs.PaymentRefNo = req.transactionId;
+            objs.price = req.price;
             objs.PaymentStatus = "success";
             objs.Type = "insert";
             var subscriptionResult = await CreateSubscription(objs);
             dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
             var data = result?.Value?.Data;
-            return Ok(new ApiResponse(true, "Payment verified successfully.", data, "200"));
+            return Ok(new { success = true });
         }
+
+
+        [Authorize]
+        [HttpGet("VerifyWithApple")]
+        private async Task<AppleVerifyResult> VerifyWithApple(string receiptData)
+        {
+            var AppConfig = _context.TblAppConfigs.ToList();
+            var password = AppConfig.FirstOrDefault(x => x.ConfigKey == "Apple_AppPassword")?.ConfigValue;
+            var ProdctionVerifyUrl = AppConfig.FirstOrDefault(x => x.ConfigKey == "Apple_ProdctionVerifyReceipt")?.ConfigValue;
+            var SandboxVerifyUrl = AppConfig.FirstOrDefault(x => x.ConfigKey == "Apple_SandboxVerifyReceipt")?.ConfigValue;
+
+            var client = _httpClientFactory.CreateClient();
+
+            var requestBody = new Dictionary<string, object>
+            {
+                { "receipt-data", receiptData },
+                { "password", password }
+            };
+
+            var json = JsonConvert.SerializeObject(requestBody);
+
+            // 🔥 Production endpoint
+            var response = await client.PostAsync(ProdctionVerifyUrl, new StringContent(json, Encoding.UTF8, "application/json"));
+
+            var result = await response.Content.ReadAsStringAsync();
+            var data = JsonConvert.DeserializeObject<AppleVerifyResponse>(result);
+
+            // 🔥 Handle sandbox case
+            if (data?.status == 21007)
+            {
+                response = await client.PostAsync(SandboxVerifyUrl, new StringContent(json, Encoding.UTF8, "application/json"));
+
+                result = await response.Content.ReadAsStringAsync();
+                data = JsonConvert.DeserializeObject<AppleVerifyResponse>(result);
+            }
+
+            if (data?.status != 0)
+                return new AppleVerifyResult { IsValid = false };
+
+            var latest = data.receipt?.in_app?.LastOrDefault();
+
+            if (latest == null)
+                return new AppleVerifyResult { IsValid = false };
+
+            return new AppleVerifyResult
+            {
+                IsValid = true,
+                ProductId = latest.product_id
+            };
+        }
+        #endregion
     }
 }

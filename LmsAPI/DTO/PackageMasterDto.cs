@@ -4,6 +4,7 @@
     {
         public int PackageId { get; set; }
 
+        public string? ios_product_id { get; set; }
         public string? PackageCode { get; set; }
 
         //public string? PackageDisplayName { get; set; }

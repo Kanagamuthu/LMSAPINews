@@ -587,9 +587,9 @@ namespace LMSAPI.Repository
                 IsPurchased = first.PaymentOn != null || first.SubjectExpiryDate != null,
 
                 //17-12-2025
-                actualprice= first.ActualPrice,
-                discount= first.Discount??0,
-                dealname= first.Dealname,
+                actualprice = first.ActualPrice,
+                discount = first.Discount ?? 0,
+                dealname = first.Dealname,
 
 
                 SubjectMaster = new List<SubjectMasterDto>(),
@@ -834,6 +834,7 @@ namespace LMSAPI.Repository
                     .GroupBy(x => x.pm.PackageId)
                     .Select(p => new PackageMasterDto
                     {
+                        ios_product_id = "Apple_" + p.First().pm.PackageId,
                         PackageId = p.First().pm.PackageId,
                         PackageCode = p.First().pm.PackageCode,
                         PackageName = p.First().pm.PackageDisplayName,
@@ -841,7 +842,7 @@ namespace LMSAPI.Repository
                         CoverPath = p.First().pm.CoverPath,
 
                         //17-12-2025
-                        ActualPrice=p.First().pm.ActualPrice??null,
+                        ActualPrice = p.First().pm.ActualPrice ?? null,
                         discount = p.First().pm.Discount ?? 0,
                         dealname = p.First().pm.Dealname
 
@@ -982,7 +983,7 @@ namespace LMSAPI.Repository
                 CreatedDate = DateTime.Now,
                 OrderId = orderid.ToString(),
                 Status = status,
-                Amount= _context.TblPackageMasters.Where(p => p.PackageId == packageId).Select(p => p.SellingPrice).FirstOrDefault()
+                Amount = _context.TblPackageMasters.Where(p => p.PackageId == packageId).Select(p => p.SellingPrice).FirstOrDefault()
 
             };
             _context.CreateOrders.Add(order);
