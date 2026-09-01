@@ -33,7 +33,7 @@ namespace LMSAPI.Repository
             if (existingOtp == null)
             {
                 await _context.TblUserRandomPasses.AddAsync(otpRecord);
-                await _context.SaveChangesAsync();
+                return await _context.SaveChangesAsync() > 0;
             }
             else
             {
