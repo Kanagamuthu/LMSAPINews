@@ -861,7 +861,6 @@ namespace LmsAPI.Controllers
             var SAHistory = _context.TblUserSubjectActivationHistories.Where(x => x.UserId == userId).ToList();
             var CreateOrder = _context.CreateOrders.Where(x => x.CreatedBy == userId).ToList();
             var SupportTicket = _context.TblSupportTickets.Where(x => x.ReadBy == userId).ToList();
-            var ReadHistorie = _context.TblReadHistories.Where(x => x.Readby == userId).ToList();
             var readtimehistories = _context.ReadTimeHistories.Where(x => x.Readby == userId).ToList();
             if (SubscripeMaster.Count > 0)
                 _context.TblUserSubscribeMasters.RemoveRange(SubscripeMaster);
@@ -871,13 +870,19 @@ namespace LmsAPI.Controllers
                 _context.CreateOrders.RemoveRange(CreateOrder);
             if (SupportTicket.Count > 0)
                 _context.TblSupportTickets.RemoveRange(SupportTicket);
-            if (ReadHistorie.Count > 0)
-                _context.TblReadHistories.RemoveRange(ReadHistorie);
             if (readtimehistories.Count > 0)
                 _context.ReadTimeHistories.RemoveRange(readtimehistories);
 
             _context.SaveChanges();
             return Ok(new ApiResponse { Success = true, Message = "User has been successfully removed", Data = null });
+        }
+
+        [Authorize]
+        [HttpGet("GetBanner")]
+        public async Task<IActionResult> GetBanner()
+        {
+            var GetBannerUrl = _context.TblAppConfigs.FirstOrDefault(x => x.ConfigKey == "Banner")?.ConfigValue ?? "";
+            return Ok(new ApiResponse { Success = true, Message = "Banner URL Fetched Successfully", Data = GetBannerUrl });
         }
     }
 }
