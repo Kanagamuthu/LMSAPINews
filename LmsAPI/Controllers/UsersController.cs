@@ -547,6 +547,7 @@ namespace LmsAPI.Controllers
             }
             await _studentsRepository.TicketCreateAsync(newticket);
             await SendTicketRaiseEmail(_smtpSettings.UserName, newticket.StId, newticket.Subject, newticket.Message);
+            await SendTicketRaiseEmail(email, newticket.StId, newticket.Subject, newticket.Message);
             return Ok(new { success = true, message = "Ticket created", data = newticket, ErrorCode = "200" });
 
         }
