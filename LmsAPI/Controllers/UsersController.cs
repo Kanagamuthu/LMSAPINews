@@ -11,9 +11,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Net.Sockets;
 using System.Security.Claims;
 using System.Text;
 using static System.Net.WebRequestMethods;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LmsAPI.Controllers
 {
@@ -494,78 +496,78 @@ namespace LmsAPI.Controllers
             }
         }
 
-        [Authorize]
-        [HttpPost("TicketCreate")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> TicketCreate([FromBody] CreateTicketDto request)
-        {
-            var errors = new List<string>();
-            if (string.IsNullOrWhiteSpace(request.subject))
-                errors.Add("Subject is required.");
-            else if (string.IsNullOrWhiteSpace(request.message))
-                errors.Add("Message is required.");
+        //[Authorize]
+        //[HttpPost("TicketCreate")]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        //public async Task<IActionResult> TicketCreate([FromBody] CreateTicketDto request)
+        //{
+        //    var errors = new List<string>();
+        //    if (string.IsNullOrWhiteSpace(request.subject))
+        //        errors.Add("Subject is required.");
+        //    else if (string.IsNullOrWhiteSpace(request.message))
+        //        errors.Add("Message is required.");
 
-            if (errors.Any())
-                return Ok(new ApiResponse { Success = false, Message = string.Join(",", errors), ErrorCode = "400" });
+        //    if (errors.Any())
+        //        return Ok(new ApiResponse { Success = false, Message = string.Join(",", errors), ErrorCode = "400" });
 
-            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            if (email == null)
-                return NotFound(new { success = false, message = "User not found.", data = "", ErrorCode = "404" });
+        //    var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+        //    if (email == null)
+        //        return NotFound(new { success = false, message = "User not found.", data = "", ErrorCode = "404" });
 
-            var newticket = new TblSupportTicket
-            {
-                EmailId = email,
-                Subject = request.subject,
-                Message = request.message,
-                Createdon = DateTime.Now,
-                ActiveStatus = true,
-                ReadBy = Convert.ToInt32(userId)
-            };
-            async Task<string> SendTicketRaiseEmail(string toEmail, int ticketId, string subject, string description)
-            {
-                var template = await _context.EmailTemplates.Where(x => x.Name == "Ticket raised template" && x.Isdelete == true).FirstOrDefaultAsync();
+        //    var newticket = new TblSupportTicket
+        //    {
+        //        EmailId = email,
+        //        Subject = request.subject,
+        //        Message = request.message,
+        //        Createdon = DateTime.Now,
+        //        ActiveStatus = true,
+        //        ReadBy = Convert.ToInt32(userId)
+        //    };
+        //    async Task<string> SendTicketRaiseEmail(string toEmail, int ticketId, string subject, string description)
+        //    {
+        //        var template = await _context.EmailTemplates.Where(x => x.Name == "Ticket raised template" && x.Isdelete == true).FirstOrDefaultAsync();
 
-                if (template == null)
-                    return "Email template not found";
+        //        if (template == null)
+        //            return "Email template not found";
 
-                string body = template.Content;
+        //        string body = template.Content;
 
 
-                body = body.Replace("{TicketId}", ticketId.ToString());
-                body = body.Replace("{subject}", subject);
-                body = body.Replace("{description}", description);
+        //        body = body.Replace("{TicketId}", ticketId.ToString());
+        //        body = body.Replace("{subject}", subject);
+        //        body = body.Replace("{description}", description);
 
-                string emailSubject = template.Subject
-                    .Replace("{TicketId}", ticketId.ToString());
+        //        string emailSubject = template.Subject
+        //            .Replace("{TicketId}", ticketId.ToString());
 
-                await _emailService.SendEmailAsync(toEmail, emailSubject, body);
+        //        await _emailService.SendEmailAsync(toEmail, emailSubject, body);
 
-                return "Ticket Raise Email Sent Successfully";
-            }
-            await _studentsRepository.TicketCreateAsync(newticket);
-            await SendTicketRaiseEmail(_smtpSettings.UserName, newticket.StId, newticket.Subject, newticket.Message);
-            await SendTicketRaiseEmail(email, newticket.StId, newticket.Subject, newticket.Message);
-            return Ok(new { success = true, message = "Ticket created", data = newticket, ErrorCode = "200" });
+        //        return "Ticket Raise Email Sent Successfully";
+        //    }
+        //    await _studentsRepository.TicketCreateAsync(newticket);
+        //    await SendTicketRaiseEmail(_smtpSettings.UserName, newticket.StId, newticket.Subject, newticket.Message);
+        //    await SendTicketRaiseEmail(email, newticket.StId, newticket.Subject, newticket.Message);
+        //    return Ok(new { success = true, message = "Ticket created", data = newticket, ErrorCode = "200" });
 
-        }
+        //}
 
-        [Authorize]
-        [HttpGet("GetTicketsList")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetActiveTickets()
-        {
-            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var activeTickets = await _studentsRepository.GetTicketByEmailAsync(email);
-            //if (activeTickets.Count == 0)
-            //    return Ok(new ApiResponse(false, "No active tickets found.", "", "404"));
-            //else
-            return Ok(new ApiResponse(true, "Ticket fetched successfully", activeTickets, "200"));
-        }
+        //[Authorize]
+        //[HttpGet("GetTicketsList")]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        //public async Task<IActionResult> GetActiveTickets()
+        //{
+        //    var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    var activeTickets = await _studentsRepository.GetTicketByEmailAsync(email);
+        //    //if (activeTickets.Count == 0)
+        //    //    return Ok(new ApiResponse(false, "No active tickets found.", "", "404"));
+        //    //else
+        //    return Ok(new ApiResponse(true, "Ticket fetched successfully", activeTickets, "200"));
+        //}
 
         //04/11/2025
 
@@ -884,6 +886,160 @@ namespace LmsAPI.Controllers
         {
             var GetBannerUrl = _context.TblAppConfigs.FirstOrDefault(x => x.ConfigKey == "Banner")?.ConfigValue ?? "";
             return Ok(new ApiResponse { Success = true, Message = "Banner URL Fetched Successfully", Data = GetBannerUrl });
+        }
+
+
+        [Authorize]
+        [HttpPost("TicketCreate")]
+        public async Task<IActionResult> TicketCreate([FromBody] CreateTicketDto request)
+        {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(request.subject))
+                errors.Add("Subject is required.");
+            else if (string.IsNullOrWhiteSpace(request.message))
+                errors.Add("Message is required.");
+
+            if (errors.Any())
+                return Ok(new ApiResponse { Success = false, Message = string.Join(",", errors), ErrorCode = "400" });
+
+            var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? "0");
+            if (email == null)
+                return NotFound(new { success = false, message = "User not found.", data = "", ErrorCode = "404" });
+
+            var ticket = new SupportTicket
+            {
+                Subject = request.subject,
+                EmailId = email,
+                CreatedDate = DateTime.Now,
+                CreatedBy = userId,
+                Status = true
+            };
+
+            _context.SupportTickets.Add(ticket);
+
+            await _context.SaveChangesAsync();
+
+            // Create first message
+            var ticketMessage = new SupportTicketMessage
+            {
+                TicketId = ticket.TicketId,
+                SenderId = userId,
+                Sender = "user",
+                Message = request.message,
+                CreatedDate = DateTime.Now
+            };
+
+            _context.SupportTicketMessages.Add(ticketMessage);
+
+            await _context.SaveChangesAsync();
+
+            async Task<string> SendTicketRaiseEmail(string toEmail, int ticketId, string subject, string description)
+            {
+                var template = await _context.EmailTemplates.Where(x => x.Name == "Ticket raised template" && x.Isdelete == true).FirstOrDefaultAsync();
+
+                if (template == null)
+                    return "Email template not found";
+
+                string body = template.Content;
+
+
+                body = body.Replace("{TicketId}", ticketId.ToString());
+                body = body.Replace("{subject}", subject);
+                body = body.Replace("{description}", description);
+
+                string emailSubject = template.Subject
+                    .Replace("{TicketId}", ticketId.ToString());
+
+                await _emailService.SendEmailAsync(toEmail, emailSubject, body);
+
+                return "Ticket Raise Email Sent Successfully";
+            }
+            await SendTicketRaiseEmail(_smtpSettings.UserName, ticket.TicketId, ticket.Subject, ticketMessage.Message);
+            await SendTicketRaiseEmail(email, ticket.TicketId, ticket.Subject, ticketMessage.Message);
+            return Ok(new { success = true, message = "Ticket created", data = ticket, ErrorCode = "200" });
+
+        }
+
+        [Authorize]
+        [HttpGet("GetTicketsList")]
+        public async Task<IActionResult> GetTicketsList()
+        {
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? "0");
+            var tickets = await _context.SupportTickets.Where(x => x.CreatedBy == userId)
+                .Select(st => new TicketListDTO
+                {
+                    TicketId = st.TicketId,
+                    Subject = st.Subject,
+                    Status = st.Status == true ? "open" : "closed",
+
+                    Messages = _context.SupportTicketMessages
+                        .Where(stm => stm.TicketId == st.TicketId)
+                        .OrderBy(stm => stm.CreatedDate)
+                        .Select(stm => new TicketMessageDTO
+                        {
+                            Id = stm.Id,
+                            Sender = stm.Sender,
+                            Message = stm.Message,
+                            CreatedAt = stm.CreatedDate
+                        })
+                        .ToList()
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, message = "Ticket fetched successfully", data = tickets, ErrorCode = "200" });
+        }
+
+        [Authorize]
+        [HttpPost("TicketReply")]
+        public async Task<IActionResult> TicketReply([FromBody] TicketReplyDTO request)
+        {
+            if (request == null || request.ticketId <= 0)
+            {
+                return Ok(new ApiResponse { Success = false, Message = "Invalid TicketId.", ErrorCode = "400" });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.message))
+            {
+                return Ok(new ApiResponse { Success = false, Message = "Message is required.", ErrorCode = "400" });
+            }
+
+            var ticket = await _context.SupportTickets.FirstOrDefaultAsync(x => x.TicketId == request.ticketId);
+
+            if (ticket == null)
+            {
+                return Ok(new ApiResponse { Success = false, Message = "Ticket not found.", ErrorCode = "404" });
+            }
+
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? "0");
+            var sender = "user";
+
+            var reply = new SupportTicketMessage
+            {
+                TicketId = request.ticketId,
+                SenderId = userId,
+                Sender = sender,
+                Message = request.message,
+                CreatedDate = DateTime.Now
+            };
+
+            _context.SupportTicketMessages.Add(reply);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = "Reply added successfully.",
+                data = new
+                {
+                    id = reply.Id,
+                    ticketId = reply.TicketId,
+                    sender = reply.Sender,
+                    message = reply.Message,
+                    createdAt = reply.CreatedDate
+                }
+            });
         }
     }
 }

@@ -13,7 +13,7 @@ public partial class SubjectChapter
 
     public string ChapterCode { get; set; } = null!;
 
-    public string ChapterName { get; set; } = null!;
+    public string? ChapterName { get; set; }
 
     public string? ChapterDescription { get; set; }
 

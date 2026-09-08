@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LMSAPI.Models;
 
-public partial class LmsdbNewContext : DbContext
+public partial class ApplicationDbContext : DbContext
 {
-    public LmsdbNewContext()
+    public ApplicationDbContext()
     {
     }
 
-    public LmsdbNewContext(DbContextOptions<LmsdbNewContext> options)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
