@@ -99,6 +99,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ExceptionFilter>();
+    options.Filters.Add<RequestResponseLoggingFilter>();
     options.Filters.Add<TrialResponseFilter>();
 });
 
