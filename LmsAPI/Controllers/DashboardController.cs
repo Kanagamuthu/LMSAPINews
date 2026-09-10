@@ -973,7 +973,7 @@ namespace LMSAPI.Controllers
         // Sends the "Purchase confirmation template" mail after a payment has been verified.
         // Never throws: a mail failure must not fail an already-captured payment, so problems are
         // logged and reported back as a message instead.
-        public async Task<string> SendPurchaseEmailAsync(long? userId, int? packageId, string? orderId, string? paymentId, string? amountPaid)
+        private async Task<string> SendPurchaseEmailAsync(long? userId, int? packageId, string? orderId, string? paymentId, string? amountPaid)
         {
             try
             {
