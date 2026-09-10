@@ -39,9 +39,10 @@ namespace LMSAPI.Controllers
         private readonly IConfiguration _configuration;
         private readonly LmsdbNewContext _context;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly EmailService _emailService;
 
 
-        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository, IDistributedCache cache, IConfiguration configuration, LmsdbNewContext context, IHttpClientFactory httpClientFactory)
+        public DashboardController(ILoggerManager logger, IDashboardRepository dashboardRepository, IStudentsRepository studentsRepository, IDistributedCache cache, IConfiguration configuration, LmsdbNewContext context, IHttpClientFactory httpClientFactory, EmailService emailService)
         {
             _logger = logger;
             _dashboardRepository = dashboardRepository;
@@ -50,6 +51,7 @@ namespace LMSAPI.Controllers
             _configuration = configuration;
             _context = context;
             _httpClientFactory = httpClientFactory;
+            _emailService = emailService;
         }
 
         #region validate student is validate or not from session
@@ -764,6 +766,9 @@ namespace LMSAPI.Controllers
                 var subscriptionResult = await CreateSubscription(obj);
                 dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
                 var data = result?.Value?.Data;
+
+                await SendPurchaseEmailAsync(userId, res.PackageId, req.OrderId, req.PaymentId, res.Amount);
+
                 return Ok(new ApiResponse(true, "Payment verified successfully.", data, "200"));
             }
             return BadRequest(new ApiResponse(false, "Signature mismatch", null, "400"));
@@ -812,6 +817,8 @@ namespace LMSAPI.Controllers
                         var subscriptionResult = await CreateSubscription(obj);
                         dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
                         var data = result?.Value?.Data;
+
+                        await SendPurchaseEmailAsync(order.userId, res.PackageId, order.OrderId, Convert.ToString(req.id), res.Amount);
                     }
                 }
                 else
@@ -829,6 +836,7 @@ namespace LMSAPI.Controllers
 
             return Ok(new ApiResponse(true, "Payment verified successfully.", null, "200"));
         }
+
 
         [Authorize]
         [HttpPost("ReadTimeHistory")]
@@ -901,6 +909,10 @@ namespace LMSAPI.Controllers
             var subscriptionResult = await CreateSubscription(objs);
             dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
             var data = result?.Value?.Data;
+
+            // Apple has no Razorpay order id; the App Store transaction id is the payment reference.
+            await SendPurchaseEmailAsync(userId, PackageId, order.OrderId, req.transactionId, req.price);
+
             return Ok(new { success = true });
         }
 
@@ -952,6 +964,87 @@ namespace LMSAPI.Controllers
                 IsValid = true,
                 ProductId = latest.product_id
             };
+        }
+        #endregion
+
+
+
+        #region purchase confirmation mail
+        // Sends the "Purchase confirmation template" mail after a payment has been verified.
+        // Never throws: a mail failure must not fail an already-captured payment, so problems are
+        // logged and reported back as a message instead.
+        public async Task<string> SendPurchaseEmailAsync(long? userId, int? packageId, string? orderId, string? paymentId, string? amountPaid)
+        {
+            try
+            {
+                var template = await _context.EmailTemplates
+                    .Where(x => x.Name == "Purchase Confirmation" && x.Isdelete == true)
+                    .FirstOrDefaultAsync();
+
+                if (template == null)
+                    return "Purchase confirmation template not found";
+
+                var student = await _context.TblStudentUserMasters
+                    .FirstOrDefaultAsync(x => x.StudentUserId == userId);
+
+                if (student == null || string.IsNullOrWhiteSpace(student.EmailId))
+                    return "Student email not found";
+
+                var package = await _context.TblPackageMasters
+                    .FirstOrDefaultAsync(x => x.PackageId == packageId);
+
+                if (package == null)
+                    return "Package not found";
+
+                // Furthest expiry activated for this user against this package, plus the
+                // recorded payment time (CheckOrderStatus can poll well after the payment).
+                var activation = await (from usm in _context.TblUserSubscribeMasters
+                                        join sah in _context.TblUserSubjectActivationHistories
+                                            on usm.UserSubscribeMasterId equals sah.TusmId
+                                        where usm.UserId == userId && usm.PackageId == packageId
+                                        orderby sah.SubjectExpiryDate descending
+                                        select new { sah.SubjectExpiryDate, usm.PaymentOn }).FirstOrDefaultAsync();
+
+                var accessTill = activation?.SubjectExpiryDate;
+                var paymentOn = activation?.PaymentOn ?? DateTime.Now;
+
+                var packageName = package.PackageDisplayName ?? package.PackageName ?? "";
+                var sellingPrice = package.SellingPrice ?? "0";
+
+                string body = template.Content ?? "";
+                body = body.Replace("{userName}", Encode(student.Username ?? student.UserFirstName));
+                body = body.Replace("{PackageName}", Encode(packageName));
+                body = body.Replace("{PackageCode}", Encode(package.PackageCode));
+                body = body.Replace("{OrderId}", Encode(orderId));
+                body = body.Replace("{PaymentId}", Encode(paymentId));
+                body = body.Replace("{PaymentDate}", paymentOn.ToString("dd-MMM-yyyy"));
+                body = body.Replace("{AccessTill}", accessTill.HasValue ? accessTill.Value.ToString("dd-MMM-yyyy") : "-");
+                body = body.Replace("{Price}", Encode(sellingPrice));
+                body = body.Replace("{Total}", Encode(string.IsNullOrWhiteSpace(amountPaid) ? sellingPrice : amountPaid));
+
+                string emailSubject = (template.Subject ?? "Your LearnEngg purchase is confirmed")
+                    .Replace("{PackageName}", packageName)
+                    .Replace("{OrderId}", orderId ?? "-");
+
+                var sent = await _emailService.SendEmailAsync(student.EmailId.Trim(), emailSubject, body);
+                if (!sent)
+                {
+                    _logger.LogError($"Purchase confirmation mail failed to send. UserId: {userId}, PackageId: {packageId}, OrderId: {orderId}");
+                    return "Purchase confirmation email could not be sent";
+                }
+
+                _logger.LogInfo($"Purchase confirmation mail sent to {student.EmailId} for PackageId: {packageId}, OrderId: {orderId}");
+                return "Purchase confirmation email sent successfully";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error building purchase confirmation mail. UserId: {userId}, PackageId: {packageId}, OrderId: {orderId}");
+                return "Purchase confirmation email could not be sent";
+            }
+
+            // Values land inside HTML, so escape them rather than trusting the stored text.
+            static string Encode(string? value) =>
+                string.IsNullOrWhiteSpace(value) ? "-" : System.Net.WebUtility.HtmlEncode(value);
         }
         #endregion
     }
