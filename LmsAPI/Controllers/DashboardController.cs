@@ -100,6 +100,7 @@ namespace LMSAPI.Controllers
                 string.IsNullOrWhiteSpace(obj.department_name)  ? "Department is required." : null,
                 string.IsNullOrWhiteSpace(obj.batchyear)  ? "Batch year is required." : null,
                 string.IsNullOrWhiteSpace(obj.collegename)  ? "College name is required." : null,
+                string.IsNullOrWhiteSpace(obj.country)  ? "Country is required." : null,
 
             };
 
@@ -110,7 +111,13 @@ namespace LMSAPI.Controllers
             if (errors.Count > 0)
                 return Ok(new ApiResponse { Success = false, Message = string.Join(", ", errors), Data = "", ErrorCode = "400" });
             var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(email))
+                return Ok(new ApiResponse { Success = false, Message = "User not found.", Data = "", ErrorCode = "404" });
+
             var result = await _dashboardRepository.PostRegisterStudentTradeDepartment(email, obj);
+            if (result == null)
+                return Ok(new ApiResponse { Success = false, Message = "Student not found.", Data = "", ErrorCode = "404" });
+
             return Ok(new ApiResponse { Success = true, Message = "Education details added successfully.", Data = result, ErrorCode = "200" });
 
         }
@@ -743,6 +750,16 @@ namespace LMSAPI.Controllers
         {
             var educationTypeList = await _dashboardRepository.GetEducationTypeListAsync();
             return Ok(new ApiResponse(true, "Education type list fetched successfully.", educationTypeList, ""));
+        }
+        #endregion
+
+        #region get country list
+        [Authorize]
+        [HttpGet("GetCountryList")]
+        public async Task<IActionResult> GetCountryList()
+        {
+            var countryList = await _dashboardRepository.GetCountryListAsync();
+            return Ok(new ApiResponse(true, "Country list fetched successfully.", countryList, "200"));
         }
         #endregion
 

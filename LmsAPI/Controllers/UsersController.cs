@@ -490,6 +490,11 @@ namespace LmsAPI.Controllers
                     return Ok(new ApiResponse { Success = false, Message = "Name is required.", ErrorCode = "400" });
                 }
 
+                if (string.IsNullOrWhiteSpace(request.country))
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "Country is required.", ErrorCode = "400" });
+                }
+
                 // Update only required fields. CreatedOn is the account creation stamp that the
                 // trial calculation depends on, so a profile edit must not touch it.
                 student.Username = request.studentname;
@@ -498,6 +503,9 @@ namespace LmsAPI.Controllers
                 student.DepartmentName = request.department;
                 student.EduType = request.educationtype;
                 student.Batchyear = string.IsNullOrEmpty(request.batch) ? null : request.batch;
+                student.City = request.city;
+                student.State = request.state;
+                student.Country = request.country;
 
                 // Update in DB
                 bool is_updated = await _studentsRepository.UpdateStudentAsync(student);
@@ -519,6 +527,9 @@ namespace LmsAPI.Controllers
                     student.DepartmentName,
                     EduType = student.EduType?.ToString(),
                     Batchyear = student.Batchyear?.ToString(),
+                    student.City,
+                    student.State,
+                    student.Country,
                     student.CountryCode,
                     student.AccActiveOn,
                     student.Istrail

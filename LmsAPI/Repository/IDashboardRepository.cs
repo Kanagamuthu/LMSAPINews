@@ -54,6 +54,9 @@ namespace LMSAPI.Repository
 
         Task<List<EducationListDto>> GetEducationTypeListAsync();
 
+        //country dropdown from Tbl_CountriesCode
+        Task<List<CountryListDto>> GetCountryListAsync();
+
         //get department by education type id
         Task<List<DepartmentMasterDto>> GetDepartmentByEduTypeIdAsync(int eduTypeId);
 

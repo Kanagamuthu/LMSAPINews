@@ -48,4 +48,8 @@ public partial class TblStudentUserMaster
     public bool? Istrail { get; set; }
 
     public DateTime? TrailExpiryDate { get; set; }
+
+    public string? City { get; set; }
+
+    public string? State { get; set; }
 }

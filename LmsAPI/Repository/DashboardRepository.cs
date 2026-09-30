@@ -183,6 +183,9 @@ namespace LMSAPI.Repository
             student.Collegename = studentTradeDepartmentDTO.collegename;
             student.EduType = studentTradeDepartmentDTO.edutype;
             student.Batchyear = studentTradeDepartmentDTO.batchyear;
+            student.City = studentTradeDepartmentDTO.city;
+            student.State = studentTradeDepartmentDTO.state;
+            student.Country = studentTradeDepartmentDTO.country;
             //student.TradeId = studentTradeDepartmentDTO.TradeId;
 
             // mark entity as modified and save
@@ -775,6 +778,24 @@ namespace LMSAPI.Repository
                 Id = item.DepartmentId,
                 Department_name = item.DepartmentName
             }).ToList();
+        }
+
+        /// <summary>
+        /// Country dropdown, ordered by name. Sourced from Tbl_CountriesCode - the same
+        /// table GetFlags uses for dial codes.
+        /// </summary>
+        public async Task<List<CountryListDto>> GetCountryListAsync()
+        {
+            return await _context.TblCountriesCodes
+                .OrderBy(c => c.CName)
+                .Select(c => new CountryListDto
+                {
+                    id = c.Id,
+                    name = c.CName,
+                    //country_code = c.CCode,
+                    //dial_code = c.DialCode
+                })
+                .ToListAsync();
         }
 
         public async Task<List<EducationListDto>> GetEducationTypeListAsync()
