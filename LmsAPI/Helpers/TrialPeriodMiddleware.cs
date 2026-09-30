@@ -38,10 +38,16 @@ namespace LMSAPI.Helpers
                                 var student = await studentsRepository.GetStudentByEmailAsync(email);
                                 if (student != null && student.AccActiveOn.HasValue)
                                 {
-                                    var trialDays = await studentsRepository.GetTrialPeriodDaysAsync();
-                                    var activationDate = student.AccActiveOn.Value.Date;
-                                    var daysSinceActivation = (DateTime.Now.Date - activationDate).Days;
-                                    int daysLeft = trialDays - daysSinceActivation;
+                                    //var trialDays = await studentsRepository.GetTrialPeriodDaysAsync();  
+                                    //var activationDate = student.AccActiveOn.Value.Date;
+                                    //var daysSinceActivation = (DateTime.Now.Date - activationDate).Days;
+                                    //int daysLeft = trialDays - daysSinceActivation;
+
+
+                                    var expiryDate = student.TrailExpiryDate.Value.Date;
+                                    var today = DateTime.Now.Date;
+
+                                    var daysLeft = (expiryDate - today).Days;
                                     if (daysLeft <= 0)
                                     {
                                         // trial expired

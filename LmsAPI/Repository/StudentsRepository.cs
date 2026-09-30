@@ -98,18 +98,39 @@ namespace LMSAPI.Repository
             return true;
 
         }
+        /// <summary>
+        /// Consumes the user's current OTP so it can never validate again.
+        /// Previously this saved the row without changing a property, which was a no-op.
+        /// </summary>
         public async Task<bool> UpdateOtpAsync(int userId)
         {
 
             var otpRecords = await _context.TblUserRandomPasses.OrderByDescending(x => x.GeneratedTime).Where(o => o.UserId == userId).FirstOrDefaultAsync();
             if (otpRecords != null)
             {
+                // verification_code is NOT NULL, so blank it rather than nulling it.
+                // A submitted OTP is never blank, so a consumed row can no longer match.
+                otpRecords.VerificationCode = string.Empty;
                 _context.TblUserRandomPasses.Update(otpRecords);
                 await _context.SaveChangesAsync();
             }
 
             return true;
 
+        }
+
+        /// <summary>
+        /// Minutes an OTP stays valid, from the 'otpexpiryinmin' application config key.
+        /// Falls back to 10 when the key is missing or unparseable.
+        /// </summary>
+        public async Task<int> GetOtpExpiryMinutesAsync()
+        {
+            var value = await _context.TblAppConfigs
+                .Where(x => x.ConfigKey == "otpexpiryinmin")
+                .Select(x => x.ConfigValue)
+                .FirstOrDefaultAsync();
+
+            return int.TryParse(value, out int minutes) && minutes > 0 ? minutes : 10;
         }
         public async Task<bool> GetStudentTokenAsync(string token)
         {
@@ -189,10 +210,24 @@ namespace LMSAPI.Repository
 
         }
 
+        /// <summary>
+        /// Validates a login OTP. Applies the same expiry rule as the activation path and
+        /// filters on the action/user type the OTP was issued for.
+        /// </summary>
         public async Task<bool> ValidateOtpAsync(int userId, string otp)
         {
+            if (string.IsNullOrWhiteSpace(otp))
+                return false;
 
-            return await _context.TblUserRandomPasses.AnyAsync(o => o.UserId == userId && o.VerificationCode == otp);
+            var expiryMinutes = await GetOtpExpiryMinutesAsync();
+            var cutoff = DateTime.Now.AddMinutes(-expiryMinutes);
+
+            return await _context.TblUserRandomPasses.AnyAsync(
+                o => o.UserId == userId
+                     && o.VerificationCode == otp
+                     && o.ActionType == 1
+                     && o.UserType == 2
+                     && o.GeneratedTime >= cutoff);
 
         }
 

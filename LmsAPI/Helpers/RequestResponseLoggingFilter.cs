@@ -27,7 +27,7 @@ namespace LMSAPI.Helpers
                 var action = context.RouteData.Values["action"]?.ToString() ?? "";
 
                 string arguments;
-                try { arguments = JsonSerializer.Serialize(context.ActionArguments); }
+                try { arguments = JsonSerializer.Serialize(Sanitize(context.ActionArguments)); }
                 catch { arguments = "(unavailable)"; }
 
                 var entry =
@@ -107,13 +107,68 @@ namespace LMSAPI.Helpers
             }
         }
 
+        // Values that must never reach a plain-text log file.
+        private static readonly string[] SensitiveKeys =
+            { "otp", "verificationcode", "password", "token", "accesstoken", "signature", "receipt", "secret" };
+
+        /// <summary>
+        /// Replaces the value of any sensitive-looking property with a mask, so OTPs and
+        /// tokens are not written to the request log.
+        /// </summary>
+        private static Dictionary<string, object?> Sanitize(IDictionary<string, object?> args)
+        {
+            var clean = new Dictionary<string, object?>();
+
+            foreach (var kv in args)
+            {
+                if (kv.Value == null) { clean[kv.Key] = null; continue; }
+
+                if (IsSensitive(kv.Key)) { clean[kv.Key] = "***"; continue; }
+
+                var type = kv.Value.GetType();
+                if (type.IsPrimitive || kv.Value is string || kv.Value is DateTime || kv.Value is decimal)
+                {
+                    clean[kv.Key] = kv.Value;
+                    continue;
+                }
+
+                // Complex model: mask sensitive properties one level down.
+                var masked = new Dictionary<string, object?>();
+                foreach (var prop in type.GetProperties())
+                {
+                    if (!prop.CanRead) continue;
+                    object? value;
+                    try { value = prop.GetValue(kv.Value); } catch { value = "(unreadable)"; }
+                    masked[prop.Name] = IsSensitive(prop.Name) && value != null ? "***" : value;
+                }
+                clean[kv.Key] = masked;
+            }
+
+            return clean;
+        }
+
+        private static bool IsSensitive(string name)
+        {
+            var n = name.Replace("_", "").ToLowerInvariant();
+            foreach (var s in SensitiveKeys)
+                if (n.Contains(s)) return true;
+            return false;
+        }
+
+        // One process-wide gate: File.AppendAllText from concurrent requests otherwise
+        // throws on a locked file and the entry is silently dropped by the outer catch.
+        private static readonly object _logGate = new object();
+
         private void AppendLog(string entry)
         {
             var documentPath = _configuration.GetSection("DocumentPath")?.Value ?? Directory.GetCurrentDirectory();
             var logFolder = Path.Combine(documentPath, "Logs");
             Directory.CreateDirectory(logFolder);
             var logFile = Path.Combine(logFolder, $"RequestLog_{DateTime.Now:yyyy-MM-dd}.txt");
-            File.AppendAllText(logFile, entry);
+            lock (_logGate)
+            {
+                File.AppendAllText(logFile, entry);
+            }
         }
     }
 }

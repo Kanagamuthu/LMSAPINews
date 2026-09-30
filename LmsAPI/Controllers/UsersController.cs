@@ -6,6 +6,7 @@ using LMSAPI.Repository;
 using log4net.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -49,6 +50,7 @@ namespace LmsAPI.Controllers
         }
 
         #region student register
+        [EnableRateLimiting("auth")]
         [HttpPost("RegisterStudent")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -116,13 +118,15 @@ namespace LmsAPI.Controllers
                 await SendOtpEmailAsync(existing.EmailId, existing.StudentUserId.ToString(), otpRecord.VerificationCode);
                 //   await _emailService.SendEmailAsync(existing.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
                 // TODO: send OTP via email (using a mail service)
-                return Ok(new ApiResponse { Success = true, Message = "OTP again sent to your email", Data = _againotp });
+                // The OTP is delivered by email only - never in the response body.
+                return Ok(new ApiResponse { Success = true, Message = "OTP again sent to your email", Data = null });
             }
         }
 
         #endregion
 
         #region student login
+        [EnableRateLimiting("auth")]
         [HttpPost("Student-login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -152,7 +156,8 @@ namespace LmsAPI.Controllers
                     {
                         Success = false,
                         Message = "Login attempt from a different device. do you want login?",
-                        Data = student,
+                        // Only what the prompt needs - never the account row or its token.
+                        Data = new { Username = student?.Username, EmailId = student?.EmailId },
                         ErrorCode = "403"
                     });
                 }
@@ -182,7 +187,8 @@ namespace LmsAPI.Controllers
                         _logger.LogInfo($"Sending OTP to email (from user controller): {student.EmailId}");
                         await SendOtpEmailAsync(student.EmailId, student.StudentUserId.ToString(), otpRecord.VerificationCode);
                         //   await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
-                        return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = _againotp });
+                        // The OTP is delivered by email only - never in the response body.
+                        return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email", Data = null });
                     }
                     //bool is_saved = await _studentsRepository.SaveOtpAsync(otpRecord);
                     ////validate db otp save or not
@@ -223,7 +229,8 @@ namespace LmsAPI.Controllers
                     {
                         Success = false,
                         Message = "Login attempt from a different device. do you want login?",
-                        Data = student,
+                        // Only what the prompt needs - never the account row or its token.
+                        Data = new { Username = student?.Username, EmailId = student?.EmailId },
                         ErrorCode = "403"
                     });
                 }
@@ -243,6 +250,7 @@ namespace LmsAPI.Controllers
         #endregion
 
         #region Validate OTP
+        [EnableRateLimiting("auth")]
         [HttpPost("ValidateOtp")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -277,8 +285,10 @@ namespace LmsAPI.Controllers
             student.ActiveStatus = 1;
             if (student.AccActiveOn == null)
             {
+                var trialDays = await _studentsRepository.GetTrialPeriodDaysAsync();
                 student.Istrail = true;
                 student.AccActiveOn = DateTime.Now;
+                student.TrailExpiryDate = DateTime.Now.AddDays(trialDays);
             }
             var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
             student.Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
@@ -475,14 +485,19 @@ namespace LmsAPI.Controllers
                 {
                     return Ok(new ApiResponse { Success = false, Message = "Student not found", ErrorCode = "404" });
                 }
-                // Update only required fields
+                if (string.IsNullOrWhiteSpace(request.studentname))
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "Name is required.", ErrorCode = "400" });
+                }
+
+                // Update only required fields. CreatedOn is the account creation stamp that the
+                // trial calculation depends on, so a profile edit must not touch it.
                 student.Username = request.studentname;
                 student.UserFirstName = request.studentname;
                 student.Collegename = request.collegename;
                 student.DepartmentName = request.department;
                 student.EduType = request.educationtype;
                 student.Batchyear = string.IsNullOrEmpty(request.batch) ? null : request.batch;
-                student.CreatedOn = DateTime.Now;
 
                 // Update in DB
                 bool is_updated = await _studentsRepository.UpdateStudentAsync(student);
@@ -492,7 +507,24 @@ namespace LmsAPI.Controllers
                     return Ok(new ApiResponse { Success = false, Message = "Failed to update profile. Please try again.", ErrorCode = "500" });
                 }
 
-                return Ok(new ApiResponse { Success = true, Message = "Profile updated successfully", Data = student, ErrorCode = "200" });
+                // Project the profile - the entity carries the session token, which must not be echoed.
+                var updated = new
+                {
+                    StudentUserId = student.StudentUserId.ToString(),
+                    student.UserFirstName,
+                    student.Username,
+                    student.EmailId,
+                    student.Mobile,
+                    student.Collegename,
+                    student.DepartmentName,
+                    EduType = student.EduType?.ToString(),
+                    Batchyear = student.Batchyear?.ToString(),
+                    student.CountryCode,
+                    student.AccActiveOn,
+                    student.Istrail
+                };
+
+                return Ok(new ApiResponse { Success = true, Message = "Profile updated successfully", Data = updated, ErrorCode = "200" });
             }
         }
 
@@ -572,6 +604,7 @@ namespace LmsAPI.Controllers
         //04/11/2025
 
         #region re-generate OPT
+        [EnableRateLimiting("auth")]
         [HttpPost("RegenerateOtp")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -612,7 +645,8 @@ namespace LmsAPI.Controllers
                 _logger.LogInfo($"OTP regenerated for email ID: {student.EmailId}");
                 await ResendOtpEmailAsync(student.EmailId, student.Username, otpRecord.VerificationCode);
                 //  await _emailService.SendEmailAsync(student.EmailId, "Your New OTP Code", $"Your new OTP code is: {otp}");
-                return Ok(new ApiResponse(true, "New OTP sent to your email ID", otpRecord.VerificationCode));
+                // The OTP is delivered by email only - never in the response body.
+                return Ok(new ApiResponse(true, "New OTP sent to your email ID", null));
 
             }
 
@@ -622,6 +656,7 @@ namespace LmsAPI.Controllers
 
         #endregion
 
+        [EnableRateLimiting("auth")]
         [HttpPost("RefreshToken")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -631,14 +666,29 @@ namespace LmsAPI.Controllers
             if (string.IsNullOrEmpty(model.AccessToken))
                 return Ok(new ApiResponse(false, "Token is required", "", "400"));
 
-            string tokendecoded = Encoding.UTF8.GetString(Convert.FromBase64String(model.AccessToken));
-            var principal = _jwtTokenService.GetPrincipalFromExpiredToken(tokendecoded);
+            string tokendecoded;
+            System.Security.Claims.ClaimsPrincipal principal;
+            try
+            {
+                tokendecoded = Encoding.UTF8.GetString(Convert.FromBase64String(model.AccessToken));
+                principal = _jwtTokenService.GetPrincipalFromExpiredToken(tokendecoded);
+            }
+            catch
+            {
+                return Unauthorized(new ApiResponse(false, "Invalid token", "", "401"));
+            }
+
             var userId = principal.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
 
             var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(x => x.StudentUserId.ToString() == userId);
 
             if (student == null)
                 return Unauthorized(new ApiResponse(false, "Invalid student", "", "401"));
+
+            // The presented token must still be the one on record. Without this check a token
+            // that was revoked by logout could be exchanged for a fresh one indefinitely.
+            if (string.IsNullOrEmpty(student.Token) || student.Token != model.AccessToken)
+                return Unauthorized(new ApiResponse(false, "Token expired or not found", "", "401"));
 
             var token = _jwtTokenService.GenerateToken(student.EmailId, student.StudentUserId.ToString(), student.Username);
             string base64Encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
@@ -648,6 +698,7 @@ namespace LmsAPI.Controllers
         }
 
         #region validate email id, device id wether same device or not
+        [Authorize]
         [HttpPost("Validate-Device")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -681,6 +732,7 @@ namespace LmsAPI.Controllers
 
 
         #region otp generation
+        [EnableRateLimiting("auth")]
         [HttpPost("Generate-OTP")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -720,12 +772,14 @@ namespace LmsAPI.Controllers
             {
                 await ResendOtpEmailAsync(student.EmailId, student.Username, otpRecord.VerificationCode);
                 // await _emailService.SendEmailAsync(student.EmailId, "Your OTP Code", $"Your OTP code is: {_againotp}");
-                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email ID", Data = _againotp, ErrorCode = "200" });
+                // The OTP is delivered by email only - never in the response body.
+                return Ok(new ApiResponse { Success = true, Message = "OTP sent to your email ID", Data = null, ErrorCode = "200" });
             }
         }
         #endregion
 
         #region login
+        [EnableRateLimiting("auth")]
         [HttpPost("Enter-OTP")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -757,6 +811,10 @@ namespace LmsAPI.Controllers
             {
                 return Ok(new ApiResponse(false, "Failed to update device information.", "", "500"));
             }
+
+            // Consume the OTP so it cannot be replayed after a successful login.
+            await _studentsRepository.UpdateOtpAsync((int)student.StudentUserId);
+
             // If we reach here, the login is successful
             SetStudentSession(student);
 
@@ -896,7 +954,7 @@ namespace LmsAPI.Controllers
             var errors = new List<string>();
             if (string.IsNullOrWhiteSpace(request.subject))
                 errors.Add("Subject is required.");
-            else if (string.IsNullOrWhiteSpace(request.message))
+            if (string.IsNullOrWhiteSpace(request.message))
                 errors.Add("Message is required.");
 
             if (errors.Any())
@@ -944,9 +1002,11 @@ namespace LmsAPI.Controllers
                 string body = template.Content;
 
 
+                // Ticket text is user input landing inside HTML - encode it, or a stray tag
+                // breaks the mail layout and a script tag rides into the support mailbox.
                 body = body.Replace("{TicketId}", ticketId.ToString());
-                body = body.Replace("{subject}", subject);
-                body = body.Replace("{description}", description);
+                body = body.Replace("{subject}", System.Net.WebUtility.HtmlEncode(subject ?? ""));
+                body = body.Replace("{description}", System.Net.WebUtility.HtmlEncode(description ?? ""));
 
                 string emailSubject = template.Subject
                     .Replace("{TicketId}", ticketId.ToString());

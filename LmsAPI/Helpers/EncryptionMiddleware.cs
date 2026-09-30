@@ -85,10 +85,20 @@ namespace LMSAPI.Helpers
                 newResponseBody.Seek(0, SeekOrigin.Begin);
                 await originalBodyStream.WriteAsync(responseBytes, 0, responseBytes.Length);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                context.Response.StatusCode = 500;
-                await context.Response.WriteAsync($"{{\"error\": \"Encryption failed: {ex.Message}\"}}");
+                // Write to the real response stream, not the buffer we are about to discard,
+                // otherwise the client receives an empty body with no explanation.
+                context.Response.Body = originalBodyStream;
+                if (!context.Response.HasStarted)
+                {
+                    context.Response.StatusCode = 500;
+                    context.Response.ContentType = "application/json";
+                    var payload = Encoding.UTF8.GetBytes(
+                        "{\"success\":false,\"message\":\"Encryption failed.\",\"data\":null,\"errorCode\":\"500\"}");
+                    context.Response.ContentLength = payload.Length;
+                    await originalBodyStream.WriteAsync(payload, 0, payload.Length);
+                }
             }
             finally
             {

@@ -16,9 +16,14 @@ namespace LMSAPI.Helpers
         {
             _logger.LogError(context.Exception, "Unhandled exception occurred in API");
 
+            // The detail stays in the log. Returning the raw exception message leaks SQL,
+            // schema and file paths to the caller.
             context.Result = new ObjectResult(new ApiResponse
             {
-                Message = context.Exception.InnerException?.Message !=null? context.Exception.InnerException?.Message: context.Exception.Message,
+                Success = false,
+                Message = "An unexpected error occurred. Please try again.",
+                Data = null,
+                ErrorCode = "500"
             })
             {
                 StatusCode = 500

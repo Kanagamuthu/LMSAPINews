@@ -46,4 +46,6 @@ public partial class TblStudentUserMaster
     public string? Token { get; set; }
 
     public bool? Istrail { get; set; }
+
+    public DateTime? TrailExpiryDate { get; set; }
 }

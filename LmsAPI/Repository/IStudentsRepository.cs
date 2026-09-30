@@ -12,8 +12,10 @@ namespace LMSAPI.Repository
         Task<TblUserRandomPass?> GetLatestOtpAsync(int userId, int actionType, int userType);
         //update student status
         Task<bool> UpdateStudentAsync(TblStudentUserMaster student);
-        //delete otp
+        //consume otp so it cannot be replayed
         Task<bool> UpdateOtpAsync(int userId);
+        //minutes an OTP stays valid (app config 'otpexpiryinmin')
+        Task<int> GetOtpExpiryMinutesAsync();
         //get trail period days
         Task<int> GetTrialPeriodDaysAsync();
         Task<bool> GetStudentTokenAsync(string token);

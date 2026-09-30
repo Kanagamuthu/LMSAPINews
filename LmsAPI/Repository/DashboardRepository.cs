@@ -175,6 +175,9 @@ namespace LMSAPI.Repository
 
             var student = await _context.TblStudentUserMasters.FirstOrDefaultAsync(s => s.EmailId == userEmail);
 
+            if (student == null)
+                return null;
+
             // update the department
             student.DepartmentName = studentTradeDepartmentDTO.department_name;
             student.Collegename = studentTradeDepartmentDTO.collegename;
@@ -531,7 +534,9 @@ namespace LMSAPI.Repository
 
         public async Task<PackageDetailsDTO> GetPackageDetails(string packageId, int userId)
         {
-            long pkgId = Convert.ToInt64(packageId);
+            // Client-supplied value: a non-numeric id must read as "not found", not throw.
+            if (!long.TryParse(packageId, out long pkgId))
+                return null;
 
             var data = await (
                 from pm in _context.TblPackageMasters
@@ -584,7 +589,11 @@ namespace LMSAPI.Repository
                 PaymentOn = first.PaymentOn,
                 TransactionType = first.TransactionType,
                 SubjectExpiryDate = first.SubjectExpiryDate,
-                IsPurchased = first.PaymentOn != null || first.SubjectExpiryDate != null,
+                // Access that has lapsed is not a purchase any more - the client needs to
+                // offer a renewal rather than show the package as owned.
+                IsPurchased = (first.PaymentOn != null || first.SubjectExpiryDate != null)
+                              && (first.SubjectExpiryDate == null
+                                  || first.SubjectExpiryDate.Value.Date >= DateTime.Now.Date),
 
                 //17-12-2025
                 actualprice = first.ActualPrice,

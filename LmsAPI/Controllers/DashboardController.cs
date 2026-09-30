@@ -344,7 +344,7 @@ namespace LMSAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateSubscription(PaymentPayload model)
         {
-            string Message = ""; var errors = new List<string>();
+            var errors = new List<string>();
 
             if (string.IsNullOrWhiteSpace(model.Type))
                 errors.Add("Type is required.");
@@ -354,20 +354,66 @@ namespace LMSAPI.Controllers
             if (errors.Any())
                 return Ok(new ApiResponse { Success = false, Message = string.Join(",", errors), ErrorCode = "400" });
 
+            var callerId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? "0");
+
+            // A subscription may only follow a payment this API has already verified.
+            // Verify, CheckOrderStatus and AppleVerify each mark the order 'successful'
+            // before activating; a direct call from a client has no such order and is refused.
+            // Without this gate the request body's PaymentStatus alone unlocked paid content.
+            var verifiedOrder = await _context.CreateOrders
+                .Where(o => o.CreatedBy == (int)callerId
+                            && o.PackageId == model.packageId
+                            && o.Status == "successful")
+                .OrderByDescending(o => o.Id)
+                .FirstOrDefaultAsync();
+
+            if (verifiedOrder == null)
+            {
+                _logger.LogWarn($"CreateSubscription refused: no verified payment. UserId {callerId}, PackageId {model.packageId}");
+                return Ok(new ApiResponse
+                {
+                    Success = false,
+                    Message = "No verified payment found for this package.",
+                    ErrorCode = "402"
+                });
+            }
+
+            return await ActivateSubscriptionAsync(model, callerId, verifiedOrder.Amount, verifiedOrder.PaymentId);
+        }
+
+        /// <summary>
+        /// Writes the subscription and its subject activation history. Called directly by the
+        /// gateway handlers once they have verified the payment, so the user id and the amount
+        /// are passed in rather than read from the request body.
+        /// </summary>
+        private async Task<IActionResult> ActivateSubscriptionAsync(
+            PaymentPayload model, long userId, string amountPaid, string paymentRef)
+        {
+            string Message = "";
+
             var getpaymentPackage = await _dashboardRepository.GetpaymentPackage(model.packageId ?? 0);
-            var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
-            //if (model.Type.ToLower() == "insert")
-            //{
+            var package = getpaymentPackage?.FirstOrDefault();
+
+            if (package?.subjectmaster == null || package.subjectmaster.Count == 0)
+            {
+                _logger.LogWarn($"ActivateSubscription: package {model.packageId} has no subjects or does not exist.");
+                return Ok(new ApiResponse
+                {
+                    Success = false,
+                    Message = "No package found with the given PackageId.",
+                    ErrorCode = "404"
+                });
+            }
+
             TblUserSubscribeMaster obj = new TblUserSubscribeMaster();
             obj.UserId = userId;
             obj.PackageId = model.packageId;
-            //obj.Amount = getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
-            obj.Amount = !string.IsNullOrEmpty(model.price) ? model.price : getpaymentPackage?.FirstOrDefault()?.packagemaster.SellingPrice;
+            obj.Amount = !string.IsNullOrEmpty(amountPaid) ? amountPaid : package.packagemaster.SellingPrice;
             obj.CreatedOn = DateTime.Now;
             obj.TransactionType = "Pay";
             obj.PaymentOn = DateTime.Now;
-            obj.PaymentRefNo = model.PaymentRefNo;
-            obj.PaymentStatus = model.PaymentStatus;
+            obj.PaymentRefNo = !string.IsNullOrEmpty(paymentRef) ? paymentRef : model.PaymentRefNo;
+            obj.PaymentStatus = "success";
 
             await _dashboardRepository.AddUserSubscribeMasterAsync(obj);
             //Message = "Subscription created successfully.";
@@ -384,10 +430,10 @@ namespace LMSAPI.Controllers
 
             List<TblUserSubjectActivationHistory> obj2 = new List<TblUserSubjectActivationHistory>();
 
-            foreach (var item in getpaymentPackage?.FirstOrDefault()?.subjectmaster)
+            foreach (var item in package.subjectmaster)
             {
                 TblUserSubjectActivationHistory obj1 = new TblUserSubjectActivationHistory();
-                var DepartmentId = getpaymentPackage?.FirstOrDefault()?.packagedetails.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
+                var DepartmentId = package.packagedetails.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
                 obj1.TusmId = obj.UserSubscribeMasterId;
                 obj1.SubjectId = Convert.ToInt32(item.SubjectId);
                 obj1.SubjectCode = item.SubjectCode;
@@ -395,20 +441,15 @@ namespace LMSAPI.Controllers
                 obj1.SubjectVersion = item.SubjectVersion;
                 obj1.UserId = Convert.ToInt32(userId);
                 obj1.DepartmentId = DepartmentId;
-                if (model.PaymentStatus.ToLower() == "success")
-                {
-                    obj1.SubjectExpiryDate = DateTime.Now.AddDays(getpaymentPackage?.FirstOrDefault()?.packagemaster.PackageDurationDays ?? 0);
-                    obj1.ActivatedOn = DateTime.Now;
-                    obj1.ActivatedBy = Convert.ToInt32(userId);
-                }
+                obj1.SubjectExpiryDate = DateTime.Now.AddDays(package.packagemaster.PackageDurationDays ?? 0);
+                obj1.ActivatedOn = DateTime.Now;
+                obj1.ActivatedBy = Convert.ToInt32(userId);
                 obj2.Add(obj1);
             }
 
             await _dashboardRepository.AddUserSubjectActivationHistoryAsync(obj2);
             Message = "Subscription Added successfully";
             return Ok(new ApiResponse(true, Message, obj, ""));
-
-            //}
         }
         #endregion
 
@@ -614,6 +655,33 @@ namespace LMSAPI.Controllers
             var getpaymentPackage = await _dashboardRepository.GetpaymentPackage(model.packageId ?? 0);
             var userId = Convert.ToInt64(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
 
+            var trialPackage = getpaymentPackage?.FirstOrDefault();
+            if (trialPackage?.subjectmaster == null || trialPackage.subjectmaster.Count == 0)
+            {
+                return Ok(new ApiResponse
+                {
+                    Success = false,
+                    Message = "No package found with the given PackageId.",
+                    ErrorCode = "404"
+                });
+            }
+
+            // A trial is once per package per user - otherwise it can be re-claimed indefinitely.
+            var alreadyTrialled = await _context.TblUserSubscribeMasters
+                .AnyAsync(x => x.UserId == userId
+                               && x.PackageId == model.packageId
+                               && x.TransactionType == "Trail");
+
+            if (alreadyTrialled)
+            {
+                return Ok(new ApiResponse
+                {
+                    Success = false,
+                    Message = "A trial has already been used for this package.",
+                    ErrorCode = "409"
+                });
+            }
+
             TblUserSubscribeMaster obj = new TblUserSubscribeMaster();
             obj.UserId = userId;
             obj.PackageId = model.packageId;
@@ -627,10 +695,10 @@ namespace LMSAPI.Controllers
 
             List<TblUserSubjectActivationHistory> obj2 = new List<TblUserSubjectActivationHistory>();
 
-            foreach (var item in getpaymentPackage?.FirstOrDefault()?.subjectmaster)
+            foreach (var item in trialPackage.subjectmaster)
             {
                 TblUserSubjectActivationHistory obj1 = new TblUserSubjectActivationHistory();
-                var DepartmentId = getpaymentPackage?.FirstOrDefault()?.packagedetails.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
+                var DepartmentId = trialPackage.packagedetails.FirstOrDefault(x => x.SubjectId == item.SubjectId)?.DepartmentId;
                 obj1.TusmId = obj.UserSubscribeMasterId;
                 obj1.SubjectId = Convert.ToInt32(item.SubjectId);
                 obj1.SubjectCode = item.SubjectCode;
@@ -708,7 +776,17 @@ namespace LMSAPI.Controllers
 
             var GetPackage = _context.TblPackageMasters.FirstOrDefault(x => x.PackageId == req.ProductId);
             var Getstudent = _context.TblStudentUserMasters.FirstOrDefault(x => x.StudentUserId == userId);
-            var price = Convert.ToDouble(GetPackage?.SellingPrice ?? "0") * 100;
+
+            if (GetPackage == null)
+                return Ok(new ApiResponse(false, "No package found with the given PackageId.", null, "404"));
+
+            if (Getstudent == null)
+                return Ok(new ApiResponse(false, "Student not found.", null, "404"));
+
+            var price = Convert.ToDouble(GetPackage.SellingPrice ?? "0") * 100;
+
+            if (price <= 0)
+                return Ok(new ApiResponse(false, "This package has no payable price configured.", null, "400"));
 
             var options = new Dictionary<string, object>
             {
@@ -757,15 +835,26 @@ namespace LMSAPI.Controllers
                 //update payment status in database as successful
                 var res = await _dashboardRepository.UpdateRazorpayOrderStatus(req.OrderId, req.PaymentId, req.Signature, userId, "successful");
 
+                if (res == null)
+                    return Ok(new ApiResponse(false, "Order not found.", null, "404"));
+
+                // Verification is idempotent: a replayed payload must not grant a second
+                // subscription or extend access.
+                var already = await _context.TblUserSubscribeMasters
+                    .AnyAsync(x => x.UserId == userId
+                                   && x.PackageId == res.PackageId
+                                   && x.PaymentRefNo == req.PaymentId);
+
+                if (already)
+                    return Ok(new ApiResponse(true, "Payment already verified.", null, "200"));
 
                 PaymentPayload obj = new PaymentPayload();
                 obj.packageId = res.PackageId;
                 obj.PaymentRefNo = req.PaymentId;
                 obj.PaymentStatus = "success";
                 obj.Type = "insert";
-                var subscriptionResult = await CreateSubscription(obj);
-                dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
-                var data = result?.Value?.Data;
+                var subscriptionResult = await ActivateSubscriptionAsync(obj, userId, res.Amount, req.PaymentId);
+                var data = (subscriptionResult as ObjectResult)?.Value is ApiResponse ar ? ar.Data : null;
 
                 await SendPurchaseEmailAsync(userId, res.PackageId, req.OrderId, req.PaymentId, res.Amount);
 
@@ -807,18 +896,23 @@ namespace LMSAPI.Controllers
 
                     var res = await _dashboardRepository.UpdateRazorpayOrderStatus(order.OrderId, Convert.ToString(req.id), message, order.userId, "successful");
 
+                    if (res == null)
+                        continue;
+
                     if (getSubscription == null)
                     {
+                        // The order row owns the truth about who paid; this endpoint is anonymous,
+                        // so never trust the caller-supplied userId for the activation itself.
+                        var ownerId = res.CreatedBy ?? order.userId;
+
                         PaymentPayload obj = new PaymentPayload();
                         obj.packageId = res.PackageId;
-                        obj.PaymentRefNo = req.PaymentId;
+                        obj.PaymentRefNo = Convert.ToString(req.id);
                         obj.PaymentStatus = "success";
                         obj.Type = "insert";
-                        var subscriptionResult = await CreateSubscription(obj);
-                        dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
-                        var data = result?.Value?.Data;
+                        var subscriptionResult = await ActivateSubscriptionAsync(obj, ownerId, res.Amount, Convert.ToString(req.id));
 
-                        await SendPurchaseEmailAsync(order.userId, res.PackageId, order.OrderId, Convert.ToString(req.id), res.Amount);
+                        await SendPurchaseEmailAsync(ownerId, res.PackageId, order.OrderId, Convert.ToString(req.id), res.Amount);
                     }
                 }
                 else
@@ -844,6 +938,11 @@ namespace LMSAPI.Controllers
         {
             var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value);
             var getChapters = _context?.SubjectChapters?.FirstOrDefault(c => c.ChapterId == history.ChapterId);
+
+            // Without the chapter we cannot resolve SubjectId/UnitId, and a row with those
+            // null is invisible to every progress report that reads it.
+            if (getChapters == null)
+                return Ok(new ApiResponse(false, "Chapter not found.", null, "404"));
 
             ReadTimeHistory obj = new ReadTimeHistory();
             obj.SubjectId = getChapters?.SubjectId;
@@ -906,9 +1005,7 @@ namespace LMSAPI.Controllers
             objs.price = req.price;
             objs.PaymentStatus = "success";
             objs.Type = "insert";
-            var subscriptionResult = await CreateSubscription(objs);
-            dynamic result = subscriptionResult is string ? JsonConvert.DeserializeObject(subscriptionResult.ToString()) : subscriptionResult;
-            var data = result?.Value?.Data;
+            var subscriptionResult = await ActivateSubscriptionAsync(objs, userId, req.price, req.transactionId);
 
             // Apple has no Razorpay order id; the App Store transaction id is the payment reference.
             await SendPurchaseEmailAsync(userId, PackageId, order.OrderId, req.transactionId, req.price);

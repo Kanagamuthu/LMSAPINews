@@ -49,6 +49,23 @@ builder.Services.AddRateLimiter(options =>
         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         limiterOptions.QueueLimit = 0;
     });
+
+    // Authentication policy — protects the OTP endpoints from brute force.
+    // Partitioned per caller IP. Tunable via RateLimiting:Auth so a load or QA
+    // environment can raise it without a code change.
+    var authPermit = builder.Configuration.GetValue<int?>("RateLimiting:Auth:PermitLimit") ?? 10;
+    var authWindow = builder.Configuration.GetValue<int?>("RateLimiting:Auth:WindowSeconds") ?? 60;
+
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = authPermit,
+                Window = TimeSpan.FromSeconds(authWindow),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
 });
 #endregion
 
@@ -59,14 +76,23 @@ builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpS
 #region CORS
 builder.Services.AddCors(options =>
 {
+    // Browser origins allowed to call the API. Native mobile clients send no Origin
+    // header, so CORS does not affect them. Edit Cors:AllowedOrigins in appsettings
+    // to add a front end rather than reopening this to every origin.
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                         ?? Array.Empty<string>();
+
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.WithOrigins("http://192.168.0.92", "http://localhost:5050", "http://localhost/LMSAPI", "http://10.0.2.2","null") // your Android emulator/device IP , localhost for testing
-           .AllowAnyOrigin()
-           .AllowAnyMethod()
-           //.AllowCredentials()
-           .AllowAnyHeader();
+            if (allowedOrigins.Length > 0)
+                policy.WithOrigins(allowedOrigins);
+            else
+                policy.AllowAnyOrigin();
+
+            policy.AllowAnyMethod()
+                  //.AllowCredentials()
+                  .AllowAnyHeader();
 
         });
 });
