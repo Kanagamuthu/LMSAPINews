@@ -1125,6 +1125,39 @@ namespace LmsAPI.Controllers
             });
         }
 
+        #region ticket unread counts
+        [Authorize]
+        [HttpGet("TicketUnreadCount")]
+        public async Task<IActionResult> TicketUnreadCount()
+        {
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? "0");
+
+            // Grouped in SQL - one row per ticket, no message bodies pulled back.
+            var counts = await (from m in _context.SupportTicketMessages
+                                join t in _context.SupportTickets on m.TicketId equals t.TicketId
+                                where t.CreatedBy == userId
+                                      && m.Sender != "user"
+                                      && (m.UserRead == null || m.UserRead == false)
+                                group m by m.TicketId into g
+                                select new TicketUnreadDTO
+                                {
+                                    TicketId = g.Key ?? 0,
+                                    UnreadCount = g.Count()
+                                })
+                               .OrderBy(x => x.TicketId)
+                               .ToListAsync();
+
+            var summary = new TicketUnreadSummaryDTO
+            {
+                //Tickets = counts,
+                TotalUnreadMessages = counts.Sum(x => x.UnreadCount),
+                UnreadTicketCount = counts.Count
+            };
+
+            return Ok(new ApiResponse{Success = true,Message = "Unread count fetched successfully.", Data = summary,ErrorCode = "200" });
+        }
+        #endregion
+
         [Authorize]
         [HttpPost("TicketReply")]
         public async Task<IActionResult> TicketReply([FromBody] TicketReplyDTO request)

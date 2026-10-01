@@ -46,4 +46,24 @@
         public int ticketId { get; set; }
     }
 
+    /// <summary>One ticket's unread badge.</summary>
+    public class TicketUnreadDTO
+    {
+        public int TicketId { get; set; }
+        public int UnreadCount { get; set; }
+    }
+
+   
+    public class TicketUnreadSummaryDTO
+    {
+   
+       // public List<TicketUnreadDTO> Tickets { get; set; } = new List<TicketUnreadDTO>();
+
+       
+        public int TotalUnreadMessages { get; set; }
+
+      
+        public int UnreadTicketCount { get; set; }
+    }
+
 }
