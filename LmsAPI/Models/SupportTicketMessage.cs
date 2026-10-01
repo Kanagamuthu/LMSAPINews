@@ -16,4 +16,8 @@ public partial class SupportTicketMessage
     public string? Message { get; set; }
 
     public DateTime? CreatedDate { get; set; }
+
+    public bool? AdminRead { get; set; }
+
+    public bool? UserRead { get; set; }
 }

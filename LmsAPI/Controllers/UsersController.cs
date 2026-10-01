@@ -996,7 +996,10 @@ namespace LmsAPI.Controllers
                 SenderId = userId,
                 Sender = "user",
                 Message = request.message,
-                CreatedDate = DateTime.Now
+                CreatedDate = DateTime.Now,
+                // The student wrote it, so it is read on their side and unread for support.
+                UserRead = true,
+                AdminRead = false
             };
 
             _context.SupportTicketMessages.Add(ticketMessage);
@@ -1044,6 +1047,12 @@ namespace LmsAPI.Controllers
                     Subject = st.Subject,
                     Status = st.Status == true ? "open" : "closed",
 
+                    // Unread badge: support messages the student has not opened yet.
+                    UnreadCount = _context.SupportTicketMessages
+                        .Count(stm => stm.TicketId == st.TicketId
+                                      && stm.Sender != "user"
+                                      && (stm.UserRead == null || stm.UserRead == false)),
+
                     Messages = _context.SupportTicketMessages
                         .Where(stm => stm.TicketId == st.TicketId)
                         .OrderBy(stm => stm.CreatedDate)
@@ -1052,13 +1061,66 @@ namespace LmsAPI.Controllers
                             Id = stm.Id,
                             Sender = stm.Sender,
                             Message = stm.Message,
-                            CreatedAt = stm.CreatedDate
+                            CreatedAt = stm.CreatedDate,
+                            AdminRead = stm.AdminRead == true,
+                            UserRead = stm.UserRead == true,
+                            // The tick to show on this bubble: for the student's own
+                            // message it reflects support, and vice versa.
+                            ReadStatus = stm.Sender == "user"
+                                ? (stm.AdminRead == true ? "read" : "sent")
+                                : (stm.UserRead == true ? "read" : "sent")
                         })
                         .ToList()
                 })
                 .ToListAsync();
 
             return Ok(new { success = true, message = "Ticket fetched successfully", data = tickets, ErrorCode = "200" });
+        }
+
+        /// <summary>
+        /// Marks every support message on a ticket as seen by the student. Staged on the
+        /// change tracker; the caller saves.
+        /// </summary>
+        private async Task<int> MarkSupportMessagesReadAsync(int ticketId)
+        {
+            var unread = await _context.SupportTicketMessages
+                .Where(m => m.TicketId == ticketId
+                            && m.Sender != "user"
+                            && (m.UserRead == null || m.UserRead == false))
+                .ToListAsync();
+
+            foreach (var m in unread)
+                m.UserRead = true;
+
+            return unread.Count;
+        }
+
+        [Authorize]
+        [HttpPost("TicketMarkAsRead")]
+        public async Task<IActionResult> TicketMarkAsRead([FromBody] TicketReadDTO request)
+        {
+            if (request == null || request.ticketId <= 0)
+                return Ok(new ApiResponse { Success = false, Message = "Invalid TicketId.", ErrorCode = "400" });
+
+            var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? "0");
+
+            var ticket = await _context.SupportTickets
+                .FirstOrDefaultAsync(x => x.TicketId == request.ticketId && x.CreatedBy == userId);
+
+            if (ticket == null)
+                return Ok(new ApiResponse { Success = false, Message = "Ticket not found.", ErrorCode = "404" });
+
+            var marked = await MarkSupportMessagesReadAsync(request.ticketId);
+            if (marked > 0)
+                await _context.SaveChangesAsync();
+
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Messages marked as read.",
+                Data = new { ticketId = request.ticketId, markedCount = marked, unreadCount = 0 },
+                ErrorCode = "200"
+            });
         }
 
         [Authorize]
@@ -1083,6 +1145,13 @@ namespace LmsAPI.Controllers
             }
 
             var userId = Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? "0");
+
+            // A student may only reply to their own ticket.
+            if (ticket.CreatedBy != userId)
+            {
+                return Ok(new ApiResponse { Success = false, Message = "Ticket not found.", ErrorCode = "404" });
+            }
+
             var sender = "user";
 
             var reply = new SupportTicketMessage
@@ -1091,10 +1160,16 @@ namespace LmsAPI.Controllers
                 SenderId = userId,
                 Sender = sender,
                 Message = request.message,
-                CreatedDate = DateTime.Now
+                CreatedDate = DateTime.Now,
+                // The student wrote it, so it is read on their side and unread for support.
+                UserRead = true,
+                AdminRead = false
             };
 
             _context.SupportTicketMessages.Add(reply);
+
+            // Opening the thread to reply means the student has seen what support sent.
+            await MarkSupportMessagesReadAsync(request.ticketId);
 
             await _context.SaveChangesAsync();
 
@@ -1108,7 +1183,10 @@ namespace LmsAPI.Controllers
                     ticketId = reply.TicketId,
                     sender = reply.Sender,
                     message = reply.Message,
-                    createdAt = reply.CreatedDate
+                    createdAt = reply.CreatedDate,
+                    AdminRead = reply.AdminRead ?? false,
+                    UserRead = reply.UserRead ?? false,
+                    ReadStatus = (reply.AdminRead ?? false) ? "read" : "sent"
                 }
             });
         }
