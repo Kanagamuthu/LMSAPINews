@@ -716,9 +716,12 @@ namespace LMSAPI.Controllers
                 obj1.DepartmentId = DepartmentId;
                 if (obj.PaymentStatus.ToLower() == "success")
                 {
-                    var activeDate = await _dashboardRepository.GetActiveOnDateByUserId(userId);
-                    var trialDays = await _dashboardRepository.GetTrialPeriodDaysAsync();
-                    obj1.SubjectExpiryDate = (activeDate ?? DateTime.Now).AddDays(trialDays);
+                    //var activeDate = await _dashboardRepository.GetActiveOnDateByUserId(userId);
+                    //var trialDays = await _dashboardRepository.GetTrialPeriodDaysAsync();
+                    //obj1.SubjectExpiryDate = (activeDate ?? DateTime.Now).AddDays(trialDays);
+
+                    var activeDate = _context.TblStudentUserMasters.FirstOrDefault(x => x.StudentUserId == userId)?.TrailExpiryDate ?? DateTime.Now;
+                    obj1.SubjectExpiryDate = activeDate;
 
                     obj1.ActivatedOn = DateTime.Now;
                     obj1.ActivatedBy = Convert.ToInt32(userId);

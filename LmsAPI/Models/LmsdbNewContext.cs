@@ -750,6 +750,7 @@ public partial class LmsdbNewContext : DbContext
                 .HasMaxLength(60)
                 .HasColumnName("primary_MAC");
             entity.Property(e => e.TradeId).HasColumnName("trade_id");
+            entity.Property(e => e.TrailExpiryDate).HasColumnType("datetime");
             entity.Property(e => e.UserFirstName)
                 .HasMaxLength(50)
                 .IsUnicode(false)

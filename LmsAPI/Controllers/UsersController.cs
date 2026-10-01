@@ -314,14 +314,16 @@ namespace LmsAPI.Controllers
                     DepartmentId = student.DepartmentId?.ToString(),
                     DepartmentName = student.DepartmentName,
                     Batchyear = student.Batchyear?.ToString(),
-                    Country = student.Country,
                     PrimaryImei = student.PrimaryImei,
                     PrimaryMac = student.PrimaryMac,
                     CountryCode = student.CountryCode,
                     EduType = student.EduType?.ToString(),
                     TradeId = student.TradeId?.ToString(),
                     Token = student.Token,
-                    Istrail = student.Istrail
+                    Istrail = student.Istrail,
+                    City = student.City,
+                    State = student.State,
+                    Country = student.Country,
                 };
                 return Ok(new ApiResponse(true, "Account activated successfully.", data: result, errorCode: "200"));
             }
@@ -792,9 +794,6 @@ namespace LmsAPI.Controllers
         #region login
         [EnableRateLimiting("auth")]
         [HttpPost("Enter-OTP")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UserLogin(OTPVerificationDto oTPVerificationDto)
         {
             if (string.IsNullOrEmpty(oTPVerificationDto.EmailId) || string.IsNullOrEmpty(oTPVerificationDto.deviceMacId) || string.IsNullOrEmpty(oTPVerificationDto.Otp))
@@ -844,14 +843,17 @@ namespace LmsAPI.Controllers
                 DepartmentId = student.DepartmentId?.ToString(),
                 DepartmentName = student.DepartmentName,
                 Batchyear = student.Batchyear?.ToString(),
-                Country = student.Country,
                 PrimaryImei = student.PrimaryImei,
                 PrimaryMac = student.PrimaryMac,
                 CountryCode = student.CountryCode,
                 EduType = student.EduType?.ToString(),
                 TradeId = student.TradeId?.ToString(),
                 Token = student.Token,
-                Istrail = student.Istrail
+                Istrail = student.Istrail,
+                
+                City = student.City,
+                State = student.State,
+                Country = student.Country
             };
 
 
