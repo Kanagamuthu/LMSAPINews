@@ -507,20 +507,21 @@ namespace LMSAPI.Controllers
         #region get All Package list for dashboard
         [Authorize]
         [HttpGet("GetAllPackage")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetAllPackage()
+        public async Task<IActionResult> GetAllPackage(int? EduType = 0)
         {
             var email = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             //get package id based on user id
-            var stddepartment = await _dashboardRepository.GetAllPackageByUserEmailAsync(email);
-            int education = stddepartment.FirstOrDefault()?.EduType ?? 0;
+
+            if (EduType <= 0)
+            {
+                var stddepartment = await _dashboardRepository.GetAllPackageByUserEmailAsync(email);
+                EduType = stddepartment.FirstOrDefault()?.EduType ?? 0;
+            }
 
             //get department id based on user email
-            if (education > 0)
+            if (EduType > 0)
             {
-                var res = await _dashboardRepository.GetPackageDetailsByUserEmailAsync(education);
+                var res = await _dashboardRepository.GetPackageDetailsByUserEmailAsync(EduType ?? 0);
                 return Ok(new ApiResponse { Success = true, Message = "Departments fetched successfully for the user", Data = res, ErrorCode = "200" });
             }
             else

@@ -379,19 +379,22 @@ namespace LMSAPI.Repository
             var result = (from pm in _context.TblPackageMasters
                           join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
                           join dm in _context.TblDepartmentMasters on pd.DepartmentId equals dm.DepartmentId
+                          join et in _context.TblEducationTypes on dm.DegreeId equals et.EduId
                           join usm in _context.TblUserSubscribeMasters on pm.PackageId equals usm.PackageId
                           join sah in _context.TblUserSubjectActivationHistories on usm.UserSubscribeMasterId equals sah.TusmId
                           where pm.Activestatus == true && usm.UserId == Id && usm.PaymentStatus.ToLower() == "success"
                           select new
                           {
+                              educationName = et.EduDes,
                               dm.DepartmentName,
                               pm,
                               sah,
                               usm
-                          }).AsEnumerable().GroupBy(x => x.DepartmentName).
+                          }).AsEnumerable().GroupBy(x => new { x.educationName, x.DepartmentName }).
                           Select(g => new readhistorydto
                           {
-                              departmentName = g.Key,
+                              educationName = g.Key.educationName,
+                              departmentName = g.Key.DepartmentName,
                               packageMasterDto = g.OrderByDescending(x => x.sah.SubjectExpiryDate).GroupBy(x => x.pm.PackageId)
                              .Select(p => new Packagemasterdto
                              {
@@ -849,7 +852,8 @@ namespace LMSAPI.Repository
             var result = (from pm in _context.TblPackageMasters
                           join pd in _context.TblPackageDetails on pm.PackageId equals pd.PackageId
                           join dm in _context.TblDepartmentMasters on pd.DepartmentId equals dm.DepartmentId
-                          where dm.DegreeId == DegreeId && pm.Activestatus == true
+                          join et in _context.TblEducationTypes on dm.DegreeId equals et.EduId
+                          where et.EduId == DegreeId && pm.Activestatus == true
                           select new
                           {
                               dm.DepartmentName,

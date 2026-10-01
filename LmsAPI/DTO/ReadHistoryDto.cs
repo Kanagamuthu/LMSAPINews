@@ -15,6 +15,7 @@ namespace LMSAPI.DTO
 
     public class readhistorydto
     {
+        public string educationName { get; set; }
         public string departmentName { get; set; }
         public List<Packagemasterdto> packageMasterDto { get; set; }
     }
