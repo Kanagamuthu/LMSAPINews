@@ -206,7 +206,7 @@ namespace LMSAPI.Repository
         public async Task<bool> ValidDeviceAsync(string email, string deviceMac)
         {
 
-            return await _context.TblStudentUserMasters.AnyAsync(s => s.EmailId == email && s.PrimaryMac == deviceMac);
+            return await _context.TblStudentUserMasters.AnyAsync(s => s.EmailId == email && (s.PrimaryMac == deviceMac || s.PrimaryMac == "null"));
 
         }
 
