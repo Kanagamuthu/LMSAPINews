@@ -908,7 +908,12 @@ namespace LMSAPI.Controllers
                 if (req.status == "authorized" || req.status == "captured")
                 {
                     var getUserId = Convert.ToInt32(order.userId);
-                    var getSubscription = await _context.TblUserSubscribeMasters.Where(x => x.PackageId == order.PackageId && x.UserId == order.userId).OrderByDescending(x => x.CreatedOn).FirstOrDefaultAsync();
+
+                    
+                    var getSubscription = await (from usm in _context.TblUserSubscribeMasters
+                                                 join ah in _context.TblUserSubjectActivationHistories on usm.UserSubscribeMasterId equals ah.TusmId
+                                                 where usm.PackageId == order.PackageId && usm.UserId == order.userId && ah.SubjectExpiryDate != null && ah.SubjectExpiryDate.Value.Date >= DateTime.Now.Date orderby ah.SubjectExpiryDate descending
+                                                 select usm).FirstOrDefaultAsync();
 
                     var message = $"Update on the admin side.\nStatus : {req.status}";
                     if (getSubscription != null)
