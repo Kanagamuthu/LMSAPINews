@@ -1096,7 +1096,8 @@ namespace LMSAPI.Controllers
         // Sends the "Purchase confirmation template" mail after a payment has been verified.
         // Never throws: a mail failure must not fail an already-captured payment, so problems are
         // logged and reported back as a message instead.
-        private async Task<string> SendPurchaseEmailAsync(long? userId, int? packageId, string? orderId, string? paymentId, string? amountPaid)
+        [HttpGet("SendPurchaseEmailAsync")]
+        public async Task<string> SendPurchaseEmailAsync(long? userId, int? packageId, string? orderId, string? paymentId, string? amountPaid)
         {
             try
             {
@@ -1131,11 +1132,34 @@ namespace LMSAPI.Controllers
                 var accessTill = activation?.SubjectExpiryDate;
                 var paymentOn = activation?.PaymentOn ?? DateTime.Now;
 
+                // Education and department of the thing actually bought. Tbl_package_master
+                // leaves department_id null, so the sale's department comes from
+                // Tbl_package_details; the education is that department's degree.
+                var sold = await (from pd in _context.TblPackageDetails
+                                  join dm in _context.TblDepartmentMasters
+                                      on pd.DepartmentId equals dm.DepartmentId
+                                  join et in _context.TblEducationTypes
+                                      on dm.DegreeId equals et.EduId into edu
+                                  from et in edu.DefaultIfEmpty()
+                                  where pd.PackageId == packageId
+                                  select new { dm.DepartmentName, EducationName = et.EduDes })
+                                 .FirstOrDefaultAsync();
+
+                // Fall back to the student's own profile when the package has no department.
+                var departmentName = sold?.DepartmentName ?? student.DepartmentName;
+                var educationName = sold?.EducationName
+                                    ?? await _context.TblEducationTypes
+                                           .Where(x => x.EduId == student.EduType)
+                                           .Select(x => x.EduDes)
+                                           .FirstOrDefaultAsync();
+
                 var packageName = package.PackageDisplayName ?? package.PackageName ?? "";
                 var sellingPrice = package.SellingPrice ?? "0";
 
                 string body = template.Content ?? "";
                 body = body.Replace("{userName}", Encode(student.Username ?? student.UserFirstName));
+                body = body.Replace("{EducationName}", Encode(educationName));
+                body = body.Replace("{DepartmentName}", Encode(departmentName));
                 body = body.Replace("{PackageName}", Encode(packageName));
                 body = body.Replace("{PackageCode}", Encode(package.PackageCode));
                 body = body.Replace("{OrderId}", Encode(orderId));
