@@ -1173,7 +1173,12 @@ namespace LMSAPI.Controllers
                     .Replace("{PackageName}", packageName)
                     .Replace("{OrderId}", orderId ?? "-");
 
-                var sent = await _emailService.SendEmailAsync(student.EmailId.Trim(), emailSubject, body);
+                // Blind copies, purchase confirmation only. Configured in appsettings
+                // under PurchaseMail:Bcc; an empty or missing array sends no copies.
+                var bcc = _configuration.GetSection("SmtpSettings:Bcc").Get<string[]>()
+                          ?? Array.Empty<string>();
+
+                var sent = await _emailService.SendEmailAsync(student.EmailId.Trim(), emailSubject, body, bcc);
                 if (!sent)
                 {
                     _logger.LogError($"Purchase confirmation mail failed to send. UserId: {userId}, PackageId: {packageId}, OrderId: {orderId}");

@@ -14,9 +14,14 @@ namespace LMSAPI.Helpers
             _smtpSettings = smtpSettings.Value;
             _logger = logger;
         }
-        public async Task<bool> SendEmailAsync(string toEmail, string subject, string body)
+        /// <summary>
+        /// Sends an HTML mail. <paramref name="bcc"/> is optional and defaults to none, so
+        /// existing callers are unaffected - only the purchase confirmation passes copies.
+        /// </summary>
+        public async Task<bool> SendEmailAsync(string toEmail, string subject, string body,
+                                               IEnumerable<string>? bcc = null)
         {
-            
+
             try
             {
                 _logger.LogInfo($"Preparing to send email to {toEmail} with subject '{subject}'.");
@@ -37,6 +42,30 @@ namespace LMSAPI.Helpers
                     };
 
                     mailMessage.To.Add(toEmail);
+
+                    // A malformed address would throw and lose the whole mail, including the
+                    // copy to the student, so bad entries are skipped and logged instead.
+                    if (bcc != null)
+                    {
+                        foreach (var address in bcc)
+                        {
+                            if (string.IsNullOrWhiteSpace(address))
+                                continue;
+
+                            try
+                            {
+                                mailMessage.Bcc.Add(new MailAddress(address.Trim()));
+                            }
+                            catch (FormatException)
+                            {
+                                _logger.LogWarn($"Skipping invalid BCC address '{address}'.");
+                            }
+                        }
+
+                        if (mailMessage.Bcc.Count > 0)
+                            _logger.LogInfo($"BCC: {string.Join(", ", mailMessage.Bcc.Select(a => a.Address))}");
+                    }
+
                     _logger.LogError("Sending email...");
                     await client.SendMailAsync(mailMessage);
                     return true;
